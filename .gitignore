@@ -1,2 +1,8 @@
 # Environment
 .venv/
+
+# Directories
+__pycache__
+
+# File types
+*.c
