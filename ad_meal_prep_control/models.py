@@ -3,6 +3,7 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
+from params import *
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -17,9 +18,43 @@ def adm1_r3_frac():
     model = do_mpc.model.Model(model_type, "SX")
 
     # Time-invariant parameters
-    # Read from some file
-    # Temporary: random numbers
-    c = [model.set_variable(var_type="_p", var_name=f"c_{i+1}") for i in range(33)]
+    c = np.array(
+        [
+            1 / Vl,
+            nac,
+            10 ** (-1.5 * (pHULac + pHLLac) / (pHULac - pHLLac)),
+            4 * KW,
+            kla,
+            kla * Kch4 * R * T,
+            kla * Kco2 * R * T,
+            KS_IN,
+            k_AB_ac,
+            k_AB_co2,
+            k_AB_IN,
+            kla * Vl / Vg,
+            kp / p0 * (R * T / Mch4) ** 2,
+            2 * kp / p0 * (R * T) ** 2 / (Mch4 * Mco2),
+            kp / p0 * (R * T / Mco2),
+            kp / p0 * R * T / Mch4 * (2 * ph2o - p0),
+            kp / p0 * R * T / Mco2 * (2 * ph2o - p0),
+            kp / p0 * (ph2o - p0) * ph2o,
+            R * T / Mch4,
+            R * T / Mco2,
+            rho,
+            -kp / (Vg * p0) * (R * T / Mch4) ** 2,
+            -2 * kp / (Vg * p0) * (R * T) ** 2 / (Mch4 * Mco2),
+            -kp / (Vg * p0) * (R * T / Mco2) ** 2,
+            -kp / (Vg * p0) * R * T / Mch4 * (2 * ph2o - p0),
+            -kp / (Vg * p0) * R * T / Mco2 * (2 * ph2o - p0),
+            -kla * Vl / Vg * Kch4 * R * T - kp / (Vg * p0) * (ph2o - p0) * ph2o,
+            -kla * Vl / Vg * Kco2 * R * T - kp / (Vg * p0) * (ph2o - p0) * ph2o,
+            k_AB_ac * K_a_ac,
+            k_AB_co2 * K_a_co2,
+            k_AB_IN * K_a_IN,
+            Vl / Vg,
+            -kp / (Vg * p0) * (ph2o - p0) * ph2o,
+        ]
+    )
 
     # Stoichiometric constants
     a = [
@@ -185,14 +220,32 @@ def adm1_r3_frac():
     u = model.set_variable(var_type="_u", var_name="u")
 
     # Time-variant parameters
-    theta = [
-        model.set_variable(var_type="_tvp", var_name=f"theta_{i+1}", shape=(1, 1))
-        for i in range(9)
-    ]
-    xi = [
-        model.set_variable(var_type="_tvp", var_name=f"xi_{i+1}", shape=(1, 1))
-        for i in range(13)
-    ]
+    theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
+
+    # inlet concentrations Mais A siehe Sörens Diss. [g/l] bzw. [mol/l]
+    # S_ac, S_ch4, S_IC, S_IN, S_h2o, X_chF, X_chS, X_pr, X_li, X_bac, X_ac, X_ash, S_ion, S_ac-, S_hco3-, S_nh3, S_ch4_g, S_co2_g
+    xi = np.array(
+        [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            304.5,
+            np.nan,
+            24.2,
+            18.1,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ]
+    )  # [g/l]
 
     # States
     x = [
