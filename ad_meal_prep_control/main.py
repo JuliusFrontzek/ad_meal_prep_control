@@ -64,12 +64,14 @@ mpc.set_initial_guess()
 graphics = do_mpc.graphics.Graphics(mpc.data)
 
 
-fig, ax = plt.subplots(2, sharex=True)
+fig, ax = plt.subplots(3, sharex=True)
 # Configure plot:
 graphics.add_line(var_type="_x", var_name="x_17", axis=ax[0])
-graphics.add_line(var_type="_u", var_name="u", axis=ax[1])
+graphics.add_line(var_type="_x", var_name="x_18", axis=ax[1])
+graphics.add_line(var_type="_u", var_name="u", axis=ax[2])
 ax[0].set_ylabel("x_17")
-ax[1].set_ylabel("u")
+ax[1].set_ylabel("x_18")
+ax[2].set_ylabel("u")
 # Update properties for all prediction lines:
 for line_i in graphics.pred_lines.full:
     line_i.set_linewidth(1)
