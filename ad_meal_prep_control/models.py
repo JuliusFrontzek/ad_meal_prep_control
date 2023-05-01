@@ -269,6 +269,24 @@ def adm1_r3_frac():
         / (theta[7] + x[15])
     )
 
+    # Set measurement equations as expressions
+    model.set_expression(
+        "y_1",
+        c[12] * x[16] ** 2
+        + c[13] * x[16] * x[17]
+        + c[14] * x[17] ** 2
+        + c[15] * x[16]
+        + c[16] * x[17]
+        + c[17],
+    )
+    model.set_expression("y_2", c[18] * x[16])
+    model.set_expression("y_3", c[19] * x[17])
+    model.set_expression("y_4", s_h_plus)
+    model.set_expression("y_5", x[3])
+    model.set_expression("y_6", 1.0 - 1.0 / c[20] * x[4])
+    model.set_expression("y_7", 1.0 - 1.0 / (c[20] - x[4]) * x[11])
+    model.set_expression("y_8", x[0])
+
     # Differential equations
     model.set_rhs(
         "x_1",
@@ -544,6 +562,32 @@ def adm1_r4_frac():
         model.set_variable(var_type="_x", var_name=f"x_{i+1}", shape=(1, 1))
         for i in range(12)
     ]
+
+    # model.set_meas(
+    #     "y_1",
+    #     c[5] * x[10] ** 2
+    #     + c[6] * x[10] * x[11]
+    #     + c[7] * x[11] ** 2
+    #     + c[8] * x[10]
+    #     + c[9] * x[11]
+    #     + c[10],
+    # )
+
+    # Set measurement equations as expressions
+    model.set_expression(
+        "y_1",
+        c[5] * x[10] ** 2
+        + c[6] * x[10] * x[11]
+        + c[7] * x[11] ** 2
+        + c[8] * x[10]
+        + c[9] * x[11]
+        + c[10],
+    )
+    model.set_expression("y_2", c[11] * x[10])
+    model.set_expression("y_3", c[12] * x[11])
+    model.set_expression("y_4", x[2])
+    model.set_expression("y_5", 1.0 - 1.0 / c[13] * x[3])
+    model.set_expression("y_6", 1.0 - 1.0 / (c[13] - x[3]) * x[9])
 
     # Differential equations
     model.set_rhs(

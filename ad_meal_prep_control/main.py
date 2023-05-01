@@ -27,8 +27,8 @@ show_animation = True
 store_results = False
 
 # Model
-model_type = "R4"
-if model_type == "R3":
+model_type = "R4-frac"
+if model_type == "R3-frac":
     # Set model
     model = adm1_r3_frac()
     # Set the initial state of mpc and simulator
@@ -54,24 +54,24 @@ if model_type == "R3":
             0.660494133806800,
         ]
     )
-elif model_type == "R4":
+elif model_type == "R4-frac":
     # Set model
     model = adm1_r4_frac()
     # Set the initial state of mpc and simulator
     x0 = np.array(
         [
-            0.091,
-            0.508,
-            0.944,
-            956.97 / 1000.0,
-            0.5 * 3.26,
-            0.5 * 3.26,
-            0.956,
-            0.413,
-            2.569,
-            1,
-            0.315,
-            0.78,
+            0.0221697506048759,
+            0.554580163344390,
+            0.557189956577887,
+            0.959887916032620,
+            2.03934924735466,
+            14.7843348334834,
+            4.14214818444786,
+            1.28561345217435,
+            1.01590412485130,
+            0.0170000000000000,
+            0.386609337719045,
+            0.924038131164312,
         ]
     )
 else:
@@ -82,19 +82,29 @@ simulator = template_simulator(model)
 estimator = state_estimator.StateEstimator(model)
 
 # Simulation
-n_steps = 50
+n_steps = 336
 
 # Feeding
 constant_feeding = False
-feed = 42.0 * np.ones(n_steps)
+feed = np.zeros(n_steps)
 
+feed[120:144] = 42.0 * 24
+feed[264:317] = 18.0 * 24
 
+# Set x0
 mpc.x0 = x0
 simulator.x0 = x0
 
+plot_vars = ["u", "x_1"] + [f"y_{i+1}" for i in range(6)]
+
+if not constant_feeding:
+    plot_vars = [var for var in plot_vars if not var.startswith("y")]
+
 if constant_feeding:
-    fig, ax = plt.subplots(6, sharex=True)
-    ax[0].set_ylabel("")
+    # Create arrays to save results
+    results = {}
+    for var in plot_vars:
+        results[var] = np.empty(n_steps)
 else:
     mpc.set_initial_guess()
 
@@ -102,7 +112,6 @@ else:
     graphics = do_mpc.graphics.Graphics(mpc.data)
 
     # Configure plot:
-    plot_vars = ("x_10", "x_11", "u")
     fig, ax = plt.subplots(len(plot_vars), sharex=True)
     for idx, var in enumerate(plot_vars):
         graphics.add_line(var_type=f"_{var[0]}", var_name=var, axis=ax[idx])
@@ -125,18 +134,35 @@ for k in range(n_steps):
     else:
         u0 = mpc.make_step(x0)
     timer.toc()
-    y_next = simulator.make_step(u0)
-    x0 = estimator.make_step(y_next)
+
+    x_next = simulator.make_step(u0)
+    x0 = estimator.make_step(x_next)
 
     if show_animation:
         if constant_feeding:
-            pass
+            if "u" in plot_vars:
+                results["u"][k] = u0
+
+            for var in plot_vars:
+                if var.startswith("x"):
+                    results[var][k] = x_next[int(var.lstrip("x_")) - 1]
+                elif var.startswith("y"):
+                    idx = int(var.lstrip("y_"))
+                    results[var][k] = simulator.data._aux[-1, idx]
         else:
             graphics.plot_results(t_ind=k)
             graphics.plot_predictions(t_ind=k)
-        graphics.reset_axes()
+            graphics.reset_axes()
         plt.show()
         plt.pause(0.01)
+
+if constant_feeding:
+    fig, ax = plt.subplots(len(plot_vars), sharex=True)
+    for idx, var in enumerate(plot_vars):
+        ax[idx].set_ylabel(var)
+        ax[idx].plot(results[var])
+
+    plt.show()
 
 timer.info()
 timer.hist()

@@ -12,9 +12,9 @@ import do_mpc
 
 
 def mpc_setup(model, model_type: str):
-    if model_type == "R3":
+    if model_type == "R3-frac":
         num_states = 18
-    elif model_type == "R4":
+    elif model_type == "R4-frac":
         num_states = 12
     else:
         raise NotImplementedError(f"Model '{model_type}' not implemented.")
@@ -41,9 +41,12 @@ def mpc_setup(model, model_type: str):
     # Scaling of units for better conditioning of optimization problem
     # mpc.scaling["_u", "u"] = 100
 
-    mterm = (model.x[f"x_{num_states-1}"] - 0.35) ** 2
-    lterm = (model.x[f"x_{num_states-1}"] - 0.35) ** 2
-
+    # mterm = (model.x[f"x_{3}"] - 0.55) ** 2  # + (model.x[f"x_{num_states}"] - 0.8) ** 2
+    # lterm = (
+    #     model.x[f"x_{3}"] - 0.55
+    # ) ** 2  # + (        model.x[f"x_{num_states}"] - 0.8    ) ** 2
+    mterm = (model.aux["y_2"] - 0.4) ** 2
+    lterm = (model.aux["y_2"] - 0.4) ** 2
     mpc.set_objective(lterm=lterm, mterm=mterm)
 
     # mpc.set_rterm(u=0.1)
