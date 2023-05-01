@@ -7,6 +7,7 @@ import sys
 import os
 import random
 import ad_meal_prep_control.state_estimator as state_estimator
+import substrates
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -27,10 +28,13 @@ show_animation = True
 store_results = False
 
 # Model
-model_type = "R4-frac"
+model_type = "R3-frac"
+substrate_names = ["corn"]
+xi = substrates.xi_values(model_type, substrate_names)
+
 if model_type == "R3-frac":
     # Set model
-    model = adm1_r3_frac()
+    model = adm1_r3_frac(xi)
     # Set the initial state of mpc and simulator
     x0 = np.array(
         [
@@ -56,7 +60,7 @@ if model_type == "R3-frac":
     )
 elif model_type == "R4-frac":
     # Set model
-    model = adm1_r4_frac()
+    model = adm1_r4_frac(xi)
     # Set the initial state of mpc and simulator
     x0 = np.array(
         [

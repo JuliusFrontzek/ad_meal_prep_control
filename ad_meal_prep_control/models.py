@@ -4,18 +4,20 @@ from casadi.tools import *
 import sys
 import os
 from params import *
+import substrates
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
 import do_mpc
 
 
-def adm1_r3_frac():
+def adm1_r3_frac(xi: np.ndarray):
     """
     ADM1-R3-frac model.
     """
     model_type = "continuous"
     model = do_mpc.model.Model(model_type, "SX")
+    num_inputs = xi.shape[1]
 
     # Time-invariant parameters
     c = np.array(
@@ -219,35 +221,35 @@ def adm1_r3_frac():
     ).transpose()
 
     # Input
-    u = model.set_variable(var_type="_u", var_name="u")
+    u = model.set_variable(var_type="_u", var_name="u", shape=(num_inputs, 1))
 
     # Time-variant parameters
     theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
 
     # inlet concentrations Mais A siehe Sörens Diss. [g/l] bzw. [mol/l]
     # S_ac, S_ch4, S_IC, S_IN, S_h2o, X_chF, X_chS, X_pr, X_li, X_bac, X_ac, X_ash, S_ion, S_ac-, S_hco3-, S_nh3, S_ch4_g, S_co2_g
-    xi = np.array(
-        [
-            2.14500583382249,
-            0,
-            0,
-            0.592294500000000,
-            960.511750000000 / 1000.0,
-            21.2528071170000,
-            0,
-            4.74931351500000,
-            1.38096405000000,
-            0,
-            0,
-            0.0562500000000000 / 1000.0,
-            0.00750000000000000,
-            0,
-            0,
-            0,
-            0,
-            0,
-        ]
-    )  # [g/l]
+    # xi = np.array(
+    #     [
+    #         2.14500583382249,
+    #         0,
+    #         0,
+    #         0.592294500000000,
+    #         960.511750000000 / 1000.0,
+    #         21.2528071170000,
+    #         0,
+    #         4.74931351500000,
+    #         1.38096405000000,
+    #         0,
+    #         0,
+    #         0.0562500000000000 / 1000.0,
+    #         0.00750000000000000,
+    #         0,
+    #         0,
+    #         0,
+    #         0,
+    #         0,
+    #     ]
+    # )  # [g/l]
 
     # States
     x = [
@@ -287,10 +289,15 @@ def adm1_r3_frac():
     model.set_expression("y_7", 1.0 - 1.0 / (c[20] - x[4]) * x[11])
     model.set_expression("y_8", x[0])
 
+    if num_inputs > 1:
+        sum_u = cumsum(u)[1]
+    else:
+        sum_u = u
+
     # Differential equations
     model.set_rhs(
         "x_1",
-        c[0] * (xi[0] - x[0]) * u
+        c[0] * (xi[0, :] @ u - sum_u * x[0])
         + a[0][0] * theta[0] * x[5]
         + a[0][1] * theta[1] * x[6]
         + a[0][2] * theta[2] * x[7]
@@ -299,7 +306,7 @@ def adm1_r3_frac():
     )
     model.set_rhs(
         "x_2",
-        c[0] * (xi[1] - x[1]) * u
+        c[0] * (xi[1, :] @ u - sum_u * x[1])
         + a[1][0] * theta[0] * x[5]
         + a[1][1] * theta[1] * x[6]
         + a[1][2] * theta[2] * x[7]
@@ -310,7 +317,7 @@ def adm1_r3_frac():
     )
     model.set_rhs(
         "x_3",
-        c[0] * (xi[2] - x[2]) * u
+        c[0] * (xi[2, :] @ u - sum_u * x[2])
         + a[2][0] * theta[0] * x[5]
         + a[2][1] * theta[1] * x[6]
         + a[2][2] * theta[2] * x[7]
@@ -322,7 +329,7 @@ def adm1_r3_frac():
     )
     model.set_rhs(
         "x_4",
-        c[0] * (xi[3] - x[3]) * u
+        c[0] * (xi[3, :] @ u - sum_u * x[3])
         - a[3][0] * theta[0] * x[5]
         - a[3][1] * theta[1] * x[6]
         + a[3][2] * theta[2] * x[7]
@@ -331,7 +338,7 @@ def adm1_r3_frac():
     )
     model.set_rhs(
         "x_5",
-        c[0] * (xi[4] - x[4]) * u
+        c[0] * (xi[4, :] @ u - sum_u * x[4])
         - a[4][0] * theta[0] * x[5]
         - a[4][1] * theta[1] * x[6]
         - a[4][2] * theta[2] * x[7]
@@ -340,29 +347,31 @@ def adm1_r3_frac():
     )
     model.set_rhs(
         "x_6",
-        c[0] * (theta[8] * xi[5] - x[5]) * u
+        c[0] * (theta[8] * xi[5, :] @ u - sum_u * x[5])
         - theta[0] * x[5]
         + a[5][5] * theta[4] * x[9]
         + a[5][6] * theta[4] * x[10],
     )
-    model.set_rhs("x_7", c[0] * ((1.0 - theta[8]) * xi[5] - x[6]) * u - theta[1] * x[6])
+    model.set_rhs(
+        "x_7", c[0] * ((1.0 - theta[8]) * xi[5, :] @ u - sum_u * x[6]) - theta[1] * x[6]
+    )
     model.set_rhs(
         "x_8",
-        c[0] * (xi[7] - x[7]) * u
+        c[0] * (xi[7, :] @ u - sum_u * x[7])
         - theta[2] * x[7]
         + a[7][5] * theta[4] * x[9]
         + a[7][6] * theta[4] * x[10],
     )
     model.set_rhs(
         "x_9",
-        c[0] * (xi[8] - x[8]) * u
+        c[0] * (xi[8, :] @ u - sum_u * x[8])
         - theta[3] * x[8]
         + a[8][5] * theta[4] * x[9]
         + a[8][6] * theta[4] * x[10],
     )
     model.set_rhs(
         "x_10",
-        c[0] * (xi[9] - x[9]) * u
+        c[0] * (xi[9, :] @ u - sum_u * x[9])
         + a[9][0] * theta[0] * x[5]
         + a[9][1] * theta[1] * x[6]
         + a[9][2] * theta[2] * x[7]
@@ -371,12 +380,12 @@ def adm1_r3_frac():
     )
     model.set_rhs(
         "x_11",
-        c[0] * (xi[10] - x[10]) * u
+        c[0] * (xi[10, :] @ u - sum_u * x[10])
         + theta[5] * x[0] * x[10] / (theta[6] + x[0]) * i_ac
         - theta[4] * x[10],
     )
-    model.set_rhs("x_12", c[0] * (xi[11] - x[11]) * u)
-    model.set_rhs("x_13", c[0] * (xi[12] - x[12]) * u)
+    model.set_rhs("x_12", c[0] * (xi[11, :] @ u - sum_u * x[11]))
+    model.set_rhs("x_13", c[0] * (xi[12, :] @ u - sum_u * x[12]))
     model.set_rhs("x_14", c[28] * (x[0] - x[13]) - c[8] * x[13] * s_h_plus)
     model.set_rhs("x_15", c[29] * (x[2] - x[14]) - c[9] * x[14] * s_h_plus)
     model.set_rhs("x_16", c[30] * (x[3] - x[15]) - c[10] * x[15] * s_h_plus)
@@ -407,12 +416,13 @@ def adm1_r3_frac():
     return model
 
 
-def adm1_r4_frac():
+def adm1_r4_frac(xi: np.ndarray):
     """
     ADM1-R4-frac model.
     """
     model_type = "continuous"
     model = do_mpc.model.Model(model_type, "SX")
+    num_inputs = xi.shape[1]
 
     # Time-invariant parameters
     c = np.array(
@@ -548,14 +558,15 @@ def adm1_r4_frac():
     ).transpose()
 
     # Input
-    u = model.set_variable(var_type="_u", var_name="u")
+    u = model.set_variable(var_type="_u", var_name="u", shape=(num_inputs, 1))
 
     # Time-variant parameters
     theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
 
     # inlet concentrations Mais A siehe Sörens Diss. [g/l] bzw. [mol/l]
     # S_ch4, S_IC, S_IN, S_h2o, X_chF, X_chS, X_pr, X_li, X_bac, X_ash, S_ch4_g, S_co2_g
-    xi = np.array([0, 0, 0.592, 960.512, 23.398, 0, 4.75, 1.381, 0, 17, 0, 0])  # [g/l]
+    # xi = np.array([0, 0, 0.592, 960.512, 23.398, 0, 4.75, 1.381, 0, 17, 0, 0])  # [g/l]
+    # xi = substrates.xi_values("R4-frac", "corn")
 
     # States
     x = [
@@ -589,10 +600,15 @@ def adm1_r4_frac():
     model.set_expression("y_5", 1.0 - 1.0 / c[13] * x[3])
     model.set_expression("y_6", 1.0 - 1.0 / (c[13] - x[3]) * x[9])
 
+    if num_inputs > 1:
+        sum_u = cumsum(u)[1]
+    else:
+        sum_u = u
+
     # Differential equations
     model.set_rhs(
         "x_1",
-        c[0] * (xi[0] - x[0]) * u
+        c[0] * (xi[0, :] @ u - sum_u * x[0])
         + a[0][0] * theta[0] * x[4]
         + a[0][1] * theta[1] * x[5]
         + a[0][2] * theta[2] * x[6]
@@ -602,7 +618,7 @@ def adm1_r4_frac():
     )
     model.set_rhs(
         "x_2",
-        c[0] * (xi[1] - x[1]) * u
+        c[0] * (xi[1, :] @ u - sum_u * x[1])
         + a[1][0] * theta[0] * x[4]
         + a[1][1] * theta[1] * x[5]
         + a[1][2] * theta[2] * x[6]
@@ -612,7 +628,7 @@ def adm1_r4_frac():
     )
     model.set_rhs(
         "x_3",
-        c[0] * (xi[2] - x[2]) * u
+        c[0] * (xi[2, :] @ u - sum_u * x[2])
         - a[2][0] * theta[0] * x[4]
         - a[2][1] * theta[1] * x[5]
         + a[2][2] * theta[2] * x[6]
@@ -620,7 +636,7 @@ def adm1_r4_frac():
     )
     model.set_rhs(
         "x_4",
-        c[0] * (xi[3] - x[3]) * u
+        c[0] * (xi[3, :] @ u - sum_u * x[3])
         - a[3][0] * theta[0] * x[4]
         - a[3][1] * theta[1] * x[5]
         - a[3][2] * theta[2] * x[6]
@@ -628,27 +644,36 @@ def adm1_r4_frac():
     )
     model.set_rhs(
         "x_5",
-        c[0] * (theta[5] * xi[4] - x[4]) * u
+        c[0] * (theta[5] * xi[4, :] @ u - sum_u * x[4])
         - theta[0] * x[4]
         + a[4][4] * theta[4] * x[8],
     )
-    model.set_rhs("x_6", c[0] * ((1.0 - theta[5]) * xi[4] - x[5]) * u - theta[1] * x[5])
     model.set_rhs(
-        "x_7", c[0] * (xi[6] - x[6]) * u - theta[2] * x[6] + a[6][4] * theta[4] * x[8]
+        "x_6",
+        c[0] * ((1.0 - theta[5]) * xi[4, :] @ u - sum_u * x[5]) - theta[1] * x[5],
     )
     model.set_rhs(
-        "x_8", c[0] * (xi[7] - x[7]) * u - theta[3] * x[7] + a[7][4] * theta[4] * x[8]
+        "x_7",
+        c[0] * (xi[6, :] @ u - sum_u * x[6])
+        - theta[2] * x[6]
+        + a[6][4] * theta[4] * x[8],
+    )
+    model.set_rhs(
+        "x_8",
+        c[0] * (xi[7, :] @ u - sum_u * x[7])
+        - theta[3] * x[7]
+        + a[7][4] * theta[4] * x[8],
     )
     model.set_rhs(
         "x_9",
-        c[0] * (xi[8] - x[8]) * u
+        c[0] * (xi[8, :] @ u - sum_u * x[8])
         + a[8][0] * theta[0] * x[4]
         + a[8][1] * theta[1] * x[5]
         + a[8][2] * theta[2] * x[6]
         + a[8][3] * theta[3] * x[7]
         - theta[4] * x[8],
     )
-    model.set_rhs("x_10", c[0] * (xi[9] - x[9]) * u)
+    model.set_rhs("x_10", c[0] * (xi[9, :] @ u - sum_u * x[9]))
     model.set_rhs(
         "x_11",
         c[14] * x[10] ** 3
