@@ -571,7 +571,7 @@ def adm1_r4_frac(xi: np.ndarray):
     # States
     x = [
         model.set_variable(var_type="_x", var_name=f"x_{i+1}", shape=(1, 1))
-        for i in range(12)
+        for i in range(14)
     ]
 
     # model.set_meas(
@@ -693,6 +693,14 @@ def adm1_r4_frac(xi: np.ndarray):
         + c[17] * x[10] * x[11]
         + c[20] * x[11]
         + c[4] * x[1],
+    )
+    model.set_rhs(
+        "x_13",
+        model.aux["y_1"] * model.aux["y_2"] / (model.aux["y_2"] + model.aux["y_3"]),
+    )
+    model.set_rhs(
+        "x_14",
+        model.aux["y_1"] * model.aux["y_3"] / (model.aux["y_2"] + model.aux["y_3"]),
     )
     # Build the model
     model.setup()
