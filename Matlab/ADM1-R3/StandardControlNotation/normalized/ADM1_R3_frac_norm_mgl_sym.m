@@ -8,7 +8,7 @@ function g = ADM1_R3_frac_norm_mgl_sym(xNorm,c,Tx,Ty)
 % the ADM1-R3-frac
 
 % ion balance: 
-PhiNorm = -Tx(13)*xNorm(13) + (Tx(4)*xNorm(4) - Tx(16)*xNorm(16))/17 - Tx(15)*xNorm(15)/44 - Tx(14)*xNorm(14)/60; % Achtung: VZ von x13 mit Sören klären!
+PhiNorm = Tx(13)*xNorm(13) + (Tx(4)*xNorm(4) - Tx(16)*xNorm(16))/17 - Tx(15)*xNorm(15)/44 - Tx(14)*xNorm(14)/60;
 % equivalent proton concentration: 
 SHPlusNorm = -PhiNorm/2 + 0.5*sqrt(PhiNorm^2 + c(4)); 
 

@@ -9,7 +9,7 @@ function f = ADM1_R3_frac_ode_sym(x, u, xi, th, c, a)
 % two CH-fractions) with constant values for u and xin 
 
 % ion balance: 
-Phi = -x(13) + (x(4) - x(16))/17 - x(15)/44 - x(14)/60; % Achtung: VZ von x13 mit Sören klären!
+Phi = x(13) + (x(4) - x(16))/17 - x(15)/44 - x(14)/60; 
 % equivalent proton concentration: 
 SHPlus = -Phi/2 + 0.5*sqrt(Phi^2 + c(4)); 
 % overall inhibition factor: 
