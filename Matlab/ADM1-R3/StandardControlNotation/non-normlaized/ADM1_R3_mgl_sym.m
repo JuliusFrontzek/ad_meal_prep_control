@@ -7,7 +7,7 @@ function g = ADM1_R3_mgl_sym(x,c)
 % delivers a symbolic expression (h) of measurement equation of the ADM1-R3
 
 % ion balance: 
-Phi = -x(12) + (x(4) - x(15))/17 - x(14)/44 - x(13)/60;  % Achtung: VZ von x12 mit Sören klären!
+Phi = x(12) + (x(4) - x(15))/17 - x(14)/44 - x(13)/60;
 % equivalent proton concentration: 
 SHPlus = -Phi/2 + 0.5*sqrt(Phi^2 + c(4)); 
 

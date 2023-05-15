@@ -117,8 +117,12 @@ aNum = [0.6555, 0.081837, 0.2245,  0.016932, 0.057375, -1,      0,      0,      
 %% inlet concentrations:
 feedVolFlowSS = resultsSoeren.input(2); 
 xInPre = resultsSoeren.input(3:end)';  % obtain old, preliminary value
-SanIn = xInPre(11);
-ScatIn = xInPre(12); 
+% beachte: in Sörens GitHub sind die Start- und Eingangswerte der Ionen 
+% fehlerhafterweise verkehrtrum definiert. Er würde gerne die Reihenfolge
+% der Zustände in der Petersen-Matrix umkehren (erst cat, dann an). Korrekt 
+% ist es folgendermaßen:
+ScatIn = xInPre(11); 
+SanIn = xInPre(12);
 SionIN = ScatIn - SanIn; 
 % adapt inlet concentrations for slightly different state indexing in std. 
 % control notation of ADM1-R3-frac (X_chS/F, X_ash, S_ion = S_cat - S_an): 
@@ -138,8 +142,8 @@ xIn(13) = SionIN;
 
 %% initial condition: 
 x0Pre = resultsSoeren.x0';  % obtain old, preliminary value from Sören
-San0 = x0Pre(11); 
-Scat0 = x0Pre(12); 
+Scat0 = x0Pre(11); 
+San0 = x0Pre(12); 
 Sion0 = Scat0 - San0; 
 % adapt initial condition for slightly different state indexing in
 % Simon's model (X_ash, S_ion = S_cat - S_an): 

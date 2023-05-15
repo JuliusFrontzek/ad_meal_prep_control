@@ -9,7 +9,7 @@ function f = ADM1_R3_ode_sym(x, u, xi, th, c, a)
 % constant values for u and xin 
 
 % ion balance: 
-Phi = -x(12) + (x(4) - x(15))/17 - x(14)/44 - x(13)/60; % Achtung: VZ von x12 mit Sören klären!
+Phi = x(12) + (x(4) - x(15))/17 - x(14)/44 - x(13)/60;
 % equivalent proton concentration: 
 SHPlus = -Phi/2 + 0.5*sqrt(Phi^2 + c(4)); 
 % overall inhibition factor: 

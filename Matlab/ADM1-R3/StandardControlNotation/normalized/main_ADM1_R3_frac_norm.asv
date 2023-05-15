@@ -117,7 +117,11 @@ aNum = [0.6555, 0.081837, 0.2245,  0.016932, 0.057375, -1,      0,      0,      
 %% inlet concentrations:
 feedVolFlowSS = resultsSoeren.input(2); 
 xInPre = resultsSoeren.input(3:end)';  % obtain old, preliminary value
-SanIn = xInPre(11);
+% beachte: in Sörens GitHub sind die Start- und Eingangswerte der Ionen 
+% fehlerhafterweise verkehrtrum definiert. Er würde gerne die Reihenfolge
+% der Zustände in der Petersen-Matrix umkehren (erst cat, dann an). Korrekt 
+% ist es folgendermaßen:
+SanIn = xInPre(12);
 ScatIn = xInPre(12); 
 SionIN = ScatIn - SanIn; 
 % adapt inlet concentrations for slightly different state indexing in
