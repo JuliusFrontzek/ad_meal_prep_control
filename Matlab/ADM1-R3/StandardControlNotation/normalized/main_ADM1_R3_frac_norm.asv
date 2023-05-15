@@ -1,9 +1,9 @@
 %% Version
 % (R2022b) Update 5
-% Erstelldatum: 27.4.2023
+% Erstelldatum: 10.5.2023
 % Autor: Simon Hellmann
 
-% run the ADM1-R3 in a simple scenario
+% run the ADM1-R3-frac in a simple scenario
 
 clc
 clear
@@ -15,7 +15,7 @@ load('Model_data\ADM1_parameters.mat')
 % Load experimental data
 load('Model_data\ADM1_input_data.mat')
 % load steady-state values from Sören's implementation: 
-load('computeSSR3_Soeren.mat')
+load('SteadyState_ADM1-R3_Soeren.mat')
 
 % renaming for easier understanding: 
 s = system.Variables;   % s = systemParameters
@@ -53,12 +53,12 @@ pHLL =  parameters(22); % lower pH boundary
 pHUL =  parameters(23); % upper pH boundary
 ph2o =  parameters(24); % partial pressure of water in gas phase (saturated) [bar]
 
-rho = 1;        % mass density of digestate [kg/l]
+rho = 1000;        % mass density of digestate [g/l]
 Mch4 = 16;      % molar mass CH4 [kg/kmol]
 Mco2 = 44;      % molar mass CO2 [kg/kmol]
 nac = 3/(pHUL - pHLL); 
 
-%fracChFast = 0.25; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
+fracChFast = 1-1e-10; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
 
 %% order model parameters in the rights structures (prepare simulation)
 c1 = 1/Vl; 
@@ -101,54 +101,73 @@ cNum = [c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,...
 % petersen matrix acc. to Weinrich 2021
 % Note:all aij with |aij ~= 1|, only take the absolute value (see arXiv paper). 
 % Index "Num" for Numeric
-aNum = [0.6555, 0.0818, 0.2245, 0.0169, 0.0574, -1,     0,      0,      0.1125, 0, 0, 0, 0, 0, 0, 0,    0; 
-        0.9947, 0.0696, 0.1029, 0.1746, 0.4767, 0,     -1,      0,      0.1349, 0, 0, 0, 0, 0, 0, 0,    0;
-        1.7651, 0.1913, 0.6472, 0.0244, 0.4470, 0,      0,     -1,      0.1621, 0, 0, 0, 0, 0, 0, 0,    0;
-        26.5447,6.7367,18.4808, 0.1506, 0.4778, 0,      0,      0,      0,      1, 0, 0, 0, 0, 0, 0,    0; 
-        0,      0,      0,      0,      0,      0.18,   0.77,   0.05,  -1,      0, 0, 0, 0, 0, 0, 0,    0;
-        0,      0,      0,      0,      0,      0.18,   0.77,   0.05,   0,     -1, 0, 0, 0, 0, 0, 0,    0;
-        0,      0,      0,      0,      0,      0,      0,      0,      0,      0, 0, 0,-1, 0, 0, 0,    0;
-        0,      0,      0,      0,      0,      0,      0,      0,      0,      0, 0, 0, 0,-1, 0, 0,    0; 
-        0,      0,      0,      0,      0,      0,      0,      0,      0,      0, 0, 0, 0, 0,-1, 0,    0;
-        0,     -1,      0,      0,      0,      0,      0,      0,      0,      0, 0, 0, 0, 0, 0, c32,  0; 
-        0,      0,     -1,      0,      0,      0,      0,      0,      0,      0, 0, 0, 0, 0, 0, 0,    c32;]';
+aNum = [0.6555, 0.081837, 0.2245,  0.016932, 0.057375, -1,      0,      0,      0,      0.11246,0, 0, 0, 0, 0, 0, 0,    0; 
+        0.6555, 0.081837, 0.2245,  0.016932, 0.057375,  0,     -1,      0,      0,      0.11246,0, 0, 0, 0, 0, 0, 0,    0; 
+        0.9947, 0.069636, 0.10291, 0.17456,  0.47666,   0,      0,     -1,      0,      0.13486,0, 0, 0, 0, 0, 0, 0,    0;
+        1.7651, 0.19133,  0.64716, 0.024406, 0.44695,   0,      0,      0,     -1,      0.1621, 0, 0, 0, 0, 0, 0, 0,    0;
+        26.5447,6.7367,  18.4808,  0.15056,  0.4778,    0,      0,      0,      0,      0,      1, 0, 0, 0, 0, 0, 0,    0; 
+        0,      0,        0,       0,        0,         0.18,   0,      0.77,   0.05,  -1,      0, 0, 0, 0, 0, 0, 0,    0;
+        0,      0,        0,       0,        0,         0.18,   0,      0.77,   0.05,   0,     -1, 0, 0, 0, 0, 0, 0,    0;
+        0,      0,        0,       0,        0,         0,      0,      0,      0,      0,      0, 0, 0,-1, 0, 0, 0,    0;
+        0,      0,        0,       0,        0,         0,      0,      0,      0,      0,      0, 0, 0, 0,-1, 0, 0,    0; 
+        0,      0,        0,       0,        0,         0,      0,      0,      0,      0,      0, 0, 0, 0, 0,-1, 0,    0;
+        0,     -1,        0,       0,        0,         0,      0,      0,      0,      0,      0, 0, 0, 0, 0, 0, c32,  0; 
+        0,      0,       -1,       0,        0,         0,      0,      0,      0,      0,      0, 0, 0, 0, 0, 0, 0,    c32;]';
 
 %% inlet concentrations:
-feedVolFlowSS = results.input(2); 
-xInPre = results.input(3:end);  % obtain old, preliminary value
+feedVolFlowSS = resultsSoeren.input(2); 
+xInPre = resultsSoeren.input(3:end)';  % obtain old, preliminary value
 SanIn = xInPre(11);
 ScatIn = xInPre(12); 
 SionIN = ScatIn - SanIn; 
 % adapt inlet concentrations for slightly different state indexing in
-% Simon's model (X_ash, S_ion = S_cat - S_an): 
-xIn = xInPre';   
-xIn(11) = SionIN; 
-xAshIn = 14; % 17, selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
+% Simon's ADM1-R3-frac model (X_chS/F, X_ash, S_ion = S_cat - S_an): 
+nStates = length(xInPre) + 1;    % add second CH fraction
+XInCh = xInPre(6);      % all carbohydrates in
+xIn = zeros(nStates,1); % allocate memory
+xIn(1:5) = xInPre(1:5)';    % all states up to h2o
+xIn(8:end) = xInPre(7:end)';% all other states except ch
+% assign all carbohydrates_in to the fast fraction, distribute them later 
+% in the ode model file:
+xIn(6) = XInCh; 
+xIn(7) = 0; 
+% overwrite values in positions for S_an and S_cat with those for S_ion and X_ash:
+xAshIn = 14; % selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
 xIn(12) = xAshIn;  
+xIn(13) = SionIN; 
 
 %% initial condition: 
-x0Pre = results.x0;  % obtain old, preliminary value
+x0Pre = resultsSoeren.x0';  % obtain old, preliminary value from Sören
 San0 = x0Pre(11); 
 Scat0 = x0Pre(12); 
 Sion0 = Scat0 - San0; 
-% adapt initial condition for slightly different state indexing in
-% Simon's model (X_ash, S_ion = S_cat - S_an): 
-x0 = x0Pre';   
-x0(11) = Sion0; 
+% adapt initial condition for slightly different state indexing in standard 
+% control notation (X_ash, S_ion = S_cat - S_an): 
+x0SS = zeros(nStates,1); % x0Pre'
+Xch0 = x0Pre(6);   
+x0SS(1:5) = x0Pre(1:5); 
+x0SS(6) = fracChFast*Xch0; 
+x0SS(7) = (1-fracChFast)*Xch0;
+x0SS(8:end) = x0Pre(7:end); 
+% overwrite values in positions for S_an and S_cat with those for S_ion and X_ash:
 xAsh0 = 1; % assume 1 g/l initial ash concentration
-x0(12) = xAsh0;  
+x0SS(12) = xAsh0;
+x0SS(13) = Sion0;   
 
+%% miscellaneous parameters for simulation
 % combine constant parameters in struct (index "Num" for numeric values): 
 params = struct;    % allocate memory 
 params.a = aNum; 
 params.c = cNum; 
 % time-variant parameters (hydrolysis constants):
-thNum = [kch, kpr, kli, kdec, muM, KSac, KInh3]';
+kchS = 1e-1*kch; 
+kchF = kch; 
+thNum = [kchF, kchS, kpr, kli, kdec, muM, KSac, KInh3, fracChFast]';
 params.th = thNum; 
 
 % times: 
 tEnd = 7;   % [d] End of Simulation
-tSS = 300;  % [d] Dauer, bis steady state als erreicht gilt (~ 1/3 Jahr) 
+tSS = 1000;  % [d] Dauer, bis steady state als erreicht gilt (~ 1/3 Jahr) 
 
 % feeding intervals: 
 intShort = 0.5;     % [d]
@@ -170,7 +189,7 @@ tOverall = unique([tGrid; tEvents]);% Join and sort timestamps
 % steady state but with no feeding first)
 nIntervals = length(tEvents); 
 [~,idxFeedOn] = ismember(tFeedOn,tEvents); 
-feedMax = 60*24;  % max. feed volume flow [l/h] converted to [l/d]
+feedMax = 10*24;  % max. feed volume flow [l/h] converted to [l/d]
 feedFactors = [70,30]'/100; 
 portions = feedFactors*feedMax; % [l/d]         	
 % steady state feed volume flow [l/d] should be the average of what is fed
@@ -180,7 +199,6 @@ feedVolFlow = zeros(nIntervals,1);  % allocate memory
 feedVolFlow(idxFeedOn) = portions;       
 
 % construct matrix of inlet concentrations at tFeedOn: 
-nStates = length(xIn);
 nFeedings = length(tFeedOn); 
 xInMat = zeros(nIntervals,nStates);         % allocate memory 
 % at times when there is feeding, introduce the input concentrations:
@@ -189,15 +207,15 @@ inputMat = [feedVolFlow,xInMat];
 
 %% derive odeFun from symbolic model definition and determine steady state
 % define symbolic ("S") variables (all vector are defined as column vectors)
-xS = sym('x', [17 1]);   % states as col. vector
+xS = sym('x', [18 1]);   % states as col. vector
 syms uS real             % input
-xiS = sym('xi', [17,1]); % inlet concentrations (assumed known) 
-thS = sym('th', [7,1]);  % 6 time-variant parameters (theta)
-cS = sym('c', [33,1]);   % 21 known & constant time-invariant parameters 
-aS = sym('a%d%d', [17,11]);% petersen matrix with stoichiometric constants
+xiS = sym('xi', [18,1]); % inlet concentrations (assumed known) 
+thS = sym('th', [9,1]);  % time-variant parameters (theta)
+cS = sym('c', [33,1]);   % known & constant time-invariant parameters 
+aS = sym('a', [18,12]);% petersen matrix with stoichiometric constants
 
-dynamics = ADM1_R3_ode_sym(xS, uS, xiS, thS, cS, aS); % symbolic object
-outputs = ADM1_R3_mgl_sym(xS,cS); 
+dynamics = ADM1_R3_frac_ode_sym(xS, uS, xiS, thS, cS, aS); % symbolic object
+outputs = ADM1_R3_frac_mgl_sym(xS,cS); 
 
 % transform into numeric function handle. Note that the independet
 % variables are explicitely defined. Their order must be followed when 
@@ -205,17 +223,58 @@ outputs = ADM1_R3_mgl_sym(xS,cS);
 f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
 g = matlabFunction(outputs, 'Vars', {xS, cS}); 
 
-% define ODE function handle and integrate system dynamics: 
-% feedVolFlowSS = totalFeed/tEnd; 
+%% determine steady state as initial value for simulation: 
 tSpanSS = [0,tSS]; 
 odeFunSS = @(t,x) f(x,feedVolFlowSS,xIn,thNum,cNum,aNum); 
-[tVecSS,xVecSS] = ode15s(odeFunSS,tSpanSS,x0); 
-xSSSimon = xVecSS(end,:)';   % start actual simulation in steady state
-% for comparison: 
-xSSSoeren = results.xSS; 
+% odeFunSSNum = @(t,x) ADM1_R3_ode(x,feedVolFlowSS,xIn,thNum,cNum,aNum); 
+[tVecSS,xVecSS] = ode15s(odeFunSS,tSpanSS,x0SS); 
+x0DynR3frac = xVecSS(end,:)';   % start actual simulation in steady state
+x0 = x0DynR3frac;         % to be overwritten
+
+%% derive normalized system equations
+xNormS = sym('xNorm', [18 1]);  % normalized states as col. vector
+syms uNorm real;                % normalized input
+xiNormS = sym('xi', [18,1]);    % normalized inlet concentrations 
+TxS = sym('Tx', [18,1]);        % normalization matrix for states
+TyS = sym('Ty', [8,1]);         % normalization matrix for outputs
+syms Tu real                    % normalization variable for input
+
+dynamicsNorm = ADM1_R3_frac_norm_ode_sym(xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu); 
+outputsNorm = ADM1_R3_frac_norm_mgl_sym(xNormS, cS, TxS, TyS); 
+
+% turn into numeric function handles: 
+fNorm = matlabFunction(dynamicsNorm, 'Vars', {xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu}); 
+gNorm = matlabFunction(outputsNorm, 'Vars', {xNormS, cS, TxS, TyS}); 
+
+% define numeric values for normalization with steady state: 
+TxNum = x0; 
+y0 = g(x0,cNum);    % steady state output
+TyNum = y0; 
+TuNum = feedVolFlowSS; 
+
+% normalize simulation inputs:
+uNorm = feedVolFlowSS./TuNum; 
+x0SSNorm = x0SS./TxNum; 
+xInNorm = xIn./TxNum; 
+
+% simulate transition into steady state in normalized coordinates: 
+odeFunNormSS = @(t,xNorm) fNorm(xNorm,uNorm,xInNorm,thNum,cNum,aNum,TxNum,TuNum); 
+[tVecSSNormSym,xSSNormSym] = ode15s(odeFunNormSS,tSpanSS,x0SSNorm);
+nSamplesTillSS = size(xSSNormSym,1); 
+x0DynNorm = xSSNormSym(end,:)'; % extract only last value as actual steady state
+x0Norm = x0DynNorm;
+
+% compute normalized system output at steady state: 
+ySSNorm = gNorm(x0DynNorm, cNum, TxNum, TyNum); 
+
+% perform de-normalization to check if normalization works properly: 
+xSSDeNorm = repmat(TxNum',nSamplesTillSS,1).*xSSNormSym;
+x0DynDeNorm = xSSDeNorm(end,:)';
+ySSDeNorm = TyNum.*ySSNorm;     % compare relevant entries with Sören's SS:
+ySSSoeren = resultsSoeren.ySS';
 
 %% Solve ODE via iterative solution of constant feeding regimes (on or off)
-xSim = zeros(length(tOverall), nStates);% allocate memory
+xSimNorm = zeros(length(tOverall), nStates);% allocate memory
 tSim = zeros(length(tOverall),1);       % allocate memory
 
 % integrate ODEs for each interval (=time when feeding constantly =on or
@@ -234,8 +293,14 @@ for cI = 1:nIntervals
     inputVector = interp1(tEvents, inputMat, tCurrent, 'nearest', 0); 
     % split into current values of feedVolFlow and xIn: 
     feedVolFlowCurr = inputVector(1); 
-    xInCurr = inputVector(2:end)'; 
-    odeFun = @(t,x) f(x,feedVolFlowCurr,xInCurr,thNum,cNum,aNum); 
+    xInCurr = inputVector(2:end)';
+
+    % apply normalization:
+    uCurrNorm = feedVolFlowCurr./TuNum; 
+    xInCurrNorm = xInCurr./TxNum;
+
+    % normalized function handle:
+    odeFunNorm = @(t,xNorm) fNorm(xNorm,uCurrNorm,xInCurrNorm,thNum,cNum,aNum,TxNum,TuNum); 
     
     % Construct time vector for ODE (t_ode) by filtering of tOverall:
     idxTimeInterval = (tOverall >= tCurrent & tOverall <= tNext);
@@ -243,45 +308,52 @@ for cI = 1:nIntervals
     if length(t_ode) == 2   % in this case, the solver would interpret 
         % t_ode as a time span and choose integration time points on his own
         t_ode   = linspace(t_ode(1), t_ode(end), 3);    % request to evaluate at exactly 3 time points
-        [tVec, solVec] = ode15s(odeFun, t_ode, x0);
+        [tVec, solVec] = ode15s(odeFunNorm, t_ode, x0Norm);
         % of the 3 time points evaluated, only save 2 (first and last):
-        xSim(idxTimeInterval,:) = solVec([1 end], :);  
+        xSimNorm(idxTimeInterval,:) = solVec([1 end], :);  
         tSim(idxTimeInterval) = tVec([1 end]);
     else    % t_ode has more than two time instants, which are the times 
         % when the integration is evaluated:
-        [tVec, solVec] = ode15s(odeFun, t_ode, x0); % Returns >= 3 values
-        xSim(idxTimeInterval,:) = solVec;
+        [tVec, solVec] = ode15s(odeFunNorm, t_ode, x0Norm); % Returns >= 3 values
+        xSimNorm(idxTimeInterval,:) = solVec;
         tSim(idxTimeInterval) = tVec;
     end
     
-    x0 = solVec(end, :);    % update initial value for next interval
+    x0Norm = solVec(end, :);    % update initial value for next interval
 end
 toc
 
 %% compute output variables
 % Evaluate xSol only in tGrid, discard the rest
 idxGrid = ismember(tOverall, tGrid); 
-xSol = xSim(idxGrid,:);
-N = size(xSol,1);    % number of survived sampling points
-q = 6;   
-yClean = zeros(N,q); % allocate memory
+xSolNorm = xSimNorm(idxGrid,:);
+N = size(xSolNorm,1);    % number of survived sampling points
+q = 8;   
+yCleanNorm = zeros(N,q); % allocate memory
 for k = 1:N
-    yClean(k,:) = g(xSol(k,:)',cNum)'; % Simons Implementierung (arXiv)
+    yCleanNorm(k,:) = gNorm(xSolNorm(k,:)', cNum, TxNum, TyNum);
 end
 
-%% add noise to measurements acc to sensor data sheets
- 
+%% de-normalize states and outputs
+
+xSol = repmat(TxNum',N,1).*xSolNorm;
+yClean = repmat(TyNum',N,1).*yCleanNorm;
+
+%% add noise to measurements acc to sensor data sheets 
 % define std. deviations of sensors assuming zero mean (see Übersicht_Messrauschen.xlsx):
 % sigmaV = 0.08*1000; % Trommelgaszähler FBGA [m³/h] -> [L/h]
 sigmaV = 0.2;       % Trommelgaszähler Labor [L/h] 
 sigmaCh4 = 0.2/100; % [Vol-%] -> [-]; für ideale Gase und p0 ungefähr 1 bar: -> [bar]
 sigmaCo2 = 0.2/100; % [Vol-%] -> [-]; für ideale Gase und p0 ungefähr 1 bar: -> [bar]
+sigmaPh = 0.1;      % pH [-]
 sigmaSIN = 0.12;    % NH4-N [g/L]
 sigmaTS = 1.73/100; % Trockenschrank großer Tiegel [%] -> [-]
 sigmaVS = 0.31/100; % [%] -> [-]
+sigmaAc = 0.04;     % FOS [g/L]. Aber Achtung: brauchbarere Messgröße für 
+        % S_ac eher die Einzelsäure aus GC, diese hat aber sigma=0,01 g/L 
 
 % combine all in sigma matrix and covariance matrix:
-sigmas = [sigmaV, sigmaCh4, sigmaCo2, sigmaSIN, sigmaTS, sigmaVS]; 
+sigmas = [sigmaV, sigmaCh4, sigmaCo2, sigmaPh, sigmaSIN, sigmaTS, sigmaVS, sigmaAc]; 
 sigmaMat = repmat(sigmas,N,1);
 noiseCovMat = diag(sigmas.^2);  % measurement noise covariance matrix
 
@@ -297,7 +369,7 @@ colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"];
 figure()
 
 % gas volume flow: 
-subplot(3,2,1)
+subplot(4,2,1)
 scatter(tGrid,yMeas(:,1),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
@@ -312,13 +384,13 @@ ylabel('feed vol flow [l/h]')
 legend('Location','NorthEast'); 
 
 % pch4: 
-subplot(3,2,2)
+subplot(4,2,2)
 scatter(tGrid,yMeas(:,2),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5);
 hold on
 plot(tGrid,yClean(:,2),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
-ylabel('p_{ch4} in bar')
+ylabel('p_{ch4} [bar]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
@@ -328,13 +400,13 @@ legend('Location','NorthEast');
 set(gca, "YColor", 'k')
 
 % pco2:
-subplot(3,2,3)
+subplot(4,2,3)
 scatter(tGrid,yMeas(:,3),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 plot(tGrid,yClean(:,3),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
-ylabel('p_{co2} in bar')
+ylabel('p_{co2} [bar]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
@@ -343,14 +415,31 @@ ylabel('feed vol flow [l/h]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
-% SIN:  
-subplot(3,2,4)
+% pH:  
+subplot(4,2,4)
 scatter(tGrid,yMeas(:,4),'DisplayName','noisy',...
+        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
+hold on; 
+plot(tGrid,yClean(:,4),'DisplayName','clean',...
+     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+ylabel('pH value [-]')
+xlabel('time [d]')
+yyaxis right
+stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+set(gca, "YColor", 'k')     % make right y-axis black 
+ylabel('feed vol flow [l/h]')
+legend('Location','NorthEast'); 
+set(gca, "YColor", 'k')
+
+% Snh4:  
+subplot(4,2,5)
+scatter(tGrid,yMeas(:,5),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
-plot(tGrid,yClean(:,4),'r',...
-     'LineWidth',1.2,'DisplayName','clean')
-ylabel('inorg. nitrogen in g/L')
+plot(tGrid,yClean(:,5),'DisplayName','clean',...
+     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+ylabel('NH4-N [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
@@ -360,11 +449,11 @@ legend('Location','NorthEast');
 set(gca, "YColor", 'k')
 
 % TS:  
-subplot(3,2,5)
-scatter(tGrid,yMeas(:,5),'DisplayName','noisy',...
+subplot(4,2,6)
+scatter(tGrid,yMeas(:,6),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
-plot(tGrid,yClean(:,5),'DisplayName','clean',...
+plot(tGrid,yClean(:,6),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('total solids [-]')
 xlabel('time [d]')
@@ -377,13 +466,30 @@ legend('Location','NorthEast');
 set(gca, "YColor", 'k')
 
 % VS:  
-subplot(3,2,6)
-scatter(tGrid,yMeas(:,6),'DisplayName','noisy',...
+subplot(4,2,7)
+scatter(tGrid,yMeas(:,7),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
 hold on; 
-plot(tGrid,yClean(:,6),'DisplayName','clean',...
+plot(tGrid,yClean(:,7),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('volatile solids [-]')
+xlabel('time [d]')
+yyaxis right
+stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+set(gca, "YColor", 'k')     % make right y-axis black 
+ylabel('feed vol flow [l/h]')
+legend('Location','NorthEast'); 
+set(gca, "YColor", 'k')
+
+% Sac:  
+subplot(4,2,8)
+scatter(tGrid,yMeas(:,8),'DisplayName','noisy',...
+        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
+hold on; 
+plot(tGrid,yClean(:,8),'DisplayName','clean',...
+     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+ylabel('acetic acid [g/l]')
 xlabel('time [d]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
@@ -397,12 +503,12 @@ sgtitle('Clean and noisy simulation outputs')
 
 %% save results in struct MESS: 
 MESS.t = tGrid; 
-MESS.x0 = x0Init; 
-MESS.x = xSol; 
-MESS.xSim = [tSim,xSim]; 
+MESS.x0 = x0DynR3frac; 
+MESS.x = xSolNorm; 
+% MESS.xSim = [tSim,xSimNorm]; 
 MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
 MESS.yClean = yClean;  
 MESS.yMeas = yMeas; 
 MESS.C = noiseCovMat; % accurate values from sensor data sheets
 
-save('Messung_ADM1_R4_frac.mat', 'MESS', 'params')
+save('Messung_ADM1_R3_frac_norm.mat', 'MESS', 'params')

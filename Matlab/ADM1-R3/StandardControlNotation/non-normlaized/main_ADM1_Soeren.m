@@ -46,7 +46,8 @@ systemInputSS(1) = 0;   % set initial feeding time to zero
 modelParameters = parameters.ADM1_R3.Variables; 
 
 % Solve ODE of mass-based ADM1-R3
-odeFunR3 = @(t,x) ADM1_R3_mass(t,x,systemParameters,systemInputSS,modelParameters); 
+% odeFunR3 = @(t,x) ADM1_R3_mass(t,x,systemParameters,systemInputSS,modelParameters); 
+odeFunR3 = @(t,x) ADM1_R3_mass_edit(t,x,systemParameters,systemInputSS,modelParameters); 
 x0 = initial.ADM1_R3.Variables; % x0
 time_range = [0 300];           % time range in days
 % simulate system and save results as struct: 
@@ -93,23 +94,23 @@ volFlow = ySSPre(9);
 % obtain required states; 
 xSS = odeObj.y(:,end);  % steady state
 SacSS = xSS(1); 
-SINSS = xSS(4); 
+Snh4SS = xSS(4) - xSS(15);
 
 % compute TS (VS is missing because no ash considered so far): 
 rho = 1000;     % mass densitiy [g/l]
 TS = 1 - xSS(5)/rho; 
 
 % re-order outputs: 
-ySS = [volFlow, pch4, pco2, pH, SINSS, TS, nan, SacSS]; % leave VS nan for now
+ySS = [volFlow, pch4, pco2, pH, Snh4SS, TS, nan, SacSS]; % leave VS nan for now
 
 %% save results: 
-results = struct; % empty struct
-results.x0 = x0; 
-results.xSS = xSS; 
-results.ySS = ySS; 
-results.input = systemInputSS; 
+resultsSoeren = struct; % empty struct
+resultsSoeren.x0 = x0; 
+resultsSoeren.xSS = xSS; 
+resultsSoeren.ySS = ySS; 
+resultsSoeren.input = systemInputSS; 
 
-save('computeSSR3_Soeren.mat', 'results'); 
+save('SteadyState_ADM1-R3_Soeren.mat', 'resultsSoeren'); 
 
 %% Clear variables 
 clearvars i num_t t y l time_range
