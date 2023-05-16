@@ -25,7 +25,8 @@ parameters = parameters.ADM1_R3.Variables; % modelParameters
 % extract system parameter values: 
 Vl = s(1);  % gas volume
 Vg = s(2);  % liquid volume
-p0 = s(3);  % atmospheric pressure [bar]
+% p0 = s(3);  % atmospheric pressure [bar] XY: Achtung: Typo im GitHub
+p0 = 1.0133; 
 
 % extract model parameter values:  
 Kch4 =  parameters(1);  % Henry parameter ch4 [mol/l/bar]

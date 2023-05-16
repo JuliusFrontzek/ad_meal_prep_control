@@ -17,8 +17,7 @@ g = [c(13)*Tx(17)^2/Ty(1)*xNorm(17)^2 + c(14)*Tx(17)*Tx(18)/Ty(1)*xNorm(17)*xNor
      c(19)*Tx(17)/Ty(2)*xNorm(17);                  % pch4
      c(20)*Tx(18)/Ty(3)*xNorm(18);                  % pco2
      -1/Ty(4)*log10(SHPlusNorm);                    % pH
-%    Tx(4)/Ty(5)*xNorm(4);                          % SIN
-     Tx(4)/Ty(5)*xNorm(4) - Tx(16)/Ty(5)*xNorm(16); % Snh4
+     Tx(4)/Ty(5)*xNorm(4);                          % SIN
      1/Ty(6)*(1 - Tx(5)*xNorm(5)/c(21));            % TS    
      1/Ty(7)*(1 - Tx(12)*xNorm(12)/(c(21)-Tx(5)*xNorm(5))); % VS
      Tx(1)/Ty(8)*xNorm(1)];                         % Sac
