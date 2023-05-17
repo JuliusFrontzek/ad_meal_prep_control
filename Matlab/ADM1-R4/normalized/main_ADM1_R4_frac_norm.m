@@ -12,12 +12,12 @@ close all
 
 %% define numeric values of parameters
 % kinetic constants [1/d] (Tab. B.7 in Sörens Diss): 
-kchF = 3;       % selbst gewählt
-kchS = 0.25;    % war vorher der Wert für kch
+kchF = 0.25;        % war vorher der Wert für kch
+kchS = 1E-1*kchF;   % selbst gewählt
 kpr = 0.2; 
 kli = 0.1; 
 kdec = 0.02; 
-fracChFast = 0.25; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
+fracChFast = 1; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
 
 % Henry coefficients: [mol/l/bar] (Tab. B.7 in Sörens Diss)
 Kch4 = 0.0011;      
@@ -76,7 +76,8 @@ aNum = [0.2482, 0.6809,   0.0207,     0.0456,    -1,      0,      0,      0,    
 
 % inlet concentrations [GitHub Sören], vmtl. Rindergülle
 %      S_ch4, S_IC,S_IN,  S_h2o,   X_chF,  X_chS,   X_pr,  X_li,  X_bac, X_ash,  S_ch4,g, S_co2,g
-xIn = [0,     0,   0.592, 960.512, 23.398, 0,       4.75,  1.381, 0,     10,     0,       0]'; % [g/l], xAshIn = 10 selbst gewählt
+xIn = [0,     0,   0.592, 960.512, 23.398, 0,       4.75,  1.381, 0,     17,     0,       0]'; % [g/l]
+% xAshIn = 17 selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
 
 % combine constant parameters in struct: 
 params = struct;    % allocate memory
@@ -136,10 +137,10 @@ syms uS real             % input
 xiS = sym('xi', [12,1]); % inlet concentrations (assumed known) 
 thS = sym('th', [6,1]);  % 6 time-variant parameters (theta)
 cS = sym('c', [21,1]);   % 21 known & constant time-invariant parameters 
-aS = sym('a%d%d', [12,7]);% petersen matrix with stoichiometric constants
+aS = sym('a', [12,7]);% petersen matrix with stoichiometric constants
 
 dynamics = BMR4_AB_frac_ode_sym(xS, uS, xiS, thS, cS, aS); % symbolic object
-outputs = BMR4_AB_frac_mgl_std_units_sym(xS,cS); % vol flow in l/d
+outputs = BMR4_AB_frac_mgl_sym(xS,cS); % vol flow in l/d
 
 % transform into numeric function handles. Note that the independentxNorm
 % variables are explicitely defined. Their order must be followed when 
@@ -156,7 +157,12 @@ inputVectorSS = [feedVolFlowSS,xIn'];
 odeFunSS = @(t,x) f(x,feedVolFlowSS,xIn,thNum,cNum,aNum); 
 
 % Quelle: Sörens GitHub. Selbst angepasst: xAsh0, XCH je zu 50% auf XCHFast
-x0SS = [0.091, 0.508, 0.944, 956.97, 0.5*3.26, 0.5*3.26, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
+% x0SS = [0.091, 0.508, 0.944, 956.97, 0.5*3.26, 0.5*3.26, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
+x0ch = 3.26;    % total carbohydrates initial value
+% set lower threshold for initial values of slow and fast carbohydrates for numerical stability:
+x0chF = max(fracChFast*x0ch,1e-6); 
+x0chS = max((1-fracChFast)*x0ch,1e-6); 
+x0SS = [0.091, 0.508, 0.944, 956.97, x0chF, x0chS, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
 [tVecSS,xSS] = ode15s(odeFunSS,tSpanSS,x0SS); 
 
 x0Init = xSS(end,:)';   % start dynamic simulation in steady state
@@ -168,28 +174,28 @@ syms uNorm real;                % normalized input
 xiNormS = sym('xi', [12,1]);    % normalized inlet concentrations 
 TxS = sym('Tx', [12,1]);        % normalization matrix for states
 TyS = sym('Ty', [6,1]);         % normalization matrix for outputs
-syms u0S real                   % normalization variable for input
+syms Tu real                   % normalization variable for input
 
-dynamicsNorm = BMR4_AB_frac_norm_ode_sym(xNormS, uNorm, xiNormS, thS, cS, aS, TxS, u0S); 
+dynamicsNorm = BMR4_AB_frac_norm_ode_sym(xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu); 
 outputsNorm = BMR4_AB_frac_norm_mgl_sym(xNormS, cS, TxS, TyS); 
 
 % turn into numeric function handles: 
-fNorm = matlabFunction(dynamicsNorm, 'Vars', {xNormS, uNorm, xiNormS, thS, cS, aS, TxS, u0S}); 
+fNorm = matlabFunction(dynamicsNorm, 'Vars', {xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu}); 
 gNorm = matlabFunction(outputsNorm, 'Vars', {xNormS, cS, TxS, TyS}); 
 
 % define numeric values for normalization with steady state: 
 TxNum = x0; 
 y0 = g(x0,cNum);    % steady state output
 TyNum = y0; 
-u0Num = feedVolFlowSS; 
+TuNum = feedVolFlowSS; 
 
 % normalization of simulation inputs:
-uNorm = feedVolFlowSS./u0Num; 
+uNorm = feedVolFlowSS./TuNum; 
 x0SSNorm = x0SS./TxNum; 
 xInNorm = xIn./TxNum; 
 
 % simulate transition into steady state in normalized coordinates: 
-odeFunNormSS = @(t,xNorm) fNorm(xNorm,uNorm,xInNorm,thNum,cNum,aNum,TxNum,u0Num); 
+odeFunNormSS = @(t,xNorm) fNorm(xNorm,uNorm,xInNorm,thNum,cNum,aNum,TxNum,TuNum); 
 [tVecSSNormSym,xSSNormSym] = ode15s(odeFunNormSS,tSpanSS,x0SSNorm);
 x0InitNorm = xSSNormSym(end,:);
 x0Norm = x0InitNorm;
@@ -224,11 +230,11 @@ for cI = 1:nIntervals
     xInCurr = inputVector(2:end)';
     
     % apply normalization:
-    uCurrNorm = feedVolFlowCurr./u0Num; 
+    uCurrNorm = feedVolFlowCurr./TuNum; 
     xInCurrNorm = xInCurr./TxNum; 
 
     % normalized function handle: 
-    odeFunNorm = @(t,xNorm) fNorm(xNorm,uCurrNorm,xInCurrNorm,thNum,cNum,aNum,TxNum,u0Num); 
+    odeFunNorm = @(t,xNorm) fNorm(xNorm,uCurrNorm,xInCurrNorm,thNum,cNum,aNum,TxNum,TuNum); 
 
     % Construct time vector for ODE (t_ode) by filtering of tOverall:
     idxTimeInterval = (tOverall >= tCurrent & tOverall <= tNext);
@@ -279,7 +285,7 @@ VSClean = yClean(:,6);
  
 % define std. deviations of sensors assuming zero mean (see Übersicht_Messrauschen.xlsx):
 % sigmaV = 0.08*1000; % Trommelgaszähler FBGA [m³/h] -> [L/h]
-sigmaV = 0.2;       % Trommelgaszähler Labor [L/h] XY: achtung mit Units!
+sigmaV = 0.2*24;    % Trommelgaszähler Labor [L/h] -> [L/d]
 sigmaCh4 = 0.2/100; % [Vol-%] -> [-]; für ideale Gase und p0 ungefähr 1 bar: -> [bar]
 sigmaCo2 = 0.2/100; % [Vol-%] -> [-]; für ideale Gase und p0 ungefähr 1 bar: -> [bar]
 sigmaSIN = 0.12;    % NH4-N [g/L]
@@ -289,9 +295,6 @@ sigmaVS = 0.31/100; % [%] -> [-]
 sigmas = [sigmaV, sigmaCh4, sigmaCo2, sigmaSIN, sigmaTS, sigmaVS]; 
 sigmaMat = repmat(sigmas,N,1);
 noiseCovMat = diag(sigmas.^2); 
-
-buffer = 1.5;         % conservative estimation of measurement accuracy
-R = buffer*noiseCovMat;
 
 nMeas = length(pCh4Clean);  % number of measurements
 rng('default');     % fix seed for random number generation (for replicable results)
@@ -410,7 +413,7 @@ ylabel('feed vol flow [l/h]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
-sgtitle('Saubere und verrauschte Simulationen mit p0')
+sgtitle('clean and noisy measurements from ADM1-R4-frac-norm')
 
 %% save results in struct MESS: 
 MESS.t = tGrid; 
@@ -423,6 +426,6 @@ MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
 MESS.yClean = yClean;
 MESS.yCleanNorm = yCleanNorm; % normalized outputs
 MESS.yMeas = yMeas; 
-MESS.R = R; 
+MESS.R = noiseCovMat; 
 
 save('Messung_ADM1_R4_frac_norm.mat', 'MESS', 'params')

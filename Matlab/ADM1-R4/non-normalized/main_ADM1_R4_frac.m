@@ -12,12 +12,12 @@ close all
 
 %% define numeric values of parameters
 % kinetic constants [1/d] (Tab. B.7 in Sörens Diss): 
-kchS = 0.25;    
-kchF = 10*kchS; % selbst gewählt
+kchF = 0.25;        % war vorher der Wert für kch
+kchS = 1E-1*kchF;   % selbst gewählt
 kpr = 0.2; 
 kli = 0.1; 
 kdec = 0.02; 
-fracChFast = 0.25; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
+fracChFast = 1; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
 
 % Henry coefficients: [mol/l/bar] (Tab. B.7 in Sörens Diss)
 Kch4 = 0.0011;      
@@ -81,7 +81,8 @@ xIn = [0,     0,   0.592, 960.512, 23.398, 0,     4.75,  1.381, 0,    17,     0,
 
 % initial value: 50/50 allocation of carbohydrates to fast/slow fraction; 
 % assume 1 g/l ash concentration:
-x0SS = [0.091, 0.508, 0.944, 956.97, 0.5*3.26, 0.5*3.26, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
+x0ch = 3.26;    % total carbohydrates initial value
+x0SS = [0.091, 0.508, 0.944, 956.97, fracChFast*x0ch, (1-fracChFast)*x0ch, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
 
 % adjust stoichiometric parameters of water/ash for unit change g/l --> kg/l: 
 aNum([4,10],:) = aNum([4,10],:)./1000; 
@@ -145,7 +146,7 @@ syms uS real             % input
 xiS = sym('xi', [12,1]); % inlet concentrations (assumed known) 
 thS = sym('th', [6,1]);  % 6 time-variant parameters (theta)
 cS = sym('c', [21,1]);   % 21 known & constant time-invariant parameters 
-aS = sym('a%d%d', [12,7]);% petersen matrix with stoichiometric constants
+aS = sym('a', [12,7]);% petersen matrix with stoichiometric constants
 
 dynamics = BMR4_AB_frac_ode_sym(xS, uS, xiS, thS, cS, aS); % symbolic object
 outputs = BMR4_AB_frac_mgl_sym(xS,cS); 
@@ -223,7 +224,7 @@ end
  
 % define std. deviations of sensors assuming zero mean (see Übersicht_Messrauschen.xlsx):
 % sigmaV = 0.08*1000; % Trommelgaszähler FBGA [m³/h] -> [L/h]
-sigmaV = 0.2;       % Trommelgaszähler Labor [L/h] 
+sigmaV = 0.2*24;    % Trommelgaszähler Labor [L/h] --> [L/d]
 sigmaCh4 = 0.2/100; % [Vol-%] -> [-]; für ideale Gase und p0 ungefähr 1 bar: -> [bar]
 sigmaCo2 = 0.2/100; % [Vol-%] -> [-]; für ideale Gase und p0 ungefähr 1 bar: -> [bar]
 sigmaSIN = 0.12;    % NH4-N [g/L]
@@ -248,10 +249,10 @@ figure()
 
 % gas volume flow: 
 subplot(3,2,1)
-scatter(tGrid,yMeas(:,1),'DisplayName','noisy',...
+scatter(tGrid,yMeas(:,1)/24,'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
-plot(tGrid,yClean(:,1),'DisplayName','clean',...
+plot(tGrid,yClean(:,1)/24,'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
 ylabel('gas vol flow [l/h]')
 yyaxis right
@@ -343,7 +344,7 @@ ylabel('feed vol flow [l/h]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
-sgtitle('Clean and noisy simulation outputs')
+sgtitle('clean and noisy measurements from ADM1-R4-frac')
 
 %% save results in struct MESS: 
 MESS.t = tGrid; 

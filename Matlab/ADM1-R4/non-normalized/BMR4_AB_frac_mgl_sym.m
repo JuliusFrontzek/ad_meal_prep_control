@@ -3,7 +3,7 @@ function g = BMR4_AB_frac_mgl_sym(x,c)
 % BMR4+AB_frac
 
 % measurement equations
-g = [(c(6)*x(11)^2 + c(7)*x(11)*x(12) + c(8)*x(12)^2 + c(9)*x(11) + c(10)*x(12) + c(11))/24;
+g = [c(6)*x(11)^2 + c(7)*x(11)*x(12) + c(8)*x(12)^2 + c(9)*x(11) + c(10)*x(12) + c(11); % volFlow [l/d]
      c(12)*x(11);
      c(13)*x(12);
      x(3);
