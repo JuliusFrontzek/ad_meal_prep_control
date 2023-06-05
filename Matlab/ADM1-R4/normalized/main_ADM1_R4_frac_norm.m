@@ -166,7 +166,7 @@ x0SS = [0.091, 0.508, 0.944, 956.97, x0chF, x0chS, 0.956, 0.413, 2.569, 1, 0.315
 [tVecSS,xSS] = ode15s(odeFunSS,tSpanSS,x0SS); 
 
 x0Init = xSS(end,:)';   % start dynamic simulation in steady state
-x0 = x0Init; 
+x0 = abs(x0Init); % ensure no numeric rounoff errors lead to neg. concentrations!
 
 %% derive normalized system equations
 xNormS = sym('xNorm', [12 1]);  % normalized states as col. vector
@@ -174,7 +174,7 @@ syms uNorm real;                % normalized input
 xiNormS = sym('xi', [12,1]);    % normalized inlet concentrations 
 TxS = sym('Tx', [12,1]);        % normalization matrix for states
 TyS = sym('Ty', [6,1]);         % normalization matrix for outputs
-syms Tu real                   % normalization variable for input
+syms Tu real                    % normalization variable for input
 
 dynamicsNorm = BMR4_AB_frac_norm_ode_sym(xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu); 
 outputsNorm = BMR4_AB_frac_norm_mgl_sym(xNormS, cS, TxS, TyS); 
@@ -184,10 +184,15 @@ fNorm = matlabFunction(dynamicsNorm, 'Vars', {xNormS, uNorm, xiNormS, thS, cS, a
 gNorm = matlabFunction(outputsNorm, 'Vars', {xNormS, cS, TxS, TyS}); 
 
 % define numeric values for normalization with steady state: 
-TxNum = x0; 
+TxNum = x0;    % ensure no numeric rounoff errors lead to neg. concentrations!
 y0 = g(x0,cNum);    % steady state output
 TyNum = y0; 
 TuNum = feedVolFlowSS; 
+% summarize in stuct to save them: 
+TNum = struct; 
+TNum.Tx = TxNum; 
+TNum.Ty = TyNum; 
+TNum.Tu = TuNum;
 
 % normalization of simulation inputs:
 uNorm = feedVolFlowSS./TuNum; 
@@ -428,4 +433,4 @@ MESS.yCleanNorm = yCleanNorm; % normalized outputs
 MESS.yMeas = yMeas; 
 MESS.R = noiseCovMat; 
 
-save('Messung_ADM1_R4_frac_norm.mat', 'MESS', 'params')
+save('Messung_ADM1_R4_frac_norm.mat', 'MESS', 'params', 'TNum')

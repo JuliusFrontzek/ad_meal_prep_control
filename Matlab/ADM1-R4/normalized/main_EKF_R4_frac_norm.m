@@ -1,6 +1,6 @@
 %% Version
 % (R2022b) Update 5
-% Erstelldatum: 17.5.2023
+% Erstelldatum: 25.5.2023
 % Autor: Simon Hellmann
 
 %% DAS Kalman Filter fürs ADM1-R4-frac
@@ -23,9 +23,15 @@ x0 = x0Init;        % x0 will be replaced in every iteration later
 nStates = length(x0); 
 nTheta = length(params.th); % number of time-variant parameters
 rng('default');     % fix seed for random number generation (for replicable results)
-xHat = x0Init.*abs(randn(nStates,1)); 
+xHat = x0.*abs(randn(nStates,1)); 
 xMinus = xHat;      % to be overwritten
 % xMinus = x0Init;    % XY Rania
+
+% initial state in normalized coordinates: 
+x0InitNorm = MESS.x0Norm'; 
+x0Norm = x0InitNorm; 
+xHatNorm = x0Norm.*abs(randn(nStates,1)); 
+xMinusNorm = xHatNorm;      % to be overwritten
 
 tMeas = MESS.t;
 nSamples = length(tMeas);  % number of measurements taken
@@ -39,24 +45,38 @@ t = [tMeas;tMeas(end)+dt];  % add one time interval at end
 % column more than the number of measurement instances:
 MEAS = MESS.yMeas;
 STATES = MESS.x; 
+STATESNorm = MESS.xNorm; % same for normalized coordinates
 ESTIMATES = zeros(nSamples + 1,nStates);
+ESTIMATESNorm = zeros(nSamples + 1,nStates); % same for normalized coordinates
 COVARIANCE = zeros(nStates,nStates,nSamples + 1);
+COVARIANCENorm = zeros(nStates,nStates,nSamples + 1); % same for normalized coordinates
 GAIN = zeros(nSamples,nStates);
+
+% get numeric values of normalization matrices: 
+TxNum = TNum.Tx; 
+TyNum = TNum.Ty; 
+TuNum = TNum.Tu; 
 
 % Initialize Kalman Filter:
 ESTIMATES(1,:) = xHat;
+ESTIMATESNorm(1,:) = xHatNorm;
 P0 = eye(nStates); % XY: sicher besseres Tuning möglich
+P0Norm = eye(nStates); % XY: sicher besseres Tuning möglich
 COVARIANCE(:,:,1) = P0; 
-POld = P0;      % to overwrite
+COVARIANCENorm(:,:,1) = P0Norm; 
+POld = P0;          % to overwrite
+POldNorm = P0Norm;% to overwrite
 buffer = 1.5;   % conservative safety margin of 50% for measurement noise covariance
-R = buffer * MESS.C; 
-% Tune Kalman Filter: measurement uncertainty: 
+R = buffer * MESS.R;
+RNorm = R./(TyNum.^2); 
+% fine-tune Kalman Filter: measurement uncertainty: 
 R(4,4) = 5E3*R(4,4);    % SIN
 R(5,5) = 5E2*R(5,5);    % TS
-% Tune Kalman Filter: process uncertainty: 
+% fine-tune Kalman Filter: process uncertainty: 
 Q = diag([0.016, 0.555, 0.563, 958.4, 1.263, 2.816, 2.654, 0.972, 2.894, 10, 0.374, 0.948]);
-Q(4,4) = 1E-3*Q(4,4);       % unit change for h2o [g/l] --> [kg/l]
-Q(10,10) = 1E-3*Q(10,10);   % unit change for ash [g/l] --> [kg/l]  
+QNorm = eye(nStates);   % XY: sicher noch besser auszulegen
+% Q(4,4) = 1E-3*Q(4,4);       % unit change for h2o [g/l] --> [kg/l]
+% Q(10,10) = 1E-3*Q(10,10);   % unit change for ash [g/l] --> [kg/l]  
 
 % obtain feeding information:
 inputMat = MESS.inputMat;   % [tEvents,feed vol flow,inlet concentrations]
@@ -67,6 +87,13 @@ if tEvents(1) > 0
     nColcInputMat = size(inputMat,2);   % number of columns in inputMat
     inputMat = [zeros(nColcInputMat,1),inputMat]; 
 end
+
+nIntervals = length(tEvents); 
+
+% normalize the different columns of inputMat appropriately:
+inputMatNorm = inputMat;    % copy
+inputMatNorm(:,2) = inputMatNorm(:,2)./TuNum; 
+inputMatNorm(:,3:end) = inputMatNorm(:,3:end)./repmat(TxNum',nIntervals,1);
 
 %% derive all function handles for EKF from symbolic model equations
 % define symbolic variables ("S") (all vectors are column vectors):
@@ -90,8 +117,29 @@ dfdxSym = jacobian(dynamics,xS);
 dhdxSym = jacobian(outputs,xS); 
 
 % convert to numeric function handles: 
-dfdxNew = matlabFunction(dfdxSym, 'Vars', {xS, uS, thS, cS, aS}); 
-dhdxNew = matlabFunction(dhdxSym, 'Vars', {xS, cS}); 
+dfdx = matlabFunction(dfdxSym, 'Vars', {xS, uS, thS, cS, aS}); 
+dhdx = matlabFunction(dhdxSym, 'Vars', {xS, cS}); 
+
+%% derive all function handles in normalized coordinates from sym. expressions:
+xNormS = sym('xNorm', [12 1]);  % normalized states as col. vector
+syms uNorm real;                % normalized input
+xiNormS = sym('xi', [12,1]);    % normalized inlet concentrations 
+TxS = sym('Tx', [12,1]);        % normalization matrix for states
+TyS = sym('Ty', [6,1]);         % normalization matrix for outputs
+syms Tu real                    % normalization variable for input
+
+dynamicsNorm = BMR4_AB_frac_norm_ode_sym(xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu); 
+outputsNorm = BMR4_AB_frac_norm_mgl_sym(xNormS, cS, TxS, TyS); 
+
+% partial derivatives for EKF (symbolic): 
+dfdxNormSym = jacobian(dynamicsNorm,xNormS); 
+dhdxNormSym = jacobian(outputsNorm,xNormS); 
+
+% convert to numeric function handles:
+fNorm = matlabFunction(dynamicsNorm, 'Vars', {xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu}); 
+gNorm = matlabFunction(outputsNorm, 'Vars', {xNormS, cS, TxS, TyS}); 
+dfdxNorm = matlabFunction(dfdxNormSym, 'Vars', {xNormS, uNorm, thS, cS, aS, TxS, Tu}); 
+dhdxNorm = matlabFunction(dhdxNormSym, 'Vars', {xNormS, cS, TxS, TyS}); 
 
 tic
 % integrate across all (online) measurement intervals (like in reality):
@@ -114,25 +162,36 @@ for k = 1:nSamples
     % Case a: constant feeding during measurement interval:
     if isempty(tRelEvents) 
         feedInfo = inputMat(idxLastEvent,:);
+        feedInfoNorm = inputMatNorm(idxLastEvent,:);
     % Case b: feeding changes during measurement interval:
     else
         % use all relevant feeding events during measurement interval and 
         % the critical last one before:
         feedInfo = inputMat([idxLastEvent,idxRelEvents],:);
+        feedInfoNorm = inputMatNorm([idxLastEvent,idxRelEvents],:);
     end
+    
     %% execute EKF
 
-    [xPlus,PPlus,Kv] = extendedKalmanFilter(xMinus,POld,tSpan,feedInfo,yMeas,params,Q,R,f,g,dfdxNew,dhdxNew); % standard EKF
+    [xPlus,PPlus,Kv] = extendedKalmanFilter(xMinus,POld,tSpan,feedInfo,yMeas,params,Q,R,f,g,dfdx,dhdx); % standard EKF
+    [xPlusNorm,PPlusNorm] = extendedKalmanFilterNorm(xMinusNorm,POldNorm,tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm,TxNum,TyNum,TuNum); % XY: es werden u.a. zu viele Normierungs-Matrizen übegeben
 %     [xPlus,PPlus,Kv] = constrainedExtendedKalmanFilter(xMinus,POld,tSpan,feedInfo,yMeas,AC,R); % constrained EKF
     
     % save results:
     ESTIMATES(k+1,:) = xPlus';
     COVARIANCE(:,:,k+1) = PPlus; 
+    ESTIMATESNorm(k+1,:) = xPlusNorm'; 
+    COVARIANCENorm(:,:,k+1) = PPlusNorm; 
     GAIN(k,:) = Kv;     % Kalman Gain * Innovation
     
     % Update for next iteration:  
     xMinus = xPlus;     % estimated state from Kalman Filter
     POld = PPlus;       % state error covariance matrix
+
+    xMinusNorm = xPlusNorm; 
+    POldNorm = PPlusNorm; 
+    % XY: warum wird hier so doof zwischen Old und Minus unterschieden? 
+    % Könnte man nicht beides konsistent benennen? 
 end
 toc
 
