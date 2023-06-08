@@ -19,13 +19,13 @@ import pickle
 import time
 
 
-from models import adm1_r3_frac, adm1_r4_frac
+from models import adm1_r3_frac, adm1_r4_frac, adm1_r3_frac_norm
 from mpc import mpc_setup
 from simulator import template_simulator
 
 """ User settings: """
 show_animation = True
-store_results = False
+store_results = True
 
 # Model
 model_type = "R3-frac"
@@ -38,24 +38,24 @@ if model_type == "R3-frac":
     # Set the initial state of mpc and simulator
     x0 = np.array(
         [
-            0.0494667574155131,
-            0.0116512808544296,
-            4.97521803226548,
-            0.963856429890969,
-            957.102301745169 / 1000.0,
-            0.740449903041190,
-            2.22134970912357,
-            0.948575266222027,
-            0.412040527872582,
-            1.92558575222279,
-            0.521526149938689,
-            0.0562500000000000 / 1000.0,
-            0.00750000000000000,
-            0.0493342637010683,
-            4.54552248672517,
-            0.0223970128000483,
-            0.358267793064052,
-            0.660494133806800,
+            0.0949255130768584,
+            0.0127895628562427,
+            4.65470911882496,
+            0.850440543095153,
+            957.771520363428,
+            5.17942716544083,
+            0,
+            1.49423886792478,
+            0.627629693919376,
+            1.96096081782644,
+            0.535260086844425,
+            13.9999968004443,
+            0.0487500000000000,
+            0.0946545714143219,
+            4.22865312776708,
+            0.0185676898303715,
+            0.362017286980919,
+            0.652085696312695,
         ]
     )
 elif model_type == "R4-frac":
@@ -76,8 +76,49 @@ elif model_type == "R4-frac":
             0.0170000000000000,
             0.386609337719045,
             0.924038131164312,
+            0.0,
+            0.0,
         ]
     )
+elif model_type == "R3-frac-norm":
+    # Set the initial state of mpc and simulator
+    x0 = np.array(
+        [
+            0.0949255126142516,
+            0.0127895628548919,
+            4.65470911344473,
+            0.850440540811826,
+            957.771520370543,
+            5.17942716513992,
+            1.61926162860698e-09,
+            1.49423886908271,
+            0.627629693991017,
+            1.96096082868930,
+            0.535260089706592,
+            13.9999999999951,
+            0.0487500000000000,
+            0.0946545709535683,
+            4.22865312234033,
+            0.0185676897742391,
+            0.362017286954370,
+            0.652085696384954,
+        ]
+    )
+
+    # Normalisation
+    # Define numeric values for normalization with steady state
+    Tx = x0
+    feedVolFlowSS = 8
+    Tu = feedVolFlowSS
+    Ty = np.array([137.6596, 0.5851, 0.3832, 7.3033, 0.8319, 0.0422, 0.6685, 0.0949])
+
+    # Normalize simulation inputs
+    uNorm = feedVolFlowSS / Tu
+    x0SSNorm = x0 / Tx
+    xInNorm = xi / Tx
+
+    # Set model
+    model = adm1_r3_frac_norm(xi, xInNorm, uNorm, Tu, Tx, Ty)
 else:
     raise NotImplementedError(f"Model '{model_type}' not implemented.")
 
@@ -89,17 +130,18 @@ estimator = state_estimator.StateEstimator(model)
 n_steps = 336
 
 # Feeding
-constant_feeding = False
+constant_feeding = True
 feed = np.zeros(n_steps)
 
 feed[120:144] = 42.0 * 24
-feed[264:317] = 18.0 * 24
+feed[264:312] = 18.0 * 24
 
 # Set x0
 mpc.x0 = x0
 simulator.x0 = x0
 
-plot_vars = ["u", "x_1"] + [f"y_{i+1}" for i in range(6)]
+plot_vars = ["u", "x_13", "x_14", "x_8"] + [f"y_{i+1}" for i in range(8)]
+# plot_vars = ["u"] + [f"x_{i+1}" for i in range(18)]
 
 if not constant_feeding:
     plot_vars = [var for var in plot_vars if not var.startswith("y")]
@@ -171,8 +213,9 @@ if constant_feeding:
 timer.info()
 timer.hist()
 
-input("Press any key to exit.")
+# input("Press any key to exit.")
 
 # Store results:
 if store_results:
-    do_mpc.data.save_results([mpc, simulator], "admr1-r3-frac_results")
+    # do_mpc.data.save_results([mpc, simulator], f"testing_results")
+    np.savetxt("results.csv", simulator.data._x, delimiter=",")

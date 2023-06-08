@@ -15,8 +15,8 @@ Kco2 = 0.025
 
 # miscellaneous parameters (Weinrich, 2017, Tab. B.7):
 R = 0.08315  # id. gas constant [bar l/mol/K]
-ph2o = 0  # 0.0657 partial pressure of water in gas phase (saturated) [bar]
-p0 = 1.0130  # atmospheric pressure [bar]
+ph2o = 0.0657  # partial pressure of water in gas phase (saturated) [bar]
+p0 = 1.0133  # atmospheric pressure [bar]
 kla = 200  # mass transfer coefficient [1/d]
 kp = 5e4  # friction parameter [l/bar/d]
 T = 273.15  # operating temperature [K]

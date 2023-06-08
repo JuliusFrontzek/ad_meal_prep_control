@@ -3,9 +3,10 @@
 
 # Directories
 __pycache__
-coinhsl-2022.11.09
+coinhsl
 
 # File types
 *.c
 *.asv
 *.png
+*.pkl
