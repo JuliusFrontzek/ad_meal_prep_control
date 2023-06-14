@@ -7,8 +7,6 @@ function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNorm(xOldNorm,POldNorm,tSpa
 % compute time and measurement update acc. to Joseph-version of the EKF in
 % normalized coordinates
 
-% XY: Variablen-Beschreibung anpassen
-
 % xPlusNorm - new normalized state estimate
 % PPlusNorm - new normalized state error covariance matrix
 % xOldNorm - old normalized state estimate
@@ -56,9 +54,9 @@ if isempty(tRelEvents)
     xInCurrNorm = feedInfoNorm(3:end)';  % current inlet concentrations
     tEval = tSpan;
     odeFunNorm = @(t,xPNorm) dfP_dtNorm(xPNorm,feedVolFlowNorm,xInCurrNorm,params,QNorm,fNorm,dfdxNorm,TxNum,TuNum);
-    %                        dxPdtNorm (xPNorm,uNorm,          xiNorm,     params,QNorm,fNorm,dfdxNorm,TxNum,TuNum)
     [~,xPSolNorm] = ode15s(odeFunNorm,tEval,xPOldNorm);
     xPMinusNorm = xPSolNorm(end,:)';
+
 % Case b: feeding changes during measurement interval:
 else 
     % create time grid of currently relevant feeding events and measurements:
@@ -70,8 +68,7 @@ else
         feedVolFlowNorm = feedInfoNorm(jj,2); 
         xInCurrNorm = feedInfoNorm(jj,3:end)';   % current inlet concentrations
         tEval = [tOverall(jj), tOverall(jj+1)];
-        odeFunNorm = @(t,xPNorm) dfP_dtNorm(xPNorm,feedVolFlowNorm,xInCurrNorm,params,QNorm,fNorm,dfdxNorm,TxNum,TuNum);    % XY Abhängigkeiten checken!
-        %                        dxPdtNorm (xPNorm,uNorm,          xiNorm,     params,QNorm,fNorm,dfdxNorm,TxNum,TuNum)        
+        odeFunNorm = @(t,xPNorm) dfP_dtNorm(xPNorm,feedVolFlowNorm,xInCurrNorm,params,QNorm,fNorm,dfdxNorm,TxNum,TuNum); 
         [~,xPSolNorm] = ode15s(odeFunNorm,tEval,xP0Norm);
         % update initial value for next interval:
         xP0Norm = xPSolNorm(end,:)';
@@ -86,19 +83,17 @@ PMinusNorm = reshape(xPMinusNorm(nStates+1:end),[nStates,nStates]);
 
 %% Measurement Update
 HNorm = dhdxNorm(xMinusNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
-% dhdxNorm      (xNormS,    cS,      TxS,  TyS); 
 SNorm = HNorm*PMinusNorm*HNorm' + RNorm;    % auxiliary matrix
 SNormInv = SNorm\eye(size(RNorm));  % numerically more efficient way to compute inverse
 KNorm = PMinusNorm*HNorm'*SNormInv; % Kalman Gain matrix
 hNorm = gNorm(xMinusNorm,params.c,TxNum,TyNum); % normalized predicted model output
-% gNorm(xNormS, cS, TxS, TyS); 
-yMeasNorm = yMeas'./TyNum;           % normalized measurements
-Kv = KNorm*(yMeasNorm - hNorm);    % effective correction of Kalman Gain on state estimate (n,1); 
+yMeasNorm = yMeas'./TyNum;          % normalized measurements
+KvNorm = KNorm*(yMeasNorm - hNorm);     % effective correction of Kalman Gain on state estimate (n,1); 
 % Kv = zeros(nStates,1);  % XY Rania
 
-xPlusNorm = xMinusNorm + Kv;    % updated state estimation
+xPlusNorm = xMinusNorm + KvNorm;    % updated state estimation
 
-% apply Joseph-Algorithm for measurement of P-matrix: 
+% apply Joseph-Algorithm for measurement update of P-matrix: 
 leftMat = eye(nStates) - KNorm*HNorm; 
 rightMat = leftMat'; 
 PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated covariance of estimation error

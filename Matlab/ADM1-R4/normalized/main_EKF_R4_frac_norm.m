@@ -35,7 +35,6 @@ xMinus = xHat;      % to be overwritten
 % initial state in normalized coordinates: 
 x0InitNorm = MESS.x0Norm'; 
 x0Norm = x0InitNorm; 
-% xHatNorm = x0Norm.*abs(randn(nStates,1)); 
 xHatNorm = xHat./TxNum; 
 xMinusNorm = xHatNorm;      % to be overwritten
 
@@ -66,7 +65,7 @@ COVARIANCE(:,:,1) = P0;
 PMinus = P0;          % to overwrite
 % same for normalized coordinates: 
 ESTIMATESNorm(1,:) = xHatNorm;
-P0Norm = eye(nStates); % XY: sicher besseres Tuning möglich
+P0Norm = eye(nStates)./(TxNum.^2); % for comparison with non-normalized case
 COVARIANCENorm(:,:,1) = P0Norm; 
 PMinusNorm = P0Norm;  % to overwrite
 
@@ -80,14 +79,15 @@ RNorm = R./(TyNum.^2);
 Q = diag([0.016, 0.555, 0.563, 958.4, 1.263, 2.816, 2.654, 0.972, 2.894, 10, 0.374, 0.948]);
 % Q(4,4) = 1E-3*Q(4,4);       % unit change for h2o [g/l] --> [kg/l]
 % Q(10,10) = 1E-3*Q(10,10);   % unit change for ash [g/l] --> [kg/l]  
-% QNorm = eye(nStates);   % XY: sicher noch besser auszulegen
-QNorm = Q./(TxNum.^2); 
+% QNorm = eye(nStates);   % XY: sicher besser auszulegen
+QNorm = Q./(TxNum.^2); % for comparison with non-normalized case
 
 % obtain feeding information:
 inputMat = MESS.inputMat;   % [tEvents,feed vol flow,inlet concentrations]
 tEvents = inputMat(:,1);    % times of feeding events (on/off)
 
-% if inputMat has first feeding entry only at t > t0, add zero row at t0:
+% if inputMat has first feeding entry only at t > t0, add zero row at t0
+% (make sure simulation always starts with no feeding):
 if tEvents(1) > 0
     nColcInputMat = size(inputMat,2);   % number of columns in inputMat
     inputMat = [zeros(nColcInputMat,1),inputMat]; 
@@ -247,13 +247,13 @@ figure
 
 % gas volume flow: 
 subplot(3,2,1)
-scatter(tMeas,MESS.yMeas(:,1)/24,'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
-% scatter(tMeas, MESS.yMeas(:,1)/24,'DisplayName','noisy measurements',...
+scatter(tMeas,MESS.yMeas(:,1)/24,'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+% scatter(tMeas, MESS.yMeas(:,1)/24,'DisplayName','noisy measurements', ...
 %         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 plot(tMeas,yClean(:,1)/24,'DisplayName','clean model output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
-plot(t,yEKFDeNorm(:,1),'DisplayName','EKFNorm-Output',...
+plot(t,yEKFDeNorm(:,1)/24,'DisplayName','EKFNorm-Output',...
      'LineStyle',':', 'Color', colorPaletteHex(5), 'LineWidth',1);  
 plot(t,EKFOutput(:,1)/24,'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
@@ -269,7 +269,7 @@ set(gca, "YColor", 'k')     % make right y-axis black
 
 % pch4: 
 subplot(3,2,2)
-scatter(tMeas,MESS.yMeas(:,2),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+scatter(tMeas,MESS.yMeas(:,2),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 % scatter(tMeas, MESS.yMeas(:,2),'DisplayName','noisy measurements',...
 %         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on
@@ -291,7 +291,7 @@ legend('Location','NorthEast');
 
 % pco2:
 subplot(3,2,3)
-scatter(tMeas,MESS.yMeas(:,3),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+scatter(tMeas,MESS.yMeas(:,3),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 % scatter(tMeas, MESS.yMeas(:,3),'DisplayName','noisy measurements',...
 %         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
@@ -313,7 +313,7 @@ set(gca, "YColor", 'k')     % make right y-axis black
 
 % SIN:  
 subplot(3,2,4)
-scatter(tMeas,MESS.yMeas(:,4),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+scatter(tMeas,MESS.yMeas(:,4),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 % scatter(tMeas, MESS.yMeas(:,4),'DisplayName','noisy measurements',...
 %         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
@@ -334,7 +334,7 @@ set(gca, "YColor", 'k')     % make right y-axis black
 
 % TS:  
 subplot(3,2,5)
-scatter(tMeas,MESS.yMeas(:,5),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+scatter(tMeas,MESS.yMeas(:,5),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 % scatter(tMeas, MESS.yMeas(:,5),'DisplayName','noisy measurements',...
 %         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
@@ -356,7 +356,7 @@ xlabel('time [d]')
 
 % VS:  
 subplot(3,2,6)
-scatter(tMeas,MESS.yMeas(:,6),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+scatter(tMeas,MESS.yMeas(:,6),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 % scatter(tMeas, MESS.yMeas(:,6),'DisplayName','noisy measurements',...
 %         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
