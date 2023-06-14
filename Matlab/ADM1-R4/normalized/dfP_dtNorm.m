@@ -4,9 +4,10 @@
 % Autor: Simon Hellmann
 
 function dxPdtNorm = dfP_dtNorm(xPNorm,uNorm,xiNorm,params,QNorm,fNorm,dfdxNorm,TxNum,TuNum)
-                         % (xPNorm,u,xi,params,Q,f,dfdx)
+                            %  (xPNorm,u,    xi,    params,Q,    f,    dfdx)
 % compute right-hand side of ODE of both states and state error covariance 
-% matrix P. 
+% matrix P (normalized version)
+
 % dxPdt - right-hand side of ODE (of states and dynamics of state error
 % covariance matrix)
 % xP - states and covariance matrix (reshaped as vector), stacked above
@@ -37,14 +38,16 @@ function dxPdtNorm = dfP_dtNorm(xPNorm,uNorm,xiNorm,params,QNorm,fNorm,dfdxNorm,
     
     %% ODEs of states:
     dxdtNorm = fNorm(xNorm,uNorm,xiNorm,th,c,a,TxNum,TuNum);
+    % fNorm(xNormS,uNorm,xiNormS,thS,cS,aS,TxS,Tu) 
+    
     dxPdtNorm(1:nStates) = dxdtNorm; 
     
-    %% ODEs of state error covariance matrix:
-    
+    %% ODEs of state error covariance matrix P:
     % partial derivatives of the right-hand side w.r.t. states, evaluated
     % at current estimate x (which is actually xHat):
     FNorm = dfdxNorm(xNorm,uNorm,th,c,a,TxNum,TuNum);
-%     Q = zeros(nStates);     % XY Rania
+    %dfdxNorm(xNormS,uNorm,thS,cS,aS,TxS,Tu) 
+    %     Q = zeros(nStates);     % XY Rania
     dPdtNorm = FNorm*PNorm + PNorm*FNorm' + QNorm;  % dynamics of state error covariance matrix
     % reshape matrix as long column vector and append values dxPdt:
     dxPdtNorm(nStates+1:end) = reshape(dPdtNorm,[],1);

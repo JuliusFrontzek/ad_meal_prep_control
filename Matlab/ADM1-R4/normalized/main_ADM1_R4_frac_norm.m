@@ -235,8 +235,8 @@ for cI = 1:nIntervals
     xInCurr = inputVector(2:end)';
     
     % apply normalization:
-    uCurrNorm = feedVolFlowCurr./TuNum; 
-    xInCurrNorm = xInCurr./TxNum; 
+    uCurrNorm = feedVolFlowCurr./TuNum; % inputs
+    xInCurrNorm = xInCurr./TxNum;       % normalization of inlet concentrations just like state normalization
 
     % normalized function handle: 
     odeFunNorm = @(t,xNorm) fNorm(xNorm,uCurrNorm,xInCurrNorm,thNum,cNum,aNum,TxNum,TuNum); 
@@ -323,8 +323,9 @@ figure()
 
 % gas volume flow: 
 subplot(3,2,1)
-scatter(tGrid,yMeas(:,1)/24,'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+scatter(tGrid,yMeas(:,1)/24,'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+% scatter(tGrid,yMeas(:,1)/24,'DisplayName','noisy',...
+%         'Marker','.', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 plot(tGrid,yClean(:,1)/24,'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
@@ -338,8 +339,9 @@ legend('Location','NorthEast');
 
 % pch4: 
 subplot(3,2,2)
-scatter(tGrid,yMeas(:,2),'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5);
+scatter(tGrid,yMeas(:,2),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+% scatter(tGrid,yMeas(:,2),'DisplayName','noisy',...
+%         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5);
 hold on
 plot(tGrid,yClean(:,2),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
@@ -354,8 +356,9 @@ set(gca, "YColor", 'k')
 
 % pco2:
 subplot(3,2,3)
-scatter(tGrid,yMeas(:,3),'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+scatter(tGrid,yMeas(:,3),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+% scatter(tGrid,yMeas(:,3),'DisplayName','noisy',...
+%         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 plot(tGrid,yClean(:,3),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
@@ -370,8 +373,9 @@ set(gca, "YColor", 'k')
 
 % SIN:  
 subplot(3,2,4)
-scatter(tGrid,yMeas(:,4),'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+scatter(tGrid,yMeas(:,4),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+% scatter(tGrid,yMeas(:,4),'DisplayName','noisy',...
+%         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 plot(tGrid,yClean(:,4),'r',...
      'LineWidth',1.2,'DisplayName','clean')
@@ -386,8 +390,9 @@ set(gca, "YColor", 'k')
 
 % TS:  
 subplot(3,2,5)
-scatter(tGrid,yMeas(:,5),'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+scatter(tGrid,yMeas(:,5),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+% scatter(tGrid,yMeas(:,5),'DisplayName','noisy',...
+%         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 plot(tGrid,yClean(:,5),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
@@ -403,8 +408,9 @@ set(gca, "YColor", 'k')
 
 % VS:  
 subplot(3,2,6)
-scatter(tGrid,yMeas(:,6),'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
+scatter(tGrid,yMeas(:,6),'.','MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
+% scatter(tGrid,yMeas(:,6),'DisplayName','noisy',...
+%         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
 hold on; 
 plot(tGrid,yClean(:,6),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
