@@ -186,7 +186,7 @@ tFeedOn = [cumInts(1);cumInts(3)];  % beginning times of feedings
 tFeedOff = [cumInts(2);cumInts(4)]; % end times of feedings
 feedingDurations = [intShort; intMed];  
 tEvents = sort([0;tFeedOn;tFeedOff]); 
-dt = 30/60/24;             % sample time [min], converted to [d]
+dt = 1/60/24;             % sample time [min], converted to [d]
 tGrid = (0:dt:tEnd)';     % time grid. The model outputs will be evaluated here later on
 tOverall = unique([tGrid; tEvents]);% Join and sort timestamps
 
@@ -299,7 +299,12 @@ dtAt = 1/24;    % sample time for atline measurements [d]
 % times when samples were taken:
 tOfflineSend = (0.45:dtOff:tEnd)';  % offset offline from online measurements 
 tAtlineSend = (0.25:dtAt:tEnd)';   % offset atline from online measurements 
-% construct times when samples return and are available as measurements: 
+
+% interpolate xSim at online/offline/atline sample times: 
+xSolOff = interp1(tOverall,xSim,tOfflineSend);
+xSolAt = interp1(tOverall,xSim,tAtlineSend);
+
+% construct times when offline and atline measurements return from lab: 
 NOff = numel(tOfflineSend); 
 NAt = numel(tAtlineSend); 
 delayMin = 0.8;     % [d]
@@ -311,14 +316,6 @@ tAtlineRec = tAtlineSend + delayAt;     % Rec = receive
 % cut reception times by tEnd: 
 tOfflineRec = tOfflineRec(tOfflineRec <= tEnd); 
 tAtlineRec = tAtlineRec(tAtlineRec <= tEnd); 
-
-% interpolate xSim at online/offline/atline times: 
-xSolOff = interp1(tOverall,xSim,tOfflineRec);
-
-idxGridOff = ismember(tOverall, tOfflineRec); 
-idxGridAt = ismember(tOverall, tAtlineRec); 
-% xSolOff = xSim(idxGridOff,:);
-xSolAt = xSim(idxGridAt,:);
 
 %% add noise to measurements acc to sensor data sheets
  
@@ -336,13 +333,20 @@ sigmaAc = 0.04;     % FOS [g/L]. Aber Achtung: brauchbarere Messgröße für
 
 % combine all in sigma matrix and covariance matrix:
 sigmas = [sigmaV, sigmaCh4, sigmaCo2, sigmaPh, sigmaSIN, sigmaTS, sigmaVS, sigmaAc]; 
-sigmaMat = repmat(sigmas,NOn,1);
-noiseCovMat = diag(sigmas.^2);  % measurement noise covariance matrix
+sigmasOn = [sigmaV, sigmaCh4, sigmaCo2, sigmaPh]; 
+sigmasOff = [sigmaSIN, sigmaTS, sigmaVS];
+sigmasAt = [sigmaAc]; 
+
+sigmaMatOn = repmat(sigmasOn,NOn,1);
+noiseCovMatOn = diag(sigmas.^2);  % measurement noise covariance matrix
+% same for offline and atline measurement:
+sigmaMatOff = repmat(sigmas,NOff,1);
+noiseCovMatOn = diag(sigmas.^2);  % measurement noise covariance matrix
 
 % create normally distributed measurement noise matrix:
 yMean = zeros(NOn,q); % zero mean for all online measurements 
 rng('default');     % fix seed for random number generation (for replicable results)
-normalMeasNoise = normrnd(yMean,sigmaMat);
+normalMeasNoise = normrnd(yMean,sigmaMatOn);
 yMeas = yClean + normalMeasNoise; 
 
 %% Plot results (partial pressures, gas volume flow, SIN and feedings)
@@ -491,6 +495,6 @@ MESS.xSim = [tSim,xSim];
 MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
 MESS.yClean = yClean;  
 MESS.yMeas = yMeas; 
-MESS.C = noiseCovMat; % accurate values from sensor data sheets
+MESS.C = noiseCovMatOn; % accurate values from sensor data sheets
 
 save('Messung_ADM1_R3_frac.mat', 'MESS', 'params')
