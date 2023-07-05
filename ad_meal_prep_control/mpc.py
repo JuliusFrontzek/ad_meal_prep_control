@@ -22,7 +22,7 @@ def mpc_setup(model, model_type: str):
     mpc = do_mpc.controller.MPC(model)
 
     setup_mpc = {
-        "n_horizon": 10,
+        "n_horizon": 30,
         "n_robust": 0,
         "open_loop": 0,
         "t_step": 0.5 / 24,
@@ -31,7 +31,10 @@ def mpc_setup(model, model_type: str):
         "collocation_deg": 2,
         "collocation_ni": 1,
         # Use MA27 linear solver in ipopt for faster calculations:
-        # "nlpsol_opts": {"ipopt.linear_solver": "MA27"},
+        # "nlpsol_opts": {
+        #     "ipopt.linear_solver": "MA57",
+        #     "ipopt.hsllib": "/home/julius/Documents/coinhsl-2023.05.26/builddir/libcoinhsl.so",
+        # },
     }
 
     mpc.set_param(**setup_mpc)
@@ -41,9 +44,11 @@ def mpc_setup(model, model_type: str):
     # Scaling of units for better conditioning of optimization problem
     # mpc.scaling["_u", "u"] = 100
 
-    mterm = (model.x[f"x_{8}"] - 1.0) ** 2  # + (model.x[f"x_{num_states}"] - 0.8) ** 2
+    mterm = (
+        model.x[f"x_{14}"] - 0.95
+    ) ** 2  # + (model.x[f"x_{num_states}"] - 0.8) ** 2
     lterm = (
-        model.x[f"x_{8}"] - 1.0
+        model.x[f"x_{14}"] - 0.95
     ) ** 2  # + (        model.x[f"x_{num_states}"] - 0.8    ) ** 2
     # mterm = (model.aux["y_2"] - 0.4) ** 2
     # lterm = (model.aux["y_2"] - 0.4) ** 2
