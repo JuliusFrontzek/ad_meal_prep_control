@@ -13,7 +13,6 @@ import do_mpc
 
 def adm1_r3_frac_norm(
     xi_norm: np.ndarray,
-    uNorm: np.ndarray,
     Tu: np.ndarray,
     Tx: np.ndarray,
     Ty: np.ndarray,
@@ -94,7 +93,7 @@ def adm1_r3_frac_norm(
             2557.53314272449,
             250.309598974637,
             -985.781671025363,
-            173780.0828749375,
+            173780.082874937,
             4937.07339753436,
             11.1028665270807,
             10,
@@ -350,7 +349,7 @@ def adm1_r3_frac_norm(
     ).transpose()
 
     # Input
-    u = model.set_variable(var_type="_u", var_name="u", shape=(num_inputs, 1))
+    uNorm = model.set_variable(var_type="_u", var_name="uNorm", shape=(num_inputs, 1))
 
     # Time-variant parameters
     theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
@@ -444,10 +443,10 @@ def adm1_r3_frac_norm(
     # )  # VS
     # model.set_expression("y_8", Tx[0] / Ty[7] * x_norm[0])
 
-    if num_inputs > 1:
-        sum_u = cumsum(u)[1]
-    else:
-        sum_u = u
+    # if num_inputs > 1:
+    #     sum_u = cumsum(u)[1]
+    # else:
+    #     sum_u = u
 
     # Differential equations
 
