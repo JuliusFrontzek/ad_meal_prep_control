@@ -29,7 +29,7 @@ store_results = True
 
 # Model
 model_type = "R3-frac-norm"
-substrate_names = ["corn"]
+substrate_names = ["corn", "corn"]
 xi = substrates.xi_values(model_type, substrate_names)
 
 if model_type == "R3-frac":
@@ -123,9 +123,6 @@ elif model_type == "R3-frac-norm":
         ]
     )
 
-    # Normalize simulation inputs
-    uNorm = feedVolFlowSS / Tu
-    # x0SSNorm = x0 / Tx
     xInNorm = xi / Tx
 
     x0 = x0 / Tx
@@ -144,10 +141,12 @@ n_steps = 336
 
 # Feeding
 constant_feeding = True
-feed = np.zeros(n_steps)
+feed = np.zeros((n_steps, 2))
 
 feed[120:144] = 7.0 * 24 / Tu  # 42.0
 feed[264:312] = 3.0 * 24 / Tu  # 18.0
+
+feed[:, :] = feed[:, :] / 2.0
 
 # Set x0
 mpc.x0 = x0
@@ -189,7 +188,10 @@ timer = Timer()
 for k in range(n_steps):
     timer.tic()
     if constant_feeding:
-        u0 = np.array([[feed[k]]])
+        if feed.shape[1] == 1:
+            u0 = np.array([[feed[k]]])
+        else:
+            u0 = np.array([feed[k]]).T
     else:
         u0 = mpc.make_step(x0)
     timer.toc()
@@ -199,8 +201,8 @@ for k in range(n_steps):
 
     if show_animation:
         if constant_feeding:
-            if "u" in plot_vars:
-                results["u"][k] = u0
+            # if "u" in plot_vars:
+            #     results["u"][k] = u0
 
             for var in plot_vars:
                 if var.startswith("x"):
