@@ -39,7 +39,7 @@ load('SoerensFiles/Model_data/ADM1_parameters.mat')
 % Load experimental data
 load('SoerensFiles/Model_data/ADM1_input_data.mat')
 % Select model type: ADM1, ADM1_R1, ADM1_R2, ADM1_R3 or ADM1_R4
-flagModel = 3; % 3: ADM1-R3; 4: ADM1-R4
+flagModel = 4; % 3: ADM1-R3; 4: ADM1-R4
 
 %% Run selected model 
 systemParameters = system.Variables; 

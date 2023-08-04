@@ -14,9 +14,9 @@ addpath('ODEs/')
 addpath('measurementEquations/')
 
 %% choose model type, normalization, and optionally -frac
-flagModel = 3;  % 3: ADM1-R3; 4: ADM1-R4
+flagModel = 4;  % 3: ADM1-R3; 4: ADM1-R4
+flagNorm = 0;   % 0: absolute coordinates; 1: normalized coordinates
 flagFrac = 0;   % 0: no -frac (only 1 CH-fraction); 1: -frac (second CH-fraction)
-flagNorm = 1;   % 0: absolute coordinates; 1: normalized coordinates
 
 switch flagModel
     case 3
@@ -134,11 +134,11 @@ x0Norm = x0DynNorm;
  
 % compute state trajectories during dynamic feeding scenario:
 if flagNorm == 1
-    % case a: in absolute coordinates:
+    % case a: in normalized coordinates:
     xSolNorm = computeXTrajectoriesNorm(x0Norm,fNorm,inputMat,tEvents,tOverall,tGrid,tEnd,thNum,cNum,aNum,nStates,TxNum,TuNum); 
     xSol = repmat(TxNum',N,1).*xSolNorm;    % de-normalize states
 else
-    % case b: in normalized coordinates:
+    % case b: in absolute coordinates:
     xSol = computeXTrajectories(x0,f,inputMat,tEvents,tOverall,tGrid,tEnd,thNum,cNum,aNum,nStates); 
 end
 
@@ -167,14 +167,17 @@ plotOutputs(flagModel,flagFrac,yClean,yMeas,feedVolFlow,tGrid,tEvents)
 %% save results in struct MESS: 
 MESS.t = tGrid; 
 MESS.x0 = x0DynR3;  % steady state as initial value for dynamic simulation
-MESS.x0Norm = x0DynNorm;   % normalized initial state
-MESS.xNorm = xSolNorm; 
 % MESS.xSim = [tSim,xSimNorm]; 
 MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
 MESS.yClean = yClean; 
-MESS.yCleanNorm = yCleanNorm; % normalized outputs
 MESS.yMeas = yMeas; 
 MESS.R = noiseCovMat; % accurate values from sensor data sheets
+
+if flagNorm == 1
+    MESS.x0Norm = x0DynNorm;   % normalized initial state
+    MESS.xNorm = xSolNorm; 
+    MESS.yCleanNorm = yCleanNorm; % normalized outputs
+end
 
 % create sub-folder (if non-existent yet) and save results there
 currPath = pwd; 
