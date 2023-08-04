@@ -1,0 +1,25 @@
+Notizen zur Fehlersuche Julius
+==============================
+
+
+Fragen: 
+- Welches Szenario simulierst du wirklich? 
+- ist das die Transition in den steady state? 
+
+
+Diagnosen (Fehler)
+=========
+- Tx stimmt nicht
+- x0 in python ist x0 aus Matlab. Das ist aber der Startwert der dynamischen Simulation, nicht der Startwert für die Transition into steady state (der heißt in Matlab x0SS)
+
+
+
+Diagnosen (korrekt)
+===================
+- xIn stimmt
+- feedVolFlow stimmt (8; aus steady-state transition)
+- cNum stimmt
+- Petersen-Matrix stimmt
+- PhiNorm stimmt
+- SHPlusNorm stimmt
+- IacNorm stimmt

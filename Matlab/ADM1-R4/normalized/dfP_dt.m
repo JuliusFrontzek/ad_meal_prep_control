@@ -3,7 +3,7 @@
 % Erstelldatum: 21.4.2023
 % Autor: Simon Hellmann
 
-function dxPdt = dfP_dt(xP,u,xi,params,Q,f,dfdx)
+function dxPdt = dfP_dt(xP,nStates,u,xi,params,Q,f,dfdx)
 % compute right-hand side of ODE of both states and state error covariance 
 % matrix P. 
 % dxPdt - right-hand side of ODE (of states and dynamics of state error
@@ -18,7 +18,7 @@ function dxPdt = dfP_dt(xP,u,xi,params,Q,f,dfdx)
 % f - function handle of ODEs of system equations
 % dfdx - function handle of partial derivatives of df/dx 
 
-    nStates = length(xi); 
+%     nStates = length(xi); 
     
     % extract constant parameters out of struct: 
     th = params.th; 

@@ -85,6 +85,7 @@ h = g(xMinus,params.c); % predicted model output
 Kv = K*(yMeas' - h);    % effective correction of Kalman Gain on state estimate (n,1); 
 % Kv = zeros(nStates,1);  % XY Rania
 
+
 xPlus = xMinus + Kv;    % updated state estimation
 
 % apply Joseph-Algorithm: 

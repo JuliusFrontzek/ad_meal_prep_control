@@ -6,7 +6,8 @@ import pdb
 import sys
 import os
 import random
-import ad_meal_prep_control.state_estimator as state_estimator
+# import ad_meal_prep_control.state_estimator as state_estimator
+import state_estimator
 import substrates
 
 rel_do_mpc_path = os.path.join("..", "..")
