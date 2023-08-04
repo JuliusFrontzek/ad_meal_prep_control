@@ -30,7 +30,7 @@ store_results = True
 
 # Model
 model_type = "R3-frac-norm"
-substrate_names = ["corn"]
+substrate_names = ["corn", "corn"]
 xi = substrates.xi_values(model_type, substrate_names)
 
 if model_type == "R3-frac":
@@ -83,53 +83,32 @@ elif model_type == "R4-frac":
     )
 elif model_type == "R3-frac-norm":
     # Set the initial state of mpc and simulator
-    x0Norm = np.array(
+    x0 = np.array(
         [
-            0.878474066127602,
-            0.999999900040164,
-            0.933730953851068,
-            0.882336418918662,
-            0.999999995095856,
-            0.999999999988468,
-            0.999984804739496,
-            0.999999530600200,
-            0.999998927072078,
-            0.999996522412598,
-            0.999996609020940,
-            0.999985987995331,
-            1.00000000000000,
-            0.878406260523190,
-            0.929943174578399,
-            0.784593153260128,
-            0.956768888763069,
-            0.969419709921008,
+            0.0959467827166042,
+            0.0125956088566735,
+            4.64551507877156,
+            0.850445630702126,
+            957.771504116945,
+            5.17942682112536,
+            1.61926162860691e-09,
+            1.49423713467601,
+            0.627629518798448,
+            1.96096023576704,
+            0.535229147950488,
+            13.9999999999977,
+            0.0487500000000000,
+            0.0956777093602567,
+            4.22707761131655,
+            0.0188914691525065,
+            0.355199814936346,
+            0.640296031589364,
         ]
     )
 
     # Normalisation
     # Define numeric values for normalization with steady state
-    Tx = np.array(
-        [
-            0.109219823638302,
-            0.0125956101155577,
-            4.97521803226548,
-            0.963856429890969,
-            957.771508813996,
-            5.17942682118517,
-            1.61928623408307e-09,
-            1.49423783607141,
-            0.627630192200464,
-            1.96096705520169,
-            0.535230962909218,
-            14.0001961708128,
-            0.0487500000000000,
-            0.108921934550271,
-            4.54552248672517,
-            0.0240780448734638,
-            0.371249336286256,
-            0.660494133806800,
-        ]
-    )
+    Tx = x0.copy()
     feedVolFlowSS = 8.0
     Tu = feedVolFlowSS
     Ty = np.array(
@@ -145,15 +124,12 @@ elif model_type == "R3-frac-norm":
         ]
     )
 
-    # Normalize simulation inputs
-    uNorm = feedVolFlowSS / Tu
-    # x0SSNorm = x0 / Tx
     xInNorm = xi / Tx
 
-    x0 = x0Norm
+    x0 = x0 / Tx
 
     # Set model
-    model = adm1_r3_frac_norm(xInNorm, uNorm, Tu, Tx, Ty)
+    model = adm1_r3_frac_norm(xInNorm, Tu, Tx, Ty)
 else:
     raise NotImplementedError(f"Model '{model_type}' not implemented.")
 
@@ -166,10 +142,12 @@ n_steps = 336
 
 # Feeding
 constant_feeding = True
-feed = np.zeros(n_steps)
+feed = np.zeros((n_steps, 2))
 
 feed[120:144] = 7.0 * 24 / Tu  # 42.0
 feed[264:312] = 3.0 * 24 / Tu  # 18.0
+
+feed[:, :] = feed[:, :] / 2.0
 
 # Set x0
 mpc.x0 = x0
@@ -211,7 +189,10 @@ timer = Timer()
 for k in range(n_steps):
     timer.tic()
     if constant_feeding:
-        u0 = np.array([[feed[k]]])
+        if feed.shape[1] == 1:
+            u0 = np.array([[feed[k]]])
+        else:
+            u0 = np.array([feed[k]]).T
     else:
         u0 = mpc.make_step(x0)
     timer.toc()
@@ -221,8 +202,8 @@ for k in range(n_steps):
 
     if show_animation:
         if constant_feeding:
-            if "u" in plot_vars:
-                results["u"][k] = u0
+            # if "u" in plot_vars:
+            #     results["u"][k] = u0
 
             for var in plot_vars:
                 if var.startswith("x"):

@@ -3,9 +3,7 @@
 % Erstelldatum: 25.04.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = extendedKalmanFilterMultiRate(xOld,POld,feedInfo,...
-                        yMeas,params,Q,R,f,g,dfdx,dhdx, ...
-                        tSpan,nStates,qOn,qOff,flagAugmented,flagMajor)
+function [xPlus,PPlus] = extendedKalmanFilterMultiRate(xOld,POld,feedInfo,yMeas,params,Q,R,f,g,dfdx,dhdx,tSpan,nStates,qOn,qOff,flagAugmented,flagMajor)
 
 % compute time & measurement update with Joseph-version of EKF for
 % multirate measurements
@@ -44,6 +42,8 @@ if any(xOld<0)
 end 
 
 %% Time Update
+% XY: Achtung: du musst drauf achten, wie viele Einträge x und P
+% normalerweise und während der delay period haben!
 xPOld = [xOld;reshape(POld,[],1)];  % combined vector of xHat and P
 
 tEvents = feedInfo(:,1);    % feeding time points (an/aus)

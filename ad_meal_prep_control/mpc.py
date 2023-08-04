@@ -57,8 +57,8 @@ def mpc_setup(model, model_type: str):
     # mpc.set_rterm(u=0.1)
 
     # # Hard constraints
-    mpc.bounds["lower", "_u", "u"] = 0.0
-    mpc.bounds["upper", "_u", "u"] = 200.0
+    mpc.bounds["lower", "_u", "uNorm"] = 0.0
+    mpc.bounds["upper", "_u", "uNorm"] = 10.0
 
     for i in range(num_states):
         mpc.bounds["lower", "_x", f"x_{i+1}"] = 0.0

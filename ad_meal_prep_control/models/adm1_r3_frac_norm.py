@@ -13,7 +13,6 @@ import do_mpc
 
 def adm1_r3_frac_norm(
     xi_norm: np.ndarray,
-    uNorm: np.ndarray,
     Tu: np.ndarray,
     Tx: np.ndarray,
     Ty: np.ndarray,
@@ -94,7 +93,7 @@ def adm1_r3_frac_norm(
             2557.53314272449,
             250.309598974637,
             -985.781671025363,
-            173780.0828749375,
+            173780.082874937,
             4937.07339753436,
             11.1028665270807,
             10,
@@ -350,7 +349,7 @@ def adm1_r3_frac_norm(
     ).transpose()
 
     # Input
-    u = model.set_variable(var_type="_u", var_name="u", shape=(num_inputs, 1))
+    uNorm = model.set_variable(var_type="_u", var_name="uNorm", shape=(num_inputs, 1))
 
     # Time-variant parameters
     theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
@@ -445,15 +444,15 @@ def adm1_r3_frac_norm(
     # model.set_expression("y_8", Tx[0] / Ty[7] * x_norm[0])
 
     if num_inputs > 1:
-        sum_u = cumsum(u)[1]
+        sum_u = cumsum(Tu * uNorm)[1]
     else:
-        sum_u = u
+        sum_u = Tu * uNorm
 
     # Differential equations
 
     model.set_rhs(
         "x_1",
-        c[0] * (xi_norm[0] - x_norm[0]) * Tu * uNorm
+        c[0] * (xi_norm[0, :] @ (Tu * uNorm) - sum_u * x_norm[0])
         + a[0, 0] * theta[0] * Tx[5] / Tx[0] * x_norm[5]
         + a[0, 1] * theta[1] * Tx[6] / Tx[0] * x_norm[6]
         + a[0, 2] * theta[2] * Tx[7] / Tx[0] * x_norm[7]
@@ -468,7 +467,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_2",
-        c[0] * (xi_norm[1] - x_norm[1]) * Tu * uNorm
+        c[0] * (xi_norm[1, :] @ (Tu * uNorm) - sum_u * x_norm[1])
         + a[1, 0] * theta[0] * Tx[5] / Tx[1] * x_norm[5]
         + a[1, 1] * theta[1] * Tx[6] / Tx[1] * x_norm[6]
         + a[1, 2] * theta[2] * Tx[7] / Tx[1] * x_norm[7]
@@ -487,7 +486,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_3",
-        c[0] * (xi_norm[2] - x_norm[2]) * Tu * uNorm
+        c[0] * (xi_norm[2, :] @ (Tu * uNorm) - sum_u * x_norm[2])
         + a[2, 0] * theta[0] * Tx[5] / Tx[2] * x_norm[5]
         + a[2, 1] * theta[1] * Tx[6] / Tx[2] * x_norm[6]
         + a[2, 2] * theta[2] * Tx[7] / Tx[2] * x_norm[7]
@@ -507,7 +506,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_4",
-        c[0] * (xi_norm[3] - x_norm[3]) * Tu * uNorm
+        c[0] * (xi_norm[3, :] @ (Tu * uNorm) - sum_u * x_norm[3])
         - a[3, 0] * theta[0] * Tx[5] / Tx[3] * x_norm[5]
         - a[3, 1] * theta[1] * Tx[6] / Tx[3] * x_norm[6]
         + a[3, 2] * theta[2] * Tx[7] / Tx[3] * x_norm[7]
@@ -524,7 +523,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_5",
-        c[0] * (xi_norm[4] - x_norm[4]) * Tu * uNorm
+        c[0] * (xi_norm[4, :] @ (Tu * uNorm) - sum_u * x_norm[4])
         - a[4, 0] * theta[0] * Tx[5] / Tx[4] * x_norm[5]
         - a[4, 1] * theta[1] * Tx[6] / Tx[4] * x_norm[6]
         - a[4, 2] * theta[2] * Tx[7] / Tx[4] * x_norm[7]
@@ -541,33 +540,37 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_6",
-        c[0] * (theta[8] * xi_norm[5] - x_norm[5]) * Tu * uNorm
+        c[0] * (theta[8] * xi_norm[5, :] @ (Tu * uNorm) - sum_u * x_norm[5])
         - theta[0] * x_norm[5]
         + a[5, 5] * theta[4] * Tx[9] / Tx[5] * x_norm[9]
         + a[5, 6] * theta[4] * Tx[10] / Tx[5] * x_norm[10],
     )
     model.set_rhs(
         "x_7",
-        c[0] * ((1 - theta[8]) * Tx[5] / Tx[6] * xi_norm[5] - x_norm[6]) * Tu * uNorm
+        c[0]
+        * (
+            (1 - theta[8]) * Tx[5] / Tx[6] * xi_norm[5, :] @ (Tu * uNorm)
+            - sum_u * x_norm[6]
+        )
         - theta[1] * x_norm[6],
     )
     model.set_rhs(
         "x_8",
-        c[0] * (xi_norm[7] - x_norm[7]) * Tu * uNorm
+        c[0] * (xi_norm[7, :] @ (Tu * uNorm) - sum_u * x_norm[7])
         - theta[2] * x_norm[7]
         + a[7, 5] * theta[4] * Tx[9] / Tx[7] * x_norm[9]
         + a[7, 6] * theta[4] * Tx[10] / Tx[7] * x_norm[10],
     )
     model.set_rhs(
         "x_9",
-        c[0] * (xi_norm[8] - x_norm[8]) * Tu * uNorm
+        c[0] * (xi_norm[8, :] @ (Tu * uNorm) - sum_u * x_norm[8])
         - theta[3] * x_norm[8]
         + a[8, 5] * theta[4] * Tx[9] / Tx[8] * x_norm[9]
         + a[8, 6] * theta[4] * Tx[10] / Tx[8] * x_norm[10],
     )
     model.set_rhs(
         "x_10",
-        c[0] * (xi_norm[9] - x_norm[9]) * Tu * uNorm
+        c[0] * (xi_norm[9, :] @ (Tu * uNorm) - sum_u * x_norm[9])
         + a[9, 0] * theta[0] * Tx[5] / Tx[9] * x_norm[5]
         + a[9, 1] * theta[1] * Tx[6] / Tx[9] * x_norm[6]
         + a[9, 2] * theta[2] * Tx[7] / Tx[9] * x_norm[7]
@@ -576,7 +579,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_11",
-        c[0] * (xi_norm[10] - x_norm[10]) * Tu * uNorm
+        c[0] * (xi_norm[10, :] @ (Tu * uNorm) - sum_u * x_norm[10])
         + theta[5]
         * Tx[0]
         * x_norm[0]
@@ -585,8 +588,8 @@ def adm1_r3_frac_norm(
         * IacNorm
         - theta[4] * x_norm[10],
     )
-    model.set_rhs("x_12", c[0] * (xi_norm[11] - x_norm[11]) * Tu * uNorm)
-    model.set_rhs("x_13", c[0] * (xi_norm[12] - x_norm[12]) * Tu * uNorm)
+    model.set_rhs("x_12", c[0] * (xi_norm[11, :] @ (Tu * uNorm) - sum_u * x_norm[11]))
+    model.set_rhs("x_13", c[0] * (xi_norm[12, :] @ (Tu * uNorm) - sum_u * x_norm[12]))
     model.set_rhs(
         "x_14",
         c[28] * (Tx[0] / Tx[13] * x_norm[0] - x_norm[13])

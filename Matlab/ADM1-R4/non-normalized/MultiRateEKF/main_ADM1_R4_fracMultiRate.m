@@ -32,7 +32,7 @@ kp = 5e4;       % friction parameter [l/bar/d]
 T = 273.15;     % operating temperature [K]
 Vl = 100;       % liquid volume, aus Sörens GitHub [l]
 Vg = 10;        % gas volume, aus Sörens GitHub [l]
-rho = 1000;     % mass density of digestate [g/l]
+rho = 1;        % mass density of digestate [kg/l]
 Mch4 = 16;      % molar mass CH4 [kg/kmol]
 Mco2 = 44;      % molar mass CO2 [kg/kmol]
 
@@ -83,6 +83,12 @@ xIn = [0,     0,   0.592, 960.512, 23.398, 0,     4.75,  1.381, 0,    17,     0,
 % assume 1 g/l ash concentration:
 x0ch = 3.26;    % total carbohydrates initial value
 x0SS = [0.091, 0.508, 0.944, 956.97, fracChFast*x0ch, (1-fracChFast)*x0ch, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
+
+% adjust stoichiometric parameters of water/ash for unit change g/l --> kg/l: 
+aNum([4,10],:) = aNum([4,10],:)./1000; 
+% same for concentrations of water/ash at inlet & initial value for determining steady state: 
+xIn([4,10]) = xIn([4,10])./1000; 
+x0SS([4,10]) = x0SS([4,10])./1000; 
 
 % combine constant parameters in struct (index "Num" for numeric values): 
 params = struct;    % allocate memory 
@@ -360,9 +366,8 @@ scatter(tOfflineSample,yMeasOff(:,1),'DisplayName','noisy',...
         'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 % hold last measurement value till end of simulation:
-stairs([tOfflineSample;tEnd],[yCleanOff(:,1);yCleanOff(end,1)], ...
-        'LineStyle','-.', 'Color', colorPaletteHex(2), ...
-        'LineWidth',1.5, 'DisplayName','clean')
+stairs([tOfflineSample;tEnd],[yCleanOff(:,1);yCleanOff(end,1)],'r',...
+       'LineWidth',1.2,'DisplayName','clean')
 ylabel('inorg. nitrogen in g/L')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
@@ -377,10 +382,8 @@ subplot(3,2,5)
 scatter(tOfflineSample,yMeasOff(:,2),'DisplayName','noisy',...
         'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
-% hold last measurement value till end of simulation:
-stairs([tOfflineSample;tEnd],[yCleanOff(:,2);yCleanOff(end,2)],...
-        'DisplayName','clean', 'LineStyle','-.', ...
-        'Color', colorPaletteHex(2), 'LineWidth',1.5);
+stairs([tOfflineSample;tEnd],[yCleanOff(:,2);yCleanOff(end,2)],'DisplayName','clean',...
+       'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('total solids [-]')
 xlabel('time [d]')
 yyaxis right
@@ -396,10 +399,8 @@ subplot(3,2,6)
 scatter(tOfflineSample,yMeasOff(:,3),'DisplayName','noisy',...
         'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
 hold on; 
-% hold last measurement value till end of simulation:
-stairs([tOfflineSample;tEnd],[yCleanOff(:,3);yCleanOff(end,3)], ...
-        'DisplayName','clean', 'LineStyle','-.', ...
-        'Color', colorPaletteHex(2), 'LineWidth',1.5);
+stairs([tOfflineSample;tEnd],[yCleanOff(:,3);yCleanOff(end,3)],'DisplayName','clean',...
+       'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('volatile solids [-]')
 xlabel('time [d]')
 yyaxis right
@@ -413,7 +414,8 @@ set(gca, "YColor", 'k')
 sgtitle('clean and noisy measurements from ADM1-R4-frac')
 
 %% save results in struct MESS: 
-
+% XY: umbenennen: Return --> Arrival
+% XY: umbenennen: Send --> Sampling
 MESS.tOnline = tOnline;
 MESS.tOfflineSample = tOfflineSample; 
 MESS.tOfflineArrival = tOfflineArrival; 
