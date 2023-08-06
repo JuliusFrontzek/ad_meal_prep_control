@@ -16,7 +16,9 @@ addpath('measurementEquations/')
 %% choose model type, normalization, and optionally -frac
 flagModel = 4;  % 3: ADM1-R3; 4: ADM1-R4
 flagNorm = 0;   % 0: absolute coordinates; 1: normalized coordinates
-flagFrac = 0;   % 0: no -frac (only 1 CH-fraction); 1: -frac (second CH-fraction)
+flagFrac = 1;   % 0: no -frac (only 1 CH-fraction); 1: -frac (second CH-fraction)
+
+fracChFast = 0.8; 
 
 switch flagModel
     case 3
@@ -34,12 +36,6 @@ load('SoerensFiles/Model_data/ADM1_input_data.mat')
 load(['generatedOutput/SteadyState_',num2str(model),'_Soeren.mat'])
 
 %% inlet concentrations:
-feedVolFlowSS = resultsSoeren.input(2); 
-
-% obtain inlet concentrations and initial value for steady-state transition:
-[xIn,x0SS] = getXInX0SS(flagModel,flagFrac,resultsSoeren); 
-nStates = numel(xIn); 
-
 % obtain parameters:
 params = getParameters(flagModel,flagFrac,system,parameters); 
 cNum = params.c; 
@@ -49,7 +45,6 @@ aNum = params.a;
 % times: 
 tEnd = 7;   % [d] End of Simulation
 tSS = 300;  % [d] Dauer, bis steady state als erreicht gilt (~ 1/3 Jahr) 
-
 % feeding intervals: 
 intShort = 0.5;     % [d]
 intLong = 2.5;      % [d]
@@ -80,7 +75,11 @@ portions = feedFactors*feedMax; % [l/d]
 feedVolFlow = zeros(nIntervals,1);  % allocate memory
 feedVolFlow(idxFeedOn) = portions;       
 
-% construct matrix of inlet concentrations at tFeedOn: 
+% obtain inlet concentrations and initial values for steady-state
+% transition...
+[xIn,x0SS] = getXInX0SS(flagModel,flagFrac,resultsSoeren,fracChFast); 
+nStates = numel(xIn); 
+% ...and construct matrix of inlet concentrations at tFeedOn: 
 nFeedings = length(tFeedOn); 
 xInMat = zeros(nIntervals,nStates);         % allocate memory 
 % at times when there is feeding, introduce the input concentrations:
@@ -92,58 +91,75 @@ inputMat = [feedVolFlow,xInMat];
 sza = size(aNum); 
 szc = size(cNum); 
 szth = size(thNum); 
-[f,g] = getSystemEquations(flagModel,flagFrac,nStates,sza,szc,szth); 
+if flagNorm == 0
+    [f,g] = getSystemEquations(flagModel,flagFrac,nStates,sza,szc,szth); 
+else 
+    % XY: diese Funktion noch testen!
+    [fNorm,gNorm] = getSystemEquationsNorm(flagModel,flagFrac,nStates,sza,szc,szth); 
+end
 
 %% determine steady state as initial value for simulation: 
 tSpanSS = [0,tSS]; 
+feedVolFlowSS = resultsSoeren.input(2); 
 odeFunSS = @(t,x) f(x,feedVolFlowSS,xIn,thNum,cNum,aNum); 
-% odeFunSSNum = @(t,x) ADM1_R3_ode(x,feedVolFlowSS,xIn,thNum,cNum,aNum); 
 [tVecSS,xVecSS] = ode15s(odeFunSS,tSpanSS,x0SS); 
-x0DynR3 = xVecSS(end,:)';   % start actual simulation in steady state 
-x0 = x0DynR3;         % to be overwritten
+x0Dyn = xVecSS(end,:)';   % start actual simulation in steady state 
+x0 = x0Dyn;         % to be overwritten
 
-%% derive normalized system equations
-q = 8;    % # of measurement signals; XY: nur fürs R3!
-[fNorm,gNorm] = getSystemEquationsNorm(flagModel,flagFrac,nStates,sza,szc,szth);
-
-% define numeric values for normalization with steady state: 
-TxNum = x0; 
-y0 = g(x0,cNum);    % steady state output
-TyNum = y0; 
-TuNum = feedVolFlowSS; % u0
-
-% summarize in stuct to save them: 
-TNum = struct; 
-TNum.Tx = TxNum; 
-TNum.Ty = TyNum; 
-TNum.Tu = TuNum;
-
-% normalize simulation inputs:
-uNorm = feedVolFlowSS./TuNum; 
-x0SSNorm = x0SS./TxNum; 
-xInNorm = xIn./TxNum; 
-
-%% simulate transition into steady state in normalized coordinates:
-% XY: das ist hier nicht unbedingt nötig, denn du könntest auch direkt x0
-% normieren. War eher zur Validierung gedacht!
-odeFunNormSS = @(t,xNorm) fNorm(xNorm,uNorm,xInNorm,thNum,cNum,aNum,TxNum,TuNum); 
-[tVecSSNorm,xSSNorm] = ode15s(odeFunNormSS,tSpanSS,x0SSNorm);
-nSamplesTillSS = size(xSSNorm,1); 
-x0DynNorm = xSSNorm(end,:)'; % extract only last value as actual steady state
-x0Norm = x0DynNorm;
- 
-% compute state trajectories during dynamic feeding scenario:
 if flagNorm == 1
-    % case a: in normalized coordinates:
+    %% derive normalized system equations
+    % define numeric values for normalization with steady state: 
+    TxNum = x0; 
+    y0 = g(x0,cNum);    % steady state output
+    TyNum = y0; 
+    TuNum = feedVolFlowSS; % u0
+    
+    % summarize in stuct to save them: 
+    TNum = struct; 
+    TNum.Tx = TxNum; 
+    TNum.Ty = TyNum; 
+    TNum.Tu = TuNum;
+    
+    % normalize simulation inputs:
+    uNorm = feedVolFlowSS./TuNum; 
+    x0SSNorm = x0SS./TxNum; 
+    xInNorm = xIn./TxNum; 
+
+    %% simulate transition into steady state in normalized coordinates:
+    % XY: das ist hier nicht unbedingt nötig, denn du könntest auch direkt x0
+    % normieren. War eher zur Validierung gedacht!
+    odeFunNormSS = @(t,xNorm) fNorm(xNorm,uNorm,xInNorm,thNum,cNum,aNum,TxNum,TuNum); 
+    [tVecSSNorm,xSSNorm] = ode15s(odeFunNormSS,tSpanSS,x0SSNorm);
+    nSamplesTillSS = size(xSSNorm,1); 
+    x0DynNorm = xSSNorm(end,:)'; % extract only last value as actual steady state
+    x0Norm = x0DynNorm;
+end
+ 
+%% compute state trajectories during dynamic feeding scenario:
+if flagNorm == 0
+    % case a: in absolute coordinates:
+    xSol = computeXTrajectories(x0,f,inputMat,tEvents,tOverall,tGrid,tEnd,thNum,cNum,aNum,nStates); 
+else
+    % case b: in normalized coordinates:
     xSolNorm = computeXTrajectoriesNorm(x0Norm,fNorm,inputMat,tEvents,tOverall,tGrid,tEnd,thNum,cNum,aNum,nStates,TxNum,TuNum); 
     xSol = repmat(TxNum',N,1).*xSolNorm;    % de-normalize states
-else
-    % case b: in absolute coordinates:
-    xSol = computeXTrajectories(x0,f,inputMat,tEvents,tOverall,tGrid,tEnd,thNum,cNum,aNum,nStates); 
 end
 
 %% compute output variables
-if flagNorm == 1
+% set # of measurement signals:
+switch flagModel
+    case 4
+        q = 6; 
+    case 3
+        q = 8;
+end
+
+if flagNorm == 0
+    yClean = zeros(N,q); % allocate memory
+    for k = 1:N
+        yClean(k,:) = g(xSol(k,:)',cNum)'; % Simons Implementierung (arXiv)
+    end
+else 
     yCleanNorm = zeros(N,q); % allocate memory
     for k = 1:N
         yCleanNorm(k,:) = gNorm(xSolNorm(k,:)', cNum, TxNum, TyNum);
@@ -151,11 +167,6 @@ if flagNorm == 1
     
     % de-normalize outputs:
     yClean = repmat(TyNum',N,1).*yCleanNorm;
-else 
-    yClean = zeros(N,q); % allocate memory
-    for k = 1:N
-        yClean(k,:) = g(xSol(k,:)',cNum)'; % Simons Implementierung (arXiv)
-    end
 end
 
 % add measurement noise to clean outputs (adapt sigmas therein):
@@ -166,7 +177,7 @@ plotOutputs(flagModel,flagFrac,yClean,yMeas,feedVolFlow,tGrid,tEvents)
 
 %% save results in struct MESS: 
 MESS.t = tGrid; 
-MESS.x0 = x0DynR3;  % steady state as initial value for dynamic simulation
+MESS.x0 = x0Dyn;  % steady state as initial value for dynamic simulation
 % MESS.xSim = [tSim,xSimNorm]; 
 MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
 MESS.yClean = yClean; 
@@ -184,4 +195,8 @@ currPath = pwd;
 pathToResults = fullfile(currPath,'generatedOutput');
 mkdir(pathToResults);   % create subfolder (gives warning if exists yet)
 fileName = 'Messung_ADM1_R3_norm.mat'; 
-save(fullfile(pathToResults,fileName), 'MESS', 'params', 'TNum')
+if flagNorm == 0
+    save(fullfile(pathToResults,fileName), 'MESS', 'params')
+else
+    save(fullfile(pathToResults,fileName), 'MESS', 'params', 'TNum')
+end

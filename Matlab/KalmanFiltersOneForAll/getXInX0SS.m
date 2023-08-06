@@ -3,7 +3,7 @@
 % Erstelldatum: 12.07.2023
 % Autor: Simon Hellmann
 
-function  [xIn,x0SS] = getXInX0SS(flagModel,flagFrac,resultsSoeren)
+function  [xIn,x0SS] = getXInX0SS(flagModel,flagFrac,resultsSoeren,varargin)
 % returns the inlet concentrations xIn and the initial concentrations x0SS
 % for computing the state trajectory into steady state 
 
@@ -14,6 +14,11 @@ function  [xIn,x0SS] = getXInX0SS(flagModel,flagFrac,resultsSoeren)
 % flagFrac -        0: no -frac (only 1 CH-fraction); 1: -frac (second CH-fraction)
 % resultsSoeren -   struct from Sörens GitHub containing both initial ...
 % conditions and inlet concentrations
+% optional: fracChFast - share of fast carbohydrates in total carbohydrates
+
+if flagFrac == 1
+    fracChFast = varargin{1}; 
+end
 
 %% inlet concentrations XIn:
 % miscellaneous for inlet concentrations:
@@ -45,14 +50,15 @@ switch flagModel
         end
     case 4
         if flagFrac == 0
-            %      S_ch4, S_IC,S_IN,  S_h2o,   X_ch,   X_pr,  X_li,  X_bac,X_ash,  S_ch4,g, S_co2,g
-    %       xIn = [0,     0,   0.592, 960.512, 23.398, 4.75,  1.381, 0,    17,     0,    0]'; % [g/l], 
             xIn = nan(nStatesSoeren + 1,1); % mind that Soeren has no Ash!   
             xIn([1:8,10:end]) = xInPre'; 
             xIn(9) = xAshIn;
         else 
-            % XY: Eingangs-Konzentrationen für XchS einfügen mit
-            % fracChFast!
+            xIn = nan(nStatesSoeren + 2,1); % mind that Soeren has no Ash and no 2nd CH fraction   
+            xIn([1:5,7:9,11:end]) = xInPre'; 
+            xIn(6) = 0;     % assign all carbohydrates in to CH_fast. 
+            % only separate total carbs in in convection terms of ODE!
+            xIn(10) = xAshIn;
         end
 end
 
@@ -73,16 +79,16 @@ switch flagModel
             x0SS(1:10) = x0Pre(1:10);       % all states up to X_ac 
             x0SS(13:end) = x0Pre(13:end);   % all other states 
             % overwrite values in positions of S_an/S_cat with those for S_ion/X_ash:
-            xAsh0 = 1; % assume 1 g/l initial ash concentration
             x0SS(11) = xAsh0;
             x0SS(12) = Sion0;   
-            % since the dissociation constants KaIN and Kaco2 were increased, increase
-            % the initial values of biomass to sustain a positive steady state:
+            % since the dissociation constants KaIN and Kaco2 were increased 
+            % compared with Sörens false values on GitHub, increase the
+            % initial values of biomass to sustain a positive steady state:
             x0SS(9) = 1.5*x0SS(9);      % microbial biomass 
             x0SS(10) = 1.5*x0SS(10);    % methanogens
         else
             % XY: Werte für XchS hinzufügen!
-        
+            
         end
 
     case 4
@@ -92,7 +98,14 @@ switch flagModel
             x0SS(9) = xAsh0; 
         else 
             % XY: Werte für XchS einfügen!
-
+            x0SS = nan(nStatesSoeren + 2,1); % mind that Soeren has no Ash and no 2nd CH fraction   
+%             x0SS = [0.091, 0.508, 0.944, 956.97, fracChFast*x0ch, (1-fracChFast)*x0ch, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
+            x0chTot = x0Pre(5); 
+            x0SS([1:4,7:9,11:end]) = x0Pre([1:4,6:end]); 
+            x0chFast = fracChFast*x0chTot; 
+            x0chSlow = (1 - fracChFast)*x0chTot; 
+            x0SS(5:6) = [x0chFast;x0chSlow]; 
+            x0SS(10) = xAsh0; 
         end
 
 end
