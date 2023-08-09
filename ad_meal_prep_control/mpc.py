@@ -11,13 +11,8 @@ sys.path.append(rel_do_mpc_path)
 import do_mpc
 
 
-def mpc_setup(model, model_type: str):
-    if model_type in ["R3-frac", "R3-frac-norm"]:
-        num_states = 18
-    elif model_type == "R4-frac":
-        num_states = 14
-    else:
-        raise NotImplementedError(f"Model '{model_type}' not implemented.")
+def mpc_setup(model):
+    num_states = 20
 
     mpc = do_mpc.controller.MPC(model)
 
@@ -57,8 +52,8 @@ def mpc_setup(model, model_type: str):
     # mpc.set_rterm(u=0.1)
 
     # # Hard constraints
-    mpc.bounds["lower", "_u", "uNorm"] = 0.0
-    mpc.bounds["upper", "_u", "uNorm"] = 10.0
+    mpc.bounds["lower", "_u", "u_norm"] = 0.0
+    mpc.bounds["upper", "_u", "u_norm"] = 10.0
 
     for i in range(num_states):
         mpc.bounds["lower", "_x", f"x_{i+1}"] = 0.0

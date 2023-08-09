@@ -29,111 +29,117 @@ show_animation = True
 store_results = True
 
 # Model
-model_type = "R3-frac-norm"
 substrate_names = ["corn", "corn"]
-xi = substrates.xi_values(model_type, substrate_names)
 
-if model_type == "R3-frac":
-    # Set model
-    model = adm1_r3_frac(xi)
-    # Set the initial state of mpc and simulator
-    x0 = np.array(
-        [
-            0.0959467827268156,
-            0.0125956088575309,
-            4.64551507823071,
-            0.850445630490791,
-            957.771504117476,
-            5.17942682165898,
-            0,
-            1.49423713477719,
-            0.627629518812174,
-            1.96096023676352,
-            0.535229148231421,
-            13.9999999815809,
-            0.0487500000000000,
-            0.0956777093701918,
-            4.22707761079332,
-            0.0188914691405196,
-            0.355199814946965,
-            0.640296031561076,
-        ]
-    )
-elif model_type == "R4-frac":
-    # Set model
-    model = adm1_r4_frac(xi)
-    # Set the initial state of mpc and simulator
-    x0 = np.array(
-        [
-            0.0221697506048759,
-            0.554580163344390,
-            0.557189956577887,
-            0.959887916032620,
-            2.03934924735466,
-            14.7843348334834,
-            4.14214818444786,
-            1.28561345217435,
-            1.01590412485130,
-            0.0170000000000000,
-            0.386609337719045,
-            0.924038131164312,
-            0.0,
-            0.0,
-        ]
-    )
-elif model_type == "R3-frac-norm":
-    # Set the initial state of mpc and simulator
-    x0 = np.array(
-        [
-            0.0959467827166042,
-            0.0125956088566735,
-            4.64551507877156,
-            0.850445630702126,
-            957.771504116945,
-            5.17942682112536,
-            1.61926162860691e-09,
-            1.49423713467601,
-            0.627629518798448,
-            1.96096023576704,
-            0.535229147950488,
-            13.9999999999977,
-            0.0487500000000000,
-            0.0956777093602567,
-            4.22707761131655,
-            0.0188914691525065,
-            0.355199814936346,
-            0.640296031589364,
-        ]
-    )
+model_type = "continuous"  # either 'discrete' or 'continuous'
+model = do_mpc.model.Model(model_type)
 
-    # Normalisation
-    # Define numeric values for normalization with steady state
-    Tx = x0.copy()
-    feedVolFlowSS = 8.0
-    Tu = feedVolFlowSS
-    Ty = np.array(
-        [
-            140.300279906936,
-            0.574083930894918,
-            0.376314347120225,
-            7.31094007321728,
-            0.850445630702126,
-            0.0422284958830547,
-            0.668470313534998,
-            0.0959467827166042,
-        ]
-    )
 
-    xInNorm = xi / Tx
+xi = substrates.xi_values(model, substrate_names)
 
-    x0 = x0 / Tx
+# if model_type == "R3-frac":
+#     # Set model
+#     model = adm1_r3_frac(xi)
+#     # Set the initial state of mpc and simulator
+#     x0 = np.array(
+#         [
+#             0.0959467827268156,
+#             0.0125956088575309,
+#             4.64551507823071,
+#             0.850445630490791,
+#             957.771504117476,
+#             5.17942682165898,
+#             0,
+#             1.49423713477719,
+#             0.627629518812174,
+#             1.96096023676352,
+#             0.535229148231421,
+#             13.9999999815809,
+#             0.0487500000000000,
+#             0.0956777093701918,
+#             4.22707761079332,
+#             0.0188914691405196,
+#             0.355199814946965,
+#             0.640296031561076,
+#         ]
+#     )
+# elif model_type == "R4-frac":
+#     # Set model
+#     model = adm1_r4_frac(xi)
+#     # Set the initial state of mpc and simulator
+#     x0 = np.array(
+#         [
+#             0.0221697506048759,
+#             0.554580163344390,
+#             0.557189956577887,
+#             0.959887916032620,
+#             2.03934924735466,
+#             14.7843348334834,
+#             4.14214818444786,
+#             1.28561345217435,
+#             1.01590412485130,
+#             0.0170000000000000,
+#             0.386609337719045,
+#             0.924038131164312,
+#             0.0,
+#             0.0,
+#         ]
+#     )
+# elif model_type == "R3-frac-norm":
+# Set the initial state of mpc and simulator
+x0 = np.array(
+    [
+        0.0959467827166042,
+        0.0125956088566735,
+        4.64551507877156,
+        0.850445630702126,
+        957.771504116945,
+        5.17942682112536,
+        1.61926162860691e-09,
+        1.49423713467601,
+        0.627629518798448,
+        1.96096023576704,
+        0.535229147950488,
+        13.9999999999977,
+        0.0487500000000000,
+        0.0956777093602567,
+        4.22707761131655,
+        0.0188914691525065,
+        0.355199814936346,
+        0.640296031589364,
+        0.000001,
+        0.000001,
+    ]
+)
 
-    # Set model
-    model = adm1_r3_frac_norm(xInNorm, Tu, Tx, Ty)
-else:
-    raise NotImplementedError(f"Model '{model_type}' not implemented.")
+# Normalisation
+# Define numeric values for normalization with steady state
+Tx = x0.copy()
+feedVolFlowSS = 8.0
+Tu = np.array([feedVolFlowSS for _ in range(xi.shape[1] + 1)])
+Tu[
+    -1
+] = 1.0  # TODO: Find proper value for normalizing V_ch4 output (it's a manipulated variable though)
+Ty = np.array(
+    [
+        140.300279906936,
+        0.574083930894918,
+        0.376314347120225,
+        7.31094007321728,
+        0.850445630702126,
+        0.0422284958830547,
+        0.668470313534998,
+        0.0959467827166042,
+    ]
+)
 
-mpc = mpc_setup(model, model_type)
+xInNorm = xi / Tx[:-2]
+
+x0 = x0 / Tx
+
+# Set model
+model = adm1_r3_frac_norm(xInNorm, Tu, Tx, Ty)
+mpc = mpc_setup(model)
 simulator = template_simulator(model)
 estimator = state_estimator.StateEstimator(model)
 
@@ -141,19 +147,20 @@ estimator = state_estimator.StateEstimator(model)
 n_steps = 336
 
 # Feeding
-constant_feeding = True
-feed = np.zeros((n_steps, 2))
+constant_feeding = False
+feed = np.zeros((n_steps, 3))
 
 feed[120:144] = 7.0 * 24 / Tu  # 42.0
 feed[264:312] = 3.0 * 24 / Tu  # 18.0
 
 feed[:, :] = feed[:, :] / 2.0
+feed[:, 2] = 1.0
 
 # Set x0
 mpc.x0 = x0
 simulator.x0 = x0
 
-plot_vars = ["u", "x_13", "x_14", "x_8"] + [f"y_{i+1}" for i in range(8)]
+plot_vars = ["u_norm", "x_13", "x_14", "x_8"] + [f"y_{i+1}" for i in range(8)]
 # plot_vars = ["u"] + [f"x_{i+1}" for i in range(18)]
 
 if not constant_feeding:

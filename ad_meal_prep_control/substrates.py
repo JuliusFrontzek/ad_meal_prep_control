@@ -1,5 +1,7 @@
 import numpy as np
 import casadi
+from do_mpc.model import Model
+import substrate_uncertainties
 
 
 class ADM1_R3_FRAC_XI:
@@ -88,14 +90,19 @@ class ADM1_R4_FRAC_XI:
     shit[9] = shit[9] / 1000.0
 
 
-def xi_values(model_type: str, substrate_names: list[str]) -> np.ndarray:
+def xi_values(
+    model: Model,
+    substrate_names: list[str],
+    model_type: str = "R3-frac-norm",
+    include_uncertainties: bool = True,
+) -> np.ndarray:
     assert isinstance(substrate_names, list), f"'substrate_names' must be of type list."
     if model_type == "R3-frac":
-        model = ADM1_R3_FRAC_XI
+        xi_type = ADM1_R3_FRAC_XI
     elif model_type == "R4-frac":
-        model = ADM1_R4_FRAC_XI
+        xi_type = ADM1_R4_FRAC_XI
     elif model_type == "R3-frac-norm":
-        model = ADM1_R3_FRAC_NORM_XI
+        xi_type = ADM1_R3_FRAC_NORM_XI
     else:
         raise NotImplementedError(f"Model '{model_type}' not implemented.")
 
@@ -103,7 +110,7 @@ def xi_values(model_type: str, substrate_names: list[str]) -> np.ndarray:
 
     for substrate in substrate_names:
         try:
-            xi.append(getattr(model, substrate).T)
+            xi.append(getattr(xi_type, substrate).T)
         except AttributeError:
             raise AttributeError(
                 f"The specified model '{model_type}' does not have xi values specified for the substrate '{substrate}'."

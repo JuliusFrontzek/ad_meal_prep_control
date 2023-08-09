@@ -11,12 +11,12 @@ close all
 
 %% define parameters like Sören: 
 % Load standard model parameters
+load('Model_data/ADM1_parameters.mat')
 addpath("Model_data/")
 % load('Model_data\ADM1_parameters.mat')
 load('ADM1_parameters.mat')
 % Load experimental data
-% load('Model_data\ADM1_input_data.mat')
-load('ADM1_input_data.mat')
+load('Model_data/ADM1_input_data.mat')
 % load steady-state values from Sören's implementation: 
 load('SteadyState_ADM1-R3_Soeren.mat')
 
@@ -520,3 +520,4 @@ MESS.yMeas = yMeas;
 MESS.C = noiseCovMat; % accurate values from sensor data sheets
 
 save('Messung_ADM1_R3_frac_norm.mat', 'MESS', 'params')
+writematrix(xSolNorm, "matlab_results.csv")

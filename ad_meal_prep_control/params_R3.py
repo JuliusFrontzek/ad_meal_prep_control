@@ -40,3 +40,8 @@ k_AB_IN = 1.0 * 10**10  # l/mol/d
 K_a_ac = 1.737800828749374 * 10 ** (-5.0)  # mol/l
 K_a_co2 = 4.937073397534361 * 10 ** (-7.0)  # mol/l
 K_a_IN = 1.110286652708067 * 10 ** (-9.0)  # mol/l
+
+# Parameters introduced by Julius
+p_gas_storage = p0 * 1.001  # slightly larger than atmospheric pressure [bar]
+p_norm = p0  # [bar]
+T_norm = 273.15  # [K]
