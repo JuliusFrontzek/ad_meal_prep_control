@@ -1,42 +1,74 @@
 import numpy as np
 from casadi import *
 from casadi.tools import *
-import pdb
 import sys
 import os
+import random
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
 import do_mpc
 
 
-def template_simulator(model):
+def simulator_setup(
+    model: do_mpc.model.Model,
+    t_step: float,
+    x_ch_in: np.ndarray,
+    x_pr_in: np.ndarray,
+    x_li_in: np.ndarray,
+    vol_flow_rate: np.ndarray,
+):
     simulator = do_mpc.simulator.Simulator(model)
 
     params_simulator = {
         "integration_tool": "cvodes",
         "abstol": 1e-10,
         "reltol": 1e-10,
-        "t_step": 0.5 / 24,
+        "t_step": t_step,
     }
 
     simulator.set_param(**params_simulator)
 
-    # tvp_num = simulator.get_tvp_template()
+    tvp_num = simulator.get_tvp_template()
 
-    # def tvp_fun(t_now):
-    #     return tvp_num
+    def tvp_fun(t_now):
+        t_now_idx = int(t_now / t_step)
+        tvp_num["v_ch4_dot_out", 0] = vol_flow_rate[t_now_idx]
+        return tvp_num
 
-    # simulator.set_tvp_fun(tvp_fun)
+    simulator.set_tvp_fun(tvp_fun)
 
-    # p_num = simulator.get_p_template()
-    # p_num["alpha"] = 1
-    # p_num["beta"] = 1
+    # uncertain parameter realization in simulator -> drawn from uniform distribution
+    # in between min and max values of uncertainties
+    p_num = simulator.get_p_template()
+    p_num["x_ch_in"] = np.array(
+        [
+            random.uniform(np.min(x_ch_in[:, i]), np.max(x_ch_in[:, i]))
+            for i in range(x_ch_in.shape[1])
+        ]
+    )
+    p_num["x_pr_in"] = np.array(
+        [
+            random.uniform(np.min(x_pr_in[:, i]), np.max(x_pr_in[:, i]))
+            for i in range(x_pr_in.shape[1])
+        ]
+    )
+    p_num["x_li_in"] = np.array(
+        [
+            random.uniform(np.min(x_li_in[:, i]), np.max(x_li_in[:, i]))
+            for i in range(x_li_in.shape[1])
+        ]
+    )
 
-    # def p_fun(t_now):
-    #     return p_num
+    # TODO: REMOVE THIS ONCE THE MODEL WORKS AGAIN
+    p_num["x_ch_in"] = np.array([21.252807116999996])
+    p_num["x_pr_in"] = np.array([4.749313514999999])
+    p_num["x_li_in"] = np.array([1.38096405])
 
-    # simulator.set_p_fun(p_fun)
+    def p_fun(t_now):
+        return p_num
+
+    simulator.set_p_fun(p_fun)
 
     simulator.setup()
 

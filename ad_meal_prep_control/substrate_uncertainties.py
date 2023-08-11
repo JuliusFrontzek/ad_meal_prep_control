@@ -12,7 +12,7 @@ def delta_xc_(delta_xa, delta_xp, delta_xl):
 
 
 def fq_ch_(xc, fq_ges, xa, xp, xl):
-    return xc ** (-1) * (fq_ges * (1000.0 - xa) - xp - xl)
+    return xc ** (-1) * (fq_ges * (1.0 - xa) - xp - xl)
 
 
 def delta_fq_ch_(

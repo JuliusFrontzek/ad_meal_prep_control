@@ -45,3 +45,4 @@ K_a_IN = 1.110286652708067 * 10 ** (-9.0)  # mol/l
 p_gas_storage = p0 * 1.001  # slightly larger than atmospheric pressure [bar]
 p_norm = p0  # [bar]
 T_norm = 273.15  # [K]
+T_gas_storage = 323.15  # [K]
