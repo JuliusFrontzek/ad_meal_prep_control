@@ -101,8 +101,7 @@ Ty = np.array(
     ]
 )
 
-# xInNorm = xi / Tx[:-2]
-xInNorm = list(np.array([val / Tx[i] for i, val in enumerate(xi)]).T)
+xInNorm = list(np.array([val / Tx[:-2] for val in xi]).T)
 
 x0 = x0 / Tx
 
@@ -180,8 +179,10 @@ feed[264:312] = 3.0 * 24 / Tu  # 18.0
 mpc.x0 = x0
 simulator.x0 = x0
 
-plot_vars = ["u_norm", "x_13", "x_14", "x_8"] + [f"y_{i+1}" for i in range(8)]
-plot_vars = [f"y_{i+1}" for i in range(8)]  # + ["x_19", "x_20"]
+plot_vars = ["u_norm", "x_13", "x_14", "x_8", "x_19", "x_20"] + [
+    f"y_{i+1}" for i in range(8)
+]
+# plot_vars = [f"y_{i+1}" for i in range(8)]  # + ["x_19", "x_20"]
 # plot_vars = ["u"] + [f"x_{i+1}" for i in range(18)]
 # plot_vars = ["u", "x_13", "x_14", "x_8"]
 

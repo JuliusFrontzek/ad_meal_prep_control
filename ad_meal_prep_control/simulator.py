@@ -60,11 +60,6 @@ def simulator_setup(
         ]
     )
 
-    # TODO: REMOVE THIS ONCE THE MODEL WORKS AGAIN
-    p_num["x_ch_in"] = np.array([21.252807116999996])
-    p_num["x_pr_in"] = np.array([4.749313514999999])
-    p_num["x_li_in"] = np.array([1.38096405])
-
     def p_fun(t_now):
         return p_num
 
