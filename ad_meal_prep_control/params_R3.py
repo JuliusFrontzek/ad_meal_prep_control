@@ -4,10 +4,7 @@ kchS = kchF / 10.0
 kpr = 0.2
 kli = 0.1
 kdec = 0.02
-fracChFast = (
-    1
-    - 1e-10  # fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
-)
+fracChFast = 0.75  # fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
 mu_m_ac = 0.4  # 1/d
 K_S_ac = 0.14  # g/l
 K_I_nh3 = 0.0306  # g/l
@@ -23,8 +20,8 @@ p0 = 1.0133  # atmospheric pressure [bar]
 kla = 200  # mass transfer coefficient [1/d]
 kp = 5e4  # friction parameter [l/bar/d]
 T = 311  # operating temperature [K]
-Vl = 100  # liquid volume, aus Sörens GitHub [l]
-Vg = 10  # gas volume, aus Sörens GitHub [l]
+Vl = 163000.0  # liquid volume, aus Sörens GitHub [l]
+Vg = 26000.0  # gas volume, aus Sörens GitHub [l]
 rho = 1000  # mass density of digestate [kg/l]
 Mch4 = 16  # molar mass CH4 [kg/kmol]
 Mco2 = 44  # molar mass CO2 [kg/kmol]
