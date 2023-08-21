@@ -24,7 +24,7 @@ def mpc_setup(
 
     setup_mpc = {
         "n_horizon": n_horizon,
-        "n_robust": 1,
+        "n_robust": 0,
         "open_loop": 0,
         "t_step": t_step,
         "state_discretization": "collocation",
@@ -56,23 +56,30 @@ def mpc_setup(
     # Scaling of units for better conditioning of optimization problem
     # mpc.scaling["_u", "u"] = 100
 
-    mterm = (
-        model.x[f"x_{14}"] - 0.95
-    ) ** 2  # + (model.x[f"x_{num_states}"] - 0.8) ** 2
-    lterm = (
-        model.x[f"x_{14}"] - 0.95
-    ) ** 2  # + (        model.x[f"x_{num_states}"] - 0.8    ) ** 2
+    # mterm = (model.x[f"x_{19}"] - 300.0) ** 2
+    # lterm = (model.x[f"x_{19}"] - 300.0) ** 2
+    mterm = (model.x[f"x_{14}"] - 1.0) ** 2
+    lterm = (model.x[f"x_{14}"] - 1.0) ** 2
     # mterm = (model.aux["y_2"] - 0.4) ** 2
     # lterm = (model.aux["y_2"] - 0.4) ** 2
     mpc.set_objective(lterm=lterm, mterm=mterm)
 
-    # mpc.set_rterm(u=0.1)
+    mpc.set_rterm(u_norm=0.1)
 
-    # # Hard constraints
+    # Hard constraints
     mpc.bounds["lower", "_u", "u_norm"] = 0.0
     mpc.bounds["upper", "_u", "u_norm"] = 10.0
     # mpc.bounds["lower", "_u", "u"] = 0.0
     # mpc.bounds["upper", "_u", "u"] = 10.0
+
+    # NL constraints
+    mpc.set_nl_cons(
+        "max_vol_gas_storage",
+        model._aux_expression["v_gas_storage"],
+        ub=150,
+        soft_constraint=True,
+        penalty_term_cons=1e2,
+    )
 
     for i in range(num_states):
         mpc.bounds["lower", "_x", f"x_{i+1}"] = 0.0

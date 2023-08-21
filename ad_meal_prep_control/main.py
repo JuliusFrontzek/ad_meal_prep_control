@@ -6,6 +6,7 @@ import sys
 import os
 import ad_meal_prep_control.utils as utils
 import params_R3
+import copy
 
 # import ad_meal_prep_control.state_estimator as state_estimator
 import state_estimator
@@ -35,25 +36,34 @@ model = do_mpc.model.Model(model_type)
 # _, x_ch_nom, x_pr_nom, x_li_nom = substrates.xi_values(substrate_names)
 # subs = substrates.get_subs(substrate_names)
 corn = substrates.CORN
-subs = [corn]  # + [corn.create_similar_substrate() for _ in range(2)]
+subs = [corn] + [corn.create_similar_substrate() for _ in range(2)]
 xi = [sub.xi for sub in subs]
 uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in subs]
 
 # Simulation
 n_steps = 336
-t_step = 0.5 / 24
+t_step = 0.5 / 24  # Time in days
 
 # MPC
 n_horizon = 10
 
 # Set up CHP
-chp = utils.CHP(max_power=300.0)
+chp = utils.CHP(max_power=124.0)
 chp_load = np.zeros(n_steps + n_horizon)
-for i in range(5):
-    chp_load[5 + i :: 10] = 100.0
+for i in range(12):
+    chp_load[i::48] = 1.0  # 6:00 - 12:00
+    chp_load[18 + i :: 48] = 1.0  # 15:00 - 21:00
 
 vol_flow_rate = chp.compute_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
+)
+
+# Set up disturbances
+disturbances = utils.Disturbances(
+    # state_jumps={0: (12, 0.5), 1: (13, 0.2)},
+    # max_feeding_error=(0.01, 0.01, 0.01),
+    # feed_computation_stuck=(2, 5),
+    # clogged_feeding={1: (2, 10), 1: (2, 10)},
 )
 
 # Set the initial state of mpc and simulator
@@ -77,15 +87,15 @@ x0 = np.array(
         0.0188914691525065,
         0.355199814936346,
         0.640296031589364,
-        0.000001,
-        0.000001,
+        39.0,  # m^3
+        36.0,  # m^3
     ]
 )
 
 # Normalisation
 # Define numeric values for normalization with steady state
 Tx = x0.copy()
-feedVolFlowSS = 8.0
+feedVolFlowSS = 8.0 * 15000.0
 Tu = np.array([feedVolFlowSS for _ in range(len(xi))])
 
 Ty = np.array(
@@ -103,7 +113,7 @@ Ty = np.array(
 
 xInNorm = list(np.array([val / Tx[:-2] for val in xi]).T)
 
-x0 = x0 / Tx
+x0[:-2] /= Tx[:-2]
 
 # Set model
 model = adm1_r3_frac_norm(xInNorm, Tu, Tx, Ty)
@@ -167,11 +177,11 @@ estimator = state_estimator.StateEstimator(model)
 
 
 # Feeding
-constant_feeding = True
-feed = np.zeros((n_steps, 1))
+constant_feeding = False
+# feed = np.zeros((n_steps, 1))
 
-feed[120:144] = 7.0 * 24 / Tu  # 42.0
-feed[264:312] = 3.0 * 24 / Tu  # 18.0
+# feed[120:144] = 7.0 * 24 / Tu  # 42.0
+# feed[264:312] = 3.0 * 24 / Tu  # 18.0
 
 # feed[:, :] = feed[:, :]  # / 3.0
 
@@ -216,29 +226,66 @@ else:
 
 timer = Timer()
 
+u_norm_computed = None
 for k in range(n_steps):
     timer.tic()
+    u_norm_computed_old = copy.copy(u_norm_computed)
     if constant_feeding:
         # if feed.shape[1] == 1:
-        #     u0 = np.array([[feed[k]]])
+        #     u_norm = np.array([[feed[k]]])
         # else:
-        u0 = np.array([feed[k]]).T
+        u_norm_computed = np.array([feed[k]]).T
         # pass
     else:
-        u0 = mpc.make_step(x0)
+        u_norm_computed = mpc.make_step(x0)
+
+    u_norm_actual = np.copy(u_norm_computed)
+
+    # Manipulate the actual feed to the biogas plant 'u_norm_actual'
+    # based on the set disturbances
+    if not disturbances.feed_computation_stuck is None:
+        stuck_start_idx = disturbances.feed_computation_stuck[0]
+        stuck_end_idx = stuck_start_idx + disturbances.feed_computation_stuck[1]
+        if k in range(stuck_start_idx, stuck_end_idx):
+            u_norm_actual = copy.copy(u_norm_computed_old)
+            u_norm_computed = copy.copy(u_norm_computed_old)
+
+    if not disturbances.clogged_feeding is None:
+        for sub_idx, val in disturbances.clogged_feeding.items():
+            if k in range(val[0], val[0] + val[1]):
+                u_norm_actual[sub_idx, 0] = 0.0
+
+    if not disturbances.max_feeding_error is None:
+        u_norm_actual *= (
+            1.0
+            + np.array(
+                [
+                    np.random.uniform(low=-1.0, high=1.0, size=u_norm_actual.shape[0])
+                    * disturbances.max_feeding_error
+                ]
+            ).T
+        )
+
+    print(u_norm_computed)
+    print(u_norm_actual)
     timer.toc()
 
-    x_next = simulator.make_step(u0)
-    x0 = estimator.make_step(x_next)
+    y_next = simulator.make_step(u_norm_actual)
+    x0 = estimator.make_step(y_next)
+
+    if not disturbances.state_jumps is None:
+        for x_idx, val in disturbances.state_jumps.items():
+            if k == val[0]:
+                x0[x_idx] += val[1]
 
     if show_animation:
         if constant_feeding:
             if "u" in plot_vars:
-                results["u"][k] = u0
+                results["u"][k] = u_norm_actual
 
             for var in plot_vars:
                 if var.startswith("x"):
-                    results[var][k] = x_next[int(var.lstrip("x_")) - 1]
+                    results[var][k] = y_next[int(var.lstrip("x_")) - 1]
                 elif var.startswith("y"):
                     idx = int(var.lstrip("y_"))
                     results[var][k] = simulator.data._aux[-1, idx]

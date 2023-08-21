@@ -408,13 +408,18 @@ def adm1_r3_frac_norm(
         / p_gas_storage
         * (Tx[18] * x_norm[18] + Tx[19] * x_norm[19]),
     )
+
+    v_gas_storage = model.set_expression(
+        "v_gas_storage", Tx[18] * x_norm[18] + Tx[19] * x_norm[19] + v_h2o
+    )
+
     y_h2o = model.set_expression(
         "y_h2o",
-        v_h2o / (Tx[18] * x_norm[18] + Tx[19] * x_norm[19] + v_h2o),
+        v_h2o / (v_gas_storage),
     )
     y_co2 = model.set_expression(
         "y_co2",
-        Tx[19] * x_norm[19] / (Tx[18] * x_norm[18] + Tx[19] * x_norm[19] + v_h2o),
+        Tx[19] * x_norm[19] / (v_gas_storage),
     )
 
     p_ch4_phase_change = model.set_expression(
@@ -521,8 +526,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_6",
-        c[0]
-        * (theta[8] * SX(xi_norm[5]).T @ (Tu * u_norm) - sum_u * x_norm[5])
+        c[0] * (theta[8] * SX(xi_norm[5]).T @ (Tu * u_norm) - sum_u * x_norm[5])
         - theta[0] * x_norm[5]
         + a[5, 5] * theta[4] * Tx[9] / Tx[5] * x_norm[9]
         + a[5, 6] * theta[4] * Tx[10] / Tx[5] * x_norm[10],
@@ -617,6 +621,7 @@ def adm1_r3_frac_norm(
     model.set_rhs(
         "x_19",
         y_1
+        / 1000.0
         * p_norm
         / p_gas_storage
         * T
@@ -628,6 +633,7 @@ def adm1_r3_frac_norm(
     model.set_rhs(
         "x_20",
         y_1
+        / 1000.0
         * p_norm
         / p_gas_storage
         * T
