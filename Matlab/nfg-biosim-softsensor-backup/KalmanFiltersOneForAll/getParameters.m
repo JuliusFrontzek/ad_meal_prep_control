@@ -19,6 +19,9 @@ V_gas = s(2);  % liquid volume
 % p_atm = s(3);  % atmospheric pressure [bar] XY: Achtung: Typo im GitHub
 p_atm = 1.0133; 
 
+% global value for fraction of fast carbohydrates:
+fracChFast = 0.5; 
+
 switch flagModel
     case 3
         % renaming for easier understanding: 
@@ -98,7 +101,12 @@ switch flagModel
         % combine all in column vector: 
         cNum = [c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,...
                 c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33]';
-    
+        
+        if flagFrac == 1
+            k_ch_F = k_ch;          % war vorher der Wert für kch
+            k_ch_S = 1E-1*k_ch_F;   % selbst gewählt
+        end
+
     case 4
         % code-Abschnitt für R4 und R4-frac noch überprüfen!
         parameters = parameters.ADM1_R4.Variables; % modelParameters
@@ -110,7 +118,6 @@ switch flagModel
         if flagFrac == 1
             k_ch_F = k_ch;         % war vorher der Wert für kch
             k_ch_S = 1E-1*k_ch_F;   % selbst gewählt
-            fracChFast = 0.5; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
         end
 
         % Henry coefficients: [mol/l/bar] (Tab. B.7 in Sörens Diss)
@@ -162,16 +169,16 @@ end
 % time-variant parameters
 switch flagModel
     case 3
-        if flagFrac == 0
+        if flagFrac == 0    % R3
             thNum = [k_ch, 0, k_pr, k_li, k_dec, k_m_ac, K_S_ac, K_I_nh3, 0]';
-        else 
-            % XY: Fall R3-frac nachtragen
+        else                % R3-frac
+            thNum = [k_ch_F, k_ch_S, k_pr, k_li, k_dec, k_m_ac, K_S_ac, K_I_nh3, 0]';
         end
     
     case 4
-        if flagFrac == 0
+        if flagFrac == 0    % R4
             thNum = [k_ch,  0,      k_pr, k_li, k_dec, 0]'; 
-        else
+        else                % R4-frac
             thNum = [k_ch_F,k_ch_S, k_pr, k_li, k_dec, fracChFast]'; 
         end
 

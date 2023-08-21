@@ -28,25 +28,30 @@ xAshIn = 14; % selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Ma
 
 switch flagModel
     case 3
+        % beachte: in Sörens GitHub sind die Start- und Eingangswerte der Ionen 
+        % fehlerhafterweise verkehrtrum definiert. Er würde gerne die Reihenfolge
+        % der Zustände in der Petersen-Matrix umkehren (erst cat, dann an). Korrekt 
+        % ist es folgendermaßen:
+        ScatIn = xInPre(11);
+        SanIn = xInPre(12); 
+        SionIN = ScatIn - SanIn; 
+        % adapt inlet concentrations for slightly different state indexing in
+        % Simon's ADM1-R3 models (X_ash, S_ion = S_cat - S_an):
         if flagFrac == 0
-            % beachte: in Sörens GitHub sind die Start- und Eingangswerte der Ionen 
-            % fehlerhafterweise verkehrtrum definiert. Er würde gerne die Reihenfolge
-            % der Zustände in der Petersen-Matrix umkehren (erst cat, dann an). Korrekt 
-            % ist es folgendermaßen:
-            ScatIn = xInPre(11);
-            SanIn = xInPre(12); 
-            SionIN = ScatIn - SanIn; 
-            % adapt inlet concentrations for slightly different state indexing in
-            % Simon's ADM1-R3 model (X_ash, S_ion = S_cat - S_an):
             xIn = nan(nStatesSoeren,1); % allocate memory
             xIn([1:10,13:end]) = xInPre([1:10,13:end])'; % all states except Xash and Sion
             % overwrite values in positions of S_an/S_cat with those for S_ion/X_ash:
             xIn(11) = xAshIn;  
             xIn(12) = SionIN; 
         else
-            % Gleichungen für R3-frac nachtragen
-            % XY: du wirst dann fracChFast als Argument in der Funktion
-            % getXInX0SS.m brauchen!
+            % consider second CH fraction:
+            xIn = nan(nStatesSoeren + 1,1); % allocate memory
+            xIn([1:6,8:11,14:end]) = xInPre([1:10,13:end])'; % all states except Xchslow, Xash and Sion
+            xIn(7) = 0;     % all inlet carbohydrates are assigned to the 
+            % fast fraction. Separation in fast/slow only in ODE function
+            % overwrite values in positions of S_an/S_cat with those for S_ion/X_ash:
+            xIn(12) = xAshIn;  
+            xIn(13) = SionIN; 
         end
     case 4
         if flagFrac == 0
@@ -69,12 +74,12 @@ xAsh0 = 1;                  % selbst gewählt
 
 switch flagModel
     case 3
+        Scat0 = x0Pre(11); 
+        San0 = x0Pre(12); 
+        Sion0 = Scat0 - San0; 
+        % adapt initial condition for slightly different state indexing in standard 
+        % control notation (X_ash, S_ion = S_cat - S_an): 
         if flagFrac == 0
-            Scat0 = x0Pre(11); 
-            San0 = x0Pre(12); 
-            Sion0 = Scat0 - San0; 
-            % adapt initial condition for slightly different state indexing in standard 
-            % control notation (X_ash, S_ion = S_cat - S_an): 
             x0SS = nan(nStatesSoeren,1); 
             x0SS(1:10) = x0Pre(1:10);       % all states up to X_ac 
             x0SS(13:end) = x0Pre(13:end);   % all other states 
@@ -87,8 +92,17 @@ switch flagModel
             x0SS(9) = 1.5*x0SS(9);      % microbial biomass 
             x0SS(10) = 1.5*x0SS(10);    % methanogens
         else
+            % consider additional CH fraction
             % XY: Werte für XchS hinzufügen!
-            
+            x0SS = nan(nStatesSoeren + 1,1); % allocate memory
+            x0SS([1:5,8:11,14:end]) = xInPre([1:5,7:10,13:end])'; % all states except Xch (slow and fast), Xash and Sion
+            % overwrite values in positions of S_an/S_cat with those for S_ion/X_ash:
+            x0SS(12) = xAsh0;
+            x0SS(13) = Sion0;
+            % add corbohydrate inlet concentrations: 
+            Xch0 = x0Pre(6);   
+            x0SS(6) = fracChFast*Xch0; 
+            x0SS(7) = (1-fracChFast)*Xch0;
         end
 
     case 4
