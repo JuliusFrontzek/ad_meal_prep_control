@@ -18,7 +18,7 @@ class TestVapourPressure(unittest.TestCase):
         }
         for temp, true_press in true_pressures.items():
             self.assertAlmostEqual(
-                vapour_pressure_h2o(temp),
+                vapour_pressure_h2o(temp + 273.15),
                 true_press * 1.0e-2,
                 delta=true_press / 10000.0,
             )
