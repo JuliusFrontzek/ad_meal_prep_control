@@ -1,9 +1,6 @@
 from __future__ import annotations
 import numpy as np
-import casadi
-from do_mpc.model import Model
 from dataclasses import dataclass
-from typing import ClassVar
 import substrate_uncertainties
 from uncertainties import ufloat
 from copy import deepcopy
@@ -24,6 +21,9 @@ class Substrate:
                                 Xi values describing the composition of the substrate.
                                 The uncertain ones (Carbohydrates, proteins, lipids) will be
                                 ignored later when used with do-mpc.
+        state:
+                                The physical state of the substrate.
+                                Must be either solid or liquid.
 
     Order: XP, XL, XA, BMP, TS
     """
@@ -31,8 +31,14 @@ class Substrate:
     nominal_values: np.ndarray
     variation_coefficients: np.ndarray
     xi: list
+    state: str
 
     def __post_init__(self):
+        assert self.state in [
+            "solid",
+            "liquid",
+        ], f"The physical state of an input must be either solid or liquid, not '{self.state}'."
+
         # Conversion of percentages to decimal numbers where appropriate
         self.nominal_values /= 100.0
         self.nominal_values[3] *= 100.0
@@ -109,6 +115,7 @@ CORN = Substrate(
         0,
         0,
     ],
+    state="solid",
 )
 
 
