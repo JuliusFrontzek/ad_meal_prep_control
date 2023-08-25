@@ -24,37 +24,35 @@ aS = sym('a', sza);     % petersen matrix with stoichiometric constants
 switch flagModel
     case 3
         if flagFrac == 0             
-            % compute symbolic objects:
+            % compute symbolic objects for R3:
             dynamics = ADM1_R3_ode_sym(xS, uS, xiS, thS, cS, aS);
             outputs = ADM1_R3_mgl_sym(xS,cS); 
-            % transform into numeric function handles. Note that the independet
-            % variables are explicitely defined. Their order must be followed when 
-            % using the function handle!
-            f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
-            g = matlabFunction(outputs, 'Vars', {xS, cS}); 
+        else    % consider second CH fraction
+            % compute symbolic objects for R3-frac:
+            dynamics = ADM1_R3_frac_ode_sym(xS, uS, xiS, thS, cS, aS);
+            outputs = ADM1_R3_frac_mgl_sym(xS,cS); 
         end % if
+        % transform into numeric function handles. Note that the independet
+        % variables are explicitely defined. Their order must be followed when 
+        % using the function handle!
+        f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
+        g = matlabFunction(outputs, 'Vars', {xS, cS}); 
     case 4
         if flagFrac == 0 % R4 in abs coordinates  
             % compute symbolic objects:
             dynamics = ADM1_R4_ode_sym(xS, uS, xiS, thS, cS, aS);
             outputs = ADM1_R4_mgl_sym(xS,cS); 
-            
-            % transform into numeric function handle. Note that the independet
-            % variables are explicitely defined. Their order must be followed when 
-            % using the function handle!
-            f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
-            g = matlabFunction(outputs, 'Vars', {xS, cS}); 
-
         else % R4-frac:
             % compute symbolic objects:
             dynamics = ADM1_R4_frac_ode_sym(xS, uS, xiS, thS, cS, aS); 
             outputs = ADM1_R4_frac_mgl_sym(xS,cS); 
-            
-            % transform into numeric function handle. Note that the independet
-            % variables are explicitely defined. Their order must be followed when 
-            % using the function handle!
-            f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
-            g = matlabFunction(outputs, 'Vars', {xS, cS}); 
-        end
+        end % if
+        
+        % transform into numeric function handle. Note that the independet
+        % variables are explicitely defined. Their order must be followed when 
+        % using the function handle!
+        f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
+        g = matlabFunction(outputs, 'Vars', {xS, cS}); 
+        
 end % switch
 end % fun

@@ -16,7 +16,7 @@ addpath('measurementEquations/')
 %% choose model type, normalization, and optionally -frac
 flagModel = 3;  % 3: ADM1-R3; 4: ADM1-R4
 flagNorm = 0;   % 0: absolute coordinates; 1: normalized coordinates
-flagFrac = 1;   % 0: no -frac (only 1 CH-fraction); 1: -frac (second CH-fraction)
+flagFrac = 0;   % 0: no -frac (only 1 CH-fraction); 1: -frac (second CH-fraction)
 
 fracChFast = 0.8; 
 

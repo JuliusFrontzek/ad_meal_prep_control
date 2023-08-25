@@ -105,10 +105,10 @@ intMed = 0.5;       % [d]
 % ints = [intLong,intShort,intLong,intMed]';
 % ... and transform intervals to absolute times:
 % cumInts = cumsum(ints);     % cumulated intervals
-tFeedOnWeek = [1;2.5;4.5;6];  % beginning times of feedings (1 week)
+tFeedOnWeek = [1;2.5;4.5;6];  % beginning times of feedings (1 single week)
 tFeedOn = [tFeedOnWeek;tFeedOnWeek + 7]; 
-feedingDurationsWeek = [intMed; intShort; intMed; intShort];
-feedingDurations = repmat(feedingDurationsWeek,2,1); 
+feedingDurationsWeek = [intMed; intShort; intMed; intShort];% 1 single week
+feedingDurations = repmat(feedingDurationsWeek,2,1);        % 2 weeks
 tFeedOff = tFeedOn + feedingDurations; % end times of feedings
 tEvents = sort([0;tFeedOn;tFeedOff]); 
 dt = 5/60/24;           % sample time [min], converted to [d]
@@ -268,7 +268,7 @@ xSolOn = repmat(TxNum',NOn,1).*xSolOnNorm;
 %% compute output variables
 % case 1: only online measurements
 q = 6;   
-yCleanNorm = zeros(NOn,q); % allocate memory
+yCleanNorm = nan(NOn,q); % allocate memory
 for k = 1:NOn
     yCleanNorm(k,:) = gNorm(xSolOnNorm(k,:)',cNum,TxNum,TyNum)'; % Simons Implementierung (arXiv)
 end
@@ -278,7 +278,7 @@ yClean = repmat(TyNum',NOn,1).*yCleanNorm;
 % case 2: online and offline measurements (no delay)
 dtStd = 3;          % sample time for offline measurements [d]
 tStdOffset = 0.5;   % dont start first std. measurement right at beginning 
-% times when standard samples were taken (TS, VS, NH4-N):
+% times when standard samples are taken (TS, VS, NH4-N):
 tStdSample = (tStdOffset:dtStd:tEnd)';  % no delay 
 NStd = numel(tStdSample);   % # std. measurement samples
 
@@ -492,4 +492,4 @@ MESS.C = noiseCovMat; % accurate values from sensor data sheets
 MESS.COn = noiseCovMatOn;
 MESS.COff = noiseCovMatOff;
 
-save('Messung_ADM1_R4_frac_norm_MultiRate.mat', 'MESS', 'params','TNum')
+save('Messung_ADM1_R4_frac_norm_IntensiveSampling.mat', 'MESS', 'params','TNum')
