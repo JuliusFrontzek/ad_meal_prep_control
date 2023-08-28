@@ -3,6 +3,7 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
+from params_R3 import *
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -56,10 +57,10 @@ def mpc_setup(
     # Scaling of units for better conditioning of optimization problem
     # mpc.scaling["_u", "u"] = 100
 
-    # mterm = (model.x[f"x_{19}"] - 300.0) ** 2
-    # lterm = (model.x[f"x_{19}"] - 300.0) ** 2
-    mterm = (model.x[f"x_{14}"] - 1.0) ** 2
-    lterm = (model.x[f"x_{14}"] - 1.0) ** 2
+    # mterm = (model.x[f"x_{19}"] - 80.0) ** 2
+    # lterm = (model.x[f"x_{19}"] - 80.0) ** 2
+    mterm = -model.x[f"x_{19}"]
+    lterm = -model.x[f"x_{19}"]
     # mterm = (model.aux["y_2"] - 0.4) ** 2
     # lterm = (model.aux["y_2"] - 0.4) ** 2
     mpc.set_objective(lterm=lterm, mterm=mterm)
@@ -68,7 +69,7 @@ def mpc_setup(
 
     # Hard constraints
     mpc.bounds["lower", "_u", "u_norm"] = 0.0
-    mpc.bounds["upper", "_u", "u_norm"] = 10.0
+    mpc.bounds["upper", "_u", "u_norm"] = 1.0
     # mpc.bounds["lower", "_u", "u"] = 0.0
     # mpc.bounds["upper", "_u", "u"] = 10.0
 
@@ -76,13 +77,17 @@ def mpc_setup(
     mpc.set_nl_cons(
         "max_vol_gas_storage",
         model._aux_expression["v_gas_storage"],
-        ub=150,
+        ub=V_GAS_STORAGE_MAX,
         soft_constraint=True,
-        penalty_term_cons=1e2,
+        penalty_term_cons=1e7,
     )
 
-    for i in range(num_states):
-        mpc.bounds["lower", "_x", f"x_{i+1}"] = 0.0
+    # Bounds for states
+    # for i in range(num_states):
+    #     mpc.bounds["lower", "_x", f"x_{i+1}"] = 0.0
+
+    mpc.bounds["lower", "_x", "x_19"] = 0.0
+    mpc.bounds["lower", "_x", "x_20"] = 0.0
 
     # # Soft constraints with slack variables
     # mpc.set_nl_cons(

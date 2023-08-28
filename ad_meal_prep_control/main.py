@@ -7,10 +7,11 @@ import os
 import ad_meal_prep_control.utils as utils
 import params_R3
 import copy
-
-# import ad_meal_prep_control.state_estimator as state_estimator
+import pygame
+import ad_meal_prep_control.visualization as vis
 import state_estimator
 import substrates
+import time
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -26,9 +27,16 @@ from simulator import simulator_setup
 show_animation = True
 store_results = True
 
-# Model
-# substrate_names = ["corn", "corn"]
+# pygame setup
+pygame.init()
+screen_size = (1280, 720)
+screen = pygame.display.set_mode(screen_size)
+clock = pygame.time.Clock()
 
+bga = vis.BioGasPlant(150.0, screen)
+data = vis.Data(screen)
+
+# Model
 model_type = "continuous"  # either 'discrete' or 'continuous'
 model = do_mpc.model.Model(model_type)
 
@@ -41,20 +49,25 @@ xi = [sub.xi for sub in subs]
 uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in subs]
 
 # Simulation
-n_steps = 336
+n_days_steady_state = 100
+n_days_mpc = 7
+
 t_step = 0.5 / 24  # Time in days
+n_steps_steady_state = round(n_days_steady_state / t_step)
+n_steps = round(n_days_mpc / t_step)
+
 
 # MPC
-n_horizon = 10
+n_horizon = 5
 
 # Set up CHP
-chp = utils.CHP(max_power=124.0)
+chp = utils.CHP(max_power=75.0)
 chp_load = np.zeros(n_steps + n_horizon)
-for i in range(12):
+for i in range(6):
     chp_load[i::48] = 1.0  # 6:00 - 12:00
     chp_load[18 + i :: 48] = 1.0  # 15:00 - 21:00
 
-vol_flow_rate = chp.compute_vol_flow_rate(
+vol_flow_rate = chp.ch4_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
 )
 
@@ -87,16 +100,45 @@ x0 = np.array(
         0.0188914691525065,
         0.355199814936346,
         0.640296031589364,
-        39.0,  # m^3
-        36.0,  # m^3
+        39.0 * 1.7,  # m^3
+        36.0 * 1.7,  # m^3
     ]
 )
+
+state_names = [
+    "S_ac",
+    "S_ch4",
+    "S_IC",
+    "S_IN",
+    "S_h2o",
+    "X_ch_f",
+    "X_ch_s",
+    "X_pr",
+    "X_li",
+    "X_bac",
+    "X_ac",
+    "X_ash",
+    "S_ion",
+    "S_ac−",
+    "S_hco3−",
+    "S_nh3",
+    "S_ch4_gas",
+    "S_co2_gas",
+    "V_CH4",
+    "V_CO2",
+]
+
+meas_names = ["V´_g", "p_CH4", "p_CO2", "pH", "S_IN", "TS", "VS", "S_ac"]
 
 # Normalisation
 # Define numeric values for normalization with steady state
 Tx = x0.copy()
-feedVolFlowSS = 8.0 * 15000.0
-Tu = np.array([feedVolFlowSS for _ in range(len(xi))])
+
+Tx[-2:] = 1.0
+
+u_max = {"solid": 80_000.0, "liquid": 450_000.0}
+
+Tu = np.array([u_max[sub.state] for sub in subs])
 
 Ty = np.array(
     [
@@ -111,14 +153,15 @@ Ty = np.array(
     ]
 )
 
-xInNorm = list(np.array([val / Tx[:-2] for val in xi]).T)
+xi_norm = list(np.array([val / Tx[:-2] for val in xi]).T)
 
-x0[:-2] /= Tx[:-2]
+x0_norm = np.copy(x0)
+x0_norm[:-2] /= Tx[:-2]
 
 # Set model
-model = adm1_r3_frac_norm(xInNorm, Tu, Tx, Ty)
+model = adm1_r3_frac_norm(xi_norm, Tu, Tx, Ty)
 
-num_std_devs = 1  # Lower and upper bound of uncertainties is determined by the number of standard deviations that we consider
+num_std_devs = 0.000000000000000000001  # Lower and upper bound of uncertainties is determined by the number of standard deviations that we consider
 
 x_ch_nom = np.array([un_xi[0].nominal_value for un_xi in uncertain_xis])
 x_pr_nom = np.array([un_xi[1].nominal_value for un_xi in uncertain_xis])
@@ -171,27 +214,28 @@ simulator = simulator_setup(
     x_ch_in=x_ch_in,
     x_pr_in=x_pr_in,
     x_li_in=x_li_in,
-    vol_flow_rate=vol_flow_rate,
+    vol_flow_rate=np.zeros(n_steps_steady_state),
 )
+
 estimator = state_estimator.StateEstimator(model)
 
 
 # Feeding
 constant_feeding = False
-# feed = np.zeros((n_steps, 1))
-
-# feed[120:144] = 7.0 * 24 / Tu  # 42.0
-# feed[264:312] = 3.0 * 24 / Tu  # 18.0
-
-# feed[:, :] = feed[:, :]  # / 3.0
 
 # Set x0
-mpc.x0 = x0
-simulator.x0 = x0
+mpc.x0 = x0_norm
+mpc.u0 = np.ones(len(subs)) * 0.5
+simulator.x0 = x0_norm
 
-plot_vars = ["u_norm", "x_13", "x_14", "x_8", "x_19", "x_20"] + [
-    f"y_{i+1}" for i in range(8)
-]
+plot_vars = [
+    "u_norm",
+    "x_13",
+    "x_14",
+    "x_8",
+    "x_19",
+    "x_20",
+] + [f"y_{i+1}" for i in range(8)]
 # plot_vars = [f"y_{i+1}" for i in range(8)]  # + ["x_19", "x_20"]
 # plot_vars = ["u"] + [f"x_{i+1}" for i in range(18)]
 # plot_vars = ["u", "x_13", "x_14", "x_8"]
@@ -226,18 +270,66 @@ else:
 
 timer = Timer()
 
+
+def visualize(bga, data, state_names, meas_names, Tx, Ty, x0_norm, simulator, u_actual):
+    x0 = np.copy(x0_norm)
+    x0[:-2] *= np.array([Tx[:-2]]).T
+    y = np.array([simulator.data._aux[-1, idx + 1] * Ty for idx, Ty in enumerate(Ty)])
+    bga.draw(
+        params_R3.V_GAS_STORAGE_MAX,
+        x0[-2][0],
+        x0[-1][0],
+        simulator.data._aux[-1, 9],
+        u_actual.flatten(),
+    )
+    data.draw(x0, state_names, y, meas_names)
+
+    # flip() the display to put your work on screen
+    pygame.display.flip()
+
+
 u_norm_computed = None
+
+# Simulate until steady state
+for k in range(n_days_steady_state):
+    screen.fill("white")
+
+    u_norm_steady_state = np.array([[0.03 for _ in range(len(subs))]]).T
+
+    y_next = simulator.make_step(u_norm_steady_state)
+    x0_norm = estimator.make_step(y_next)
+
+    simulator._x0.master[-2] = 50.0
+    simulator._x0.master[-1] = 50.0
+
+x0_ss = simulator._x0.master
+
+simulator = simulator_setup(
+    model=model,
+    t_step=t_step,
+    x_ch_in=x_ch_in,
+    x_pr_in=x_pr_in,
+    x_li_in=x_li_in,
+    vol_flow_rate=vol_flow_rate,
+)
+
+simulator.x0 = x0_ss
+
+simulator._x0.master[-2] = 90.0
+simulator._x0.master[-1] = 40.0
+
+
+# MPC
 for k in range(n_steps):
+    # fill the screen with a color to wipe away anything from last frame
+    screen.fill("white")
+
     timer.tic()
     u_norm_computed_old = copy.copy(u_norm_computed)
     if constant_feeding:
-        # if feed.shape[1] == 1:
-        #     u_norm = np.array([[feed[k]]])
-        # else:
-        u_norm_computed = np.array([feed[k]]).T
-        # pass
+        u_norm_computed = np.array([[0.011111 for _ in range(len(subs))]]).T
     else:
-        u_norm_computed = mpc.make_step(x0)
+        u_norm_computed = mpc.make_step(x0_norm)
 
     u_norm_actual = np.copy(u_norm_computed)
 
@@ -266,17 +358,15 @@ for k in range(n_steps):
             ).T
         )
 
-    print(u_norm_computed)
-    print(u_norm_actual)
     timer.toc()
 
     y_next = simulator.make_step(u_norm_actual)
-    x0 = estimator.make_step(y_next)
+    x0_norm = estimator.make_step(y_next)
 
     if not disturbances.state_jumps is None:
         for x_idx, val in disturbances.state_jumps.items():
             if k == val[0]:
-                x0[x_idx] += val[1]
+                x0_norm[x_idx] += val[1]
 
     if show_animation:
         if constant_feeding:
@@ -296,6 +386,18 @@ for k in range(n_steps):
         plt.show()
         plt.pause(0.01)
 
+        visualize(
+            bga,
+            data,
+            state_names,
+            meas_names,
+            Tx,
+            Ty,
+            x0_norm,
+            simulator,
+            u_norm_actual,
+        )
+
 if constant_feeding:
     fig, ax = plt.subplots(len(plot_vars), sharex=True)
     for idx, var in enumerate(plot_vars):
@@ -306,6 +408,8 @@ if constant_feeding:
 
 timer.info()
 timer.hist()
+
+pygame.quit()
 
 # input("Press any key to exit.")
 

@@ -14,8 +14,8 @@ class CHP:
             Thermal efficiency of the plant as a percentage.
     """
 
-    max_power: float = 100.0  # kW
-    thermal_efficiency: float = 0.36  # Represents 42%
+    max_power: float = 100.0
+    thermal_efficiency: float = 0.36
     lhv = 50.01  # CH4: MJ/kg
     R_S = 518.4  # J/(kg*K)
 
@@ -28,7 +28,7 @@ class CHP:
             self.thermal_efficiency >= 0 and self.thermal_efficiency <= 1.0
         ), "Thermal efficiency must be between 0 and 1."
 
-    def compute_vol_flow_rate(self, load: np.ndarray, press: float, temp: float):
+    def ch4_vol_flow_rate(self, load: np.ndarray, press: float, temp: float):
         """
         Computes the actual volume flow rate of CH4 from the gas storage in m^3/d.
 

@@ -22,7 +22,7 @@ kp = 5e4  # friction parameter [l/bar/d]
 T = 311  # operating temperature [K]
 Vl = 163000.0  # liquid volume, aus Sörens GitHub [l]
 Vg = 26000.0  # gas volume, aus Sörens GitHub [l]
-rho = 1000  # mass density of digestate [kg/l]
+rho = 1000.0  # mass density of digestate [g/l]
 Mch4 = 16  # molar mass CH4 [kg/kmol]
 Mco2 = 44  # molar mass CO2 [kg/kmol]
 
@@ -43,3 +43,4 @@ p_gas_storage = p0 * 1.001  # slightly larger than atmospheric pressure [bar]
 p_norm = p0  # [bar]
 T_norm = 273.15  # [K]
 T_gas_storage = 323.15  # [K]
+V_GAS_STORAGE_MAX = 150  # m^3

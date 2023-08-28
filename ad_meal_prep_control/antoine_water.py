@@ -8,8 +8,8 @@ C = 233.426
 def vapour_pressure_h2o(t: float):
     """
     Params:
-        t: Temperature in °C
+        t: Temperature in K
     Returns:
         p: The vapour pressure of water in bar.
     """
-    return 10 ** (A - B / (C + t)) * 133.321992076 * 1.0e-5
+    return 10 ** (A - B / (C + (t - 273.15))) * 133.321992076 * 1.0e-5

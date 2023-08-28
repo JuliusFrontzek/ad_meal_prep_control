@@ -24,6 +24,8 @@ def adm1_r3_frac_norm(
     model_type = "continuous"
     model = do_mpc.model.Model(model_type, "SX")
 
+    p_h2o = vapour_pressure_h2o(T)
+
     num_inputs = xi_norm[0].shape[0]
 
     v_ch4_dot_out = model.set_variable(var_type="_tvp", var_name="v_ch4_dot_out")
@@ -325,9 +327,7 @@ def adm1_r3_frac_norm(
     ).transpose()
 
     # Input
-    u_norm = model.set_variable(
-        var_type="_u", var_name="u_norm", shape=(num_inputs, 1)
-    )  # The last entry of u_norm is the normalized outflow of methane (by volume)
+    u_norm = model.set_variable(var_type="_u", var_name="u_norm", shape=(num_inputs, 1))
 
     # Time-variant parameters
     theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
@@ -381,7 +381,7 @@ def adm1_r3_frac_norm(
     )
 
     # Set measurement equations as expressions
-    y_1 = model.set_expression(
+    y_1_norm = model.set_expression(
         "y_1",
         c[12] * Tx[16] ** 2 / Ty[0] * x_norm[16] ** 2
         + c[13] * Tx[16] * Tx[17] / Ty[0] * x_norm[16] * x_norm[17]
@@ -390,21 +390,21 @@ def adm1_r3_frac_norm(
         + c[16] * Tx[17] / Ty[0] * x_norm[17]
         + c[17] / Ty[0],
     )
-    y_2 = model.set_expression("y_2", c[18] * Tx[16] / Ty[1] * x_norm[16])
-    y_3 = model.set_expression("y_3", c[19] * Tx[17] / Ty[2] * x_norm[17])
-    y_4 = model.set_expression("y_4", -1 / Ty[3] * log10(SHPlusNorm))
-    y_5 = model.set_expression("y_5", Tx[3] / Ty[4] * x_norm[3])
-    y_6 = model.set_expression("y_6", 1 / Ty[5] * (1 - Tx[4] * x_norm[4] / c[20]))
-    y_7 = model.set_expression(
+    y_2_norm = model.set_expression("y_2", c[18] * Tx[16] / Ty[1] * x_norm[16])
+    y_3_norm = model.set_expression("y_3", c[19] * Tx[17] / Ty[2] * x_norm[17])
+    y_4_norm = model.set_expression("y_4", -1 / Ty[3] * log10(SHPlusNorm))
+    y_5_norm = model.set_expression("y_5", Tx[3] / Ty[4] * x_norm[3])
+    y_6_norm = model.set_expression("y_6", 1 / Ty[5] * (1 - Tx[4] * x_norm[4] / c[20]))
+    y_7_norm = model.set_expression(
         "y_7", 1 / Ty[6] * (1 - Tx[11] * x_norm[11] / (c[20] - Tx[4] * x_norm[4]))
     )
-    y_8 = model.set_expression("y_8", Tx[0] / Ty[7] * x_norm[0])
+    y_8_norm = model.set_expression("y_8", Tx[0] / Ty[7] * x_norm[0])
 
     v_h2o = model.set_expression(
         "V_H2O",
         1.0
-        / (1.0 - vapour_pressure_h2o(T) / p_gas_storage)
-        * vapour_pressure_h2o(T)
+        / (1.0 - p_h2o / p_gas_storage)
+        * p_h2o
         / p_gas_storage
         * (Tx[18] * x_norm[18] + Tx[19] * x_norm[19]),
     )
@@ -422,15 +422,24 @@ def adm1_r3_frac_norm(
         Tx[19] * x_norm[19] / (v_gas_storage),
     )
 
-    p_ch4_phase_change = model.set_expression(
-        "p_ch4_phase_change", Tx[16] * x_norm[16] * R * T / 16.0
+    p_gas_total_fermenter = model.set_expression(
+        "p_gas_total_fermenter", y_2_norm * Ty[1] + y_3_norm * Ty[2] + p_h2o
     )
-    p_co2_phase_change = model.set_expression(
-        "p_co2_phase_change", Tx[17] * x_norm[17] * R * T / 44.0
+
+    v_dot_in_total = model.set_expression(
+        "v_dot_in_total",
+        y_1_norm
+        * Ty[0]
+        / 1000.0
+        * p_gas_total_fermenter
+        / p_gas_storage
+        * T_gas_storage
+        / T,
     )
 
     if num_inputs > 1:
-        sum_u = cumsum(Tu * u_norm)[1]
+        # sum_u = cumsum(Tu * u_norm)[1]
+        sum_u = cumsum((SX(Tu).T * u_norm.T).T)[len(xi_norm[0]) - 1]
     else:
         sum_u = Tu * u_norm
 
@@ -438,7 +447,7 @@ def adm1_r3_frac_norm(
 
     model.set_rhs(
         "x_1",
-        c[0] * (SX(xi_norm[0]).T @ (Tu * u_norm) - sum_u * x_norm[0])
+        c[0] * (SX(xi_norm[0]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[0])
         + a[0, 0] * theta[0] * Tx[5] / Tx[0] * x_norm[5]
         + a[0, 1] * theta[1] * Tx[6] / Tx[0] * x_norm[6]
         + a[0, 2] * theta[2] * Tx[7] / Tx[0] * x_norm[7]
@@ -453,7 +462,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_2",
-        c[0] * (SX(xi_norm[1]).T @ (Tu * u_norm) - sum_u * x_norm[1])
+        c[0] * (SX(xi_norm[1]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[1])
         + a[1, 0] * theta[0] * Tx[5] / Tx[1] * x_norm[5]
         + a[1, 1] * theta[1] * Tx[6] / Tx[1] * x_norm[6]
         + a[1, 2] * theta[2] * Tx[7] / Tx[1] * x_norm[7]
@@ -472,7 +481,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_3",
-        c[0] * (SX(xi_norm[2]).T @ (Tu * u_norm) - sum_u * x_norm[2])
+        c[0] * (SX(xi_norm[2]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[2])
         + a[2, 0] * theta[0] * Tx[5] / Tx[2] * x_norm[5]
         + a[2, 1] * theta[1] * Tx[6] / Tx[2] * x_norm[6]
         + a[2, 2] * theta[2] * Tx[7] / Tx[2] * x_norm[7]
@@ -492,7 +501,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_4",
-        c[0] * (SX(xi_norm[3]).T @ (Tu * u_norm) - sum_u * x_norm[3])
+        c[0] * (SX(xi_norm[3]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[3])
         - a[3, 0] * theta[0] * Tx[5] / Tx[3] * x_norm[5]
         - a[3, 1] * theta[1] * Tx[6] / Tx[3] * x_norm[6]
         + a[3, 2] * theta[2] * Tx[7] / Tx[3] * x_norm[7]
@@ -509,7 +518,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_5",
-        c[0] * (SX(xi_norm[4]).T @ (Tu * u_norm) - sum_u * x_norm[4])
+        c[0] * (SX(xi_norm[4]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[4])
         - a[4, 0] * theta[0] * Tx[5] / Tx[4] * x_norm[5]
         - a[4, 1] * theta[1] * Tx[6] / Tx[4] * x_norm[6]
         - a[4, 2] * theta[2] * Tx[7] / Tx[4] * x_norm[7]
@@ -526,7 +535,8 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_6",
-        c[0] * (theta[8] * SX(xi_norm[5]).T @ (Tu * u_norm) - sum_u * x_norm[5])
+        c[0]
+        * (theta[8] * SX(xi_norm[5]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[5])
         - theta[0] * x_norm[5]
         + a[5, 5] * theta[4] * Tx[9] / Tx[5] * x_norm[9]
         + a[5, 6] * theta[4] * Tx[10] / Tx[5] * x_norm[10],
@@ -535,28 +545,28 @@ def adm1_r3_frac_norm(
         "x_7",
         c[0]
         * (
-            (1 - theta[8]) * Tx[5] / Tx[6] * SX(xi_norm[5]).T @ (Tu * u_norm)
+            (1 - theta[8]) * Tx[5] / Tx[6] * SX(xi_norm[5]).T @ (SX(Tu).T * u_norm.T).T
             - sum_u * x_norm[6]
         )
         - theta[1] * x_norm[6],
     )
     model.set_rhs(
         "x_8",
-        c[0] * (SX(xi_norm[7]).T @ (Tu * u_norm) - sum_u * x_norm[7])
+        c[0] * (SX(xi_norm[7]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[7])
         - theta[2] * x_norm[7]
         + a[7, 5] * theta[4] * Tx[9] / Tx[7] * x_norm[9]
         + a[7, 6] * theta[4] * Tx[10] / Tx[7] * x_norm[10],
     )
     model.set_rhs(
         "x_9",
-        c[0] * (SX(xi_norm[8]).T @ (Tu * u_norm) - sum_u * x_norm[8])
+        c[0] * (SX(xi_norm[8]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[8])
         - theta[3] * x_norm[8]
         + a[8, 5] * theta[4] * Tx[9] / Tx[8] * x_norm[9]
         + a[8, 6] * theta[4] * Tx[10] / Tx[8] * x_norm[10],
     )
     model.set_rhs(
         "x_10",
-        c[0] * (SX(xi_norm[9]).T @ (Tu * u_norm) - sum_u * x_norm[9])
+        c[0] * (SX(xi_norm[9]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[9])
         + a[9, 0] * theta[0] * Tx[5] / Tx[9] * x_norm[5]
         + a[9, 1] * theta[1] * Tx[6] / Tx[9] * x_norm[6]
         + a[9, 2] * theta[2] * Tx[7] / Tx[9] * x_norm[7]
@@ -565,7 +575,7 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_11",
-        c[0] * (SX(xi_norm[10]).T @ (Tu * u_norm) - sum_u * x_norm[10])
+        c[0] * (SX(xi_norm[10]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[10])
         + theta[5]
         * Tx[0]
         * x_norm[0]
@@ -576,11 +586,11 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_12",
-        c[0] * (SX(xi_norm[11]).T @ (Tu * u_norm) - sum_u * x_norm[11]),
+        c[0] * (SX(xi_norm[11]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[11]),
     )
     model.set_rhs(
         "x_13",
-        c[0] * (SX(xi_norm[12]).T @ (Tu * u_norm) - sum_u * x_norm[12]),
+        c[0] * (SX(xi_norm[12]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[12]),
     )
     model.set_rhs(
         "x_14",
@@ -620,26 +630,11 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_19",
-        y_1
-        / 1000.0
-        * p_norm
-        / p_gas_storage
-        * T
-        / T_norm
-        * p_ch4_phase_change
-        / (p_ch4_phase_change + p_co2_phase_change + vapour_pressure_h2o(T))
-        - v_ch4_dot_out,
+        v_dot_in_total * y_2_norm * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out,
     )  # V_CH4
     model.set_rhs(
         "x_20",
-        y_1
-        / 1000.0
-        * p_norm
-        / p_gas_storage
-        * T
-        / T_norm
-        * p_co2_phase_change
-        / (p_ch4_phase_change + p_co2_phase_change + vapour_pressure_h2o(T))
+        v_dot_in_total * y_3_norm * Ty[2] / p_gas_total_fermenter
         - y_co2
         / (1.0 - y_co2)
         / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
