@@ -46,9 +46,10 @@ XC = labData(7);
 FQ_ch = XC^(-1)*(FQ_ges*(1000 - XA) - XP - XL); 
 X_ch_fast = FQ_ch*XC*TS*rhoFM; 
 
-% compute bacteria: 
-X_bac = 0.95*(XC + XP + XL)*TS*rhoFM;   % estimated acc. to Félix
-X_ac = 0.05*(XC + XP + XL)*TS*rhoFM;    % estimated acc. to Félix
+% compute bacteria (estimated acc. to Félix)
+X_biomass = 0.001*(XC + XP + XL);   % total biomass is fraction of macro nutrients
+X_bac = 0.95*X_biomass*TS*rhoFM;    % assign 95% of biomass to X_bac...
+X_ac = 0.05*X_biomass*TS*rhoFM;% ... and 5% to X_ac
 
 % acetic acid:
 Ac = labData(8); 
