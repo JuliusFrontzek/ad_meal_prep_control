@@ -18,6 +18,7 @@ def mpc_setup(
     x_pr_in: np.ndarray,
     x_li_in: np.ndarray,
     vol_flow_rate: np.ndarray,
+    compile_nlp: bool,
 ):
     num_states = 20
 
@@ -34,7 +35,7 @@ def mpc_setup(
         "collocation_ni": 1,
         # Use MA27 linear solver in ipopt for faster calculations:
         # "nlpsol_opts": {
-        #     "ipopt.linear_solver": "MA57",
+        #     "ipopt.linear_solver": "MA27",
         #     "ipopt.hsllib": "/home/julius/Documents/coinhsl-2023.05.26/builddir/libcoinhsl.so",
         # },
     }
@@ -59,10 +60,8 @@ def mpc_setup(
 
     # mterm = (model.x[f"x_{19}"] - 80.0) ** 2
     # lterm = (model.x[f"x_{19}"] - 80.0) ** 2
-    mterm = -model.x[f"x_{19}"]
-    lterm = -model.x[f"x_{19}"]
-    # mterm = (model.aux["y_2"] - 0.4) ** 2
-    # lterm = (model.aux["y_2"] - 0.4) ** 2
+    mterm = (model.aux["y_4"] - 7.5) ** 2
+    lterm = (model.aux["y_4"] - 7.5) ** 2
     mpc.set_objective(lterm=lterm, mterm=mterm)
 
     mpc.set_rterm(u_norm=0.1)
@@ -101,5 +100,9 @@ def mpc_setup(
     mpc.set_uncertainty_values(x_ch_in=x_ch_in, x_pr_in=x_pr_in, x_li_in=x_li_in)
 
     mpc.setup()
+    if compile_nlp:
+        mpc.compile_nlp(
+            overwrite=True, compiler_command="gcc -fPIC -shared -O3 nlp.c -o nlp.so"
+        )
 
     return mpc
