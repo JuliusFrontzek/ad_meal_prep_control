@@ -40,16 +40,18 @@ data = vis.Data(screen)
 model_type = "continuous"  # either 'discrete' or 'continuous'
 model = do_mpc.model.Model(model_type)
 
+compile_nlp = False
 
-# _, x_ch_nom, x_pr_nom, x_li_nom = substrates.xi_values(substrate_names)
-# subs = substrates.get_subs(substrate_names)
-corn = substrates.CORN
-subs = [corn] + [corn.create_similar_substrate() for _ in range(2)]
+subs = [
+    substrates.CORN_SILAGE,
+    substrates.SWINE_MANURE,
+    substrates.CHICKEN_DRY_MANURE,
+]
 xi = [sub.xi for sub in subs]
 uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in subs]
 
 # Simulation
-n_days_steady_state = 100
+n_days_steady_state = 300
 n_days_mpc = 7
 
 t_step = 0.5 / 24  # Time in days
@@ -61,7 +63,7 @@ n_steps = round(n_days_mpc / t_step)
 n_horizon = 5
 
 # Set up CHP
-chp = utils.CHP(max_power=75.0)
+chp = utils.CHP(max_power=124.0 / params_R3.SCALEDOWN)
 chp_load = np.zeros(n_steps + n_horizon)
 for i in range(6):
     chp_load[i::48] = 1.0  # 6:00 - 12:00
@@ -100,8 +102,8 @@ x0 = np.array(
         0.0188914691525065,
         0.355199814936346,
         0.640296031589364,
-        39.0 * 1.7,  # m^3
-        36.0 * 1.7,  # m^3
+        39.0 * 1.7 / params_R3.SCALEDOWN,  # m^3
+        36.0 * 1.7 / params_R3.SCALEDOWN,  # m^3
     ]
 )
 
@@ -136,7 +138,10 @@ Tx = x0.copy()
 
 Tx[-2:] = 1.0
 
-u_max = {"solid": 80_000.0, "liquid": 450_000.0}
+u_max = {
+    "solid": 80_000.0 / params_R3.SCALEDOWN,
+    "liquid": 450_000.0 / params_R3.SCALEDOWN,
+}
 
 Tu = np.array([u_max[sub.state] for sub in subs])
 
@@ -206,6 +211,7 @@ mpc = mpc_setup(
     x_pr_in=x_pr_in,
     x_li_in=x_li_in,
     vol_flow_rate=vol_flow_rate,
+    compile_nlp=compile_nlp,
 )
 
 simulator = simulator_setup(
@@ -299,8 +305,8 @@ for k in range(n_days_steady_state):
     y_next = simulator.make_step(u_norm_steady_state)
     x0_norm = estimator.make_step(y_next)
 
-    simulator._x0.master[-2] = 50.0
-    simulator._x0.master[-1] = 50.0
+    simulator._x0.master[-2] = 50.0 / params_R3.SCALEDOWN
+    simulator._x0.master[-1] = 50.0 / params_R3.SCALEDOWN
 
 x0_ss = simulator._x0.master
 
@@ -315,8 +321,8 @@ simulator = simulator_setup(
 
 simulator.x0 = x0_ss
 
-simulator._x0.master[-2] = 90.0
-simulator._x0.master[-1] = 40.0
+simulator._x0.master[-2] = 90.0 / params_R3.SCALEDOWN
+simulator._x0.master[-1] = 40.0 / params_R3.SCALEDOWN
 
 
 # MPC
