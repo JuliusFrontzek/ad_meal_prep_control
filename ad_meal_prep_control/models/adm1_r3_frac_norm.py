@@ -381,24 +381,38 @@ def adm1_r3_frac_norm(
     )
 
     # Set measurement equations as expressions
-    y_1_norm = model.set_expression(
-        "y_1",
-        c[12] * Tx[16] ** 2 / Ty[0] * x_norm[16] ** 2
-        + c[13] * Tx[16] * Tx[17] / Ty[0] * x_norm[16] * x_norm[17]
-        + c[14] * Tx[17] ** 2 / Ty[0] * x_norm[17] ** 2
-        + c[15] * Tx[16] / Ty[0] * x_norm[16]
-        + c[16] * Tx[17] / Ty[0] * x_norm[17]
-        + c[17] / Ty[0],
+    y_norm = []
+    y_norm.append(
+        model.set_expression(
+            "y_1_norm",
+            c[12] * Tx[16] ** 2 / Ty[0] * x_norm[16] ** 2
+            + c[13] * Tx[16] * Tx[17] / Ty[0] * x_norm[16] * x_norm[17]
+            + c[14] * Tx[17] ** 2 / Ty[0] * x_norm[17] ** 2
+            + c[15] * Tx[16] / Ty[0] * x_norm[16]
+            + c[16] * Tx[17] / Ty[0] * x_norm[17]
+            + c[17] / Ty[0],
+        )
     )
-    y_2_norm = model.set_expression("y_2", c[18] * Tx[16] / Ty[1] * x_norm[16])
-    y_3_norm = model.set_expression("y_3", c[19] * Tx[17] / Ty[2] * x_norm[17])
-    y_4_norm = model.set_expression("y_4", -1 / Ty[3] * log10(SHPlusNorm))
-    y_5_norm = model.set_expression("y_5", Tx[3] / Ty[4] * x_norm[3])
-    y_6_norm = model.set_expression("y_6", 1 / Ty[5] * (1 - Tx[4] * x_norm[4] / c[20]))
-    y_7_norm = model.set_expression(
-        "y_7", 1 / Ty[6] * (1 - Tx[11] * x_norm[11] / (c[20] - Tx[4] * x_norm[4]))
+    y_norm.append(model.set_expression("y_2_norm", c[18] * Tx[16] / Ty[1] * x_norm[16]))
+    y_norm.append(model.set_expression("y_3_norm", c[19] * Tx[17] / Ty[2] * x_norm[17]))
+    y_norm.append(model.set_expression("y_4_norm", -1 / Ty[3] * log10(SHPlusNorm)))
+    y_norm.append(model.set_expression("y_5_norm", Tx[3] / Ty[4] * x_norm[3]))
+    y_norm.append(
+        model.set_expression("y_6_norm", 1 / Ty[5] * (1 - Tx[4] * x_norm[4] / c[20]))
     )
-    y_8_norm = model.set_expression("y_8", Tx[0] / Ty[7] * x_norm[0])
+    y_norm.append(
+        model.set_expression(
+            "y_7_norm",
+            1 / Ty[6] * (1 - Tx[11] * x_norm[11] / (c[20] - Tx[4] * x_norm[4])),
+        )
+    )
+    y_norm.append(model.set_expression("y_8_norm", Tx[0] / Ty[7] * x_norm[0]))
+
+    y = []
+    for i in range(8):
+        y.append(model.set_expression(f"y_{i+1}", Ty[i] * y_norm[i]))
+
+    model.set_expression("y_4_test", y[3])
 
     v_h2o = model.set_expression(
         "V_H2O",
@@ -423,12 +437,12 @@ def adm1_r3_frac_norm(
     )
 
     p_gas_total_fermenter = model.set_expression(
-        "p_gas_total_fermenter", y_2_norm * Ty[1] + y_3_norm * Ty[2] + p_h2o
+        "p_gas_total_fermenter", y_norm[1] * Ty[1] + y_norm[2] * Ty[2] + p_h2o
     )
 
     v_dot_in_total = model.set_expression(
         "v_dot_in_total",
-        y_1_norm
+        y_norm[0]
         * Ty[0]
         / 1000.0
         * p_gas_total_fermenter
@@ -630,11 +644,11 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_19",
-        v_dot_in_total * y_2_norm * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out,
+        v_dot_in_total * y_norm[1] * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out,
     )  # V_CH4
     model.set_rhs(
         "x_20",
-        v_dot_in_total * y_3_norm * Ty[2] / p_gas_total_fermenter
+        v_dot_in_total * y_norm[2] * Ty[2] / p_gas_total_fermenter
         - y_co2
         / (1.0 - y_co2)
         / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
