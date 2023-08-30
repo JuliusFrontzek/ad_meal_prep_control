@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def xc_(xa, xp, xl):
-    return 1000.0 - xa - xp - xl
+    return 1.0 - xa - xp - xl
 
 
 def delta_xc_(delta_xa, delta_xp, delta_xl):
@@ -19,8 +19,8 @@ def delta_fq_ch_(
     xc, fq_ges, xa, xp, xl, delta_xc, delta_fq_ges, delta_xa, delta_xp, delta_xl
 ):
     return np.sqrt(
-        (-(xc ** (-2.0)) * (fq_ges * (1000 - xa) - xp - xl) * delta_xc) ** 2
-        + (xc ** (-1.0) * (1000 - xa) * delta_fq_ges) ** 2
+        (-(xc ** (-2.0)) * (fq_ges * (1.0 - xa) - xp - xl) * delta_xc) ** 2
+        + (xc ** (-1.0) * (1.0 - xa) * delta_fq_ges) ** 2
         + (xc ** (-1.0) * fq_ges * delta_xa) ** 2
         + (xc ** (-1.0) * delta_xp) ** 2
         + (xc ** (-1.0) * delta_xl) ** 2
