@@ -4,7 +4,8 @@
 % Autor: Simon Hellmann
 
 % compute inlet concentrations from lab measurements of substrates
-clear all
+close all
+clear
 clc
 
 % specify substrate type: 
@@ -18,6 +19,7 @@ nSubstrates = numel(bmpAgriculturalSubstrates);
 % create struct with available substrates as field names, save xInSubstrate
 % therein and save the entire struct:
 xInAgrSubstrates = struct; 
+TSAgrSubstrates = struct; 
 for k = 1:nSubstrates
     substrateNumber = k; % 1...6 for respective substrate
     substrate = agriculturalSubstrates{substrateNumber}; 
@@ -43,17 +45,21 @@ for k = 1:nSubstrates
     
     % pick rows from labDataEff 1 by 1 and compute xIn, save in xInMat:
     nSamples = size(labDataEff,1);  % # complete samples per substrate
-    xInMat = nan(18,nSamples); % input vector size for ADM1-R3-frac
+    xInMat = nan(18,nSamples);  % input vector size for ADM1-R3-frac
+    TSVec = nan(1,nSamples);    % 
     for kk = 1:nSamples
         labData = labDataEff(kk,:); 
-        xInMat(:,kk) = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich); 
+        [xInMat(:,kk),TSVec(kk)] = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich); 
     end % for
     
-    % compute mean of all xIn_i from the for loop as final result of substrate:
-    xInSubstrate = mean(xInMat,2); 
+    % compute mean of all xIn_i and TS from the for loop and save in
+    % separate structs: 
+    xInSubstrate = mean(xInMat,2);
+    TSSubstrate = mean(TSVec);
     xInAgrSubstrates.(substrate) = xInSubstrate; 
+    TSAgrSubstrates.(substrate) = TSSubstrate;  
 end % for
 
-fileName = 'xInAgrSubstrates.mat'; 
-save(fileName, 'xInAgrSubstrates')
+fileName = 'xIn_TS_AgrSubstrates.mat'; 
+save(fileName, 'xInAgrSubstrates', 'TSAgrSubstrates')
  

@@ -3,12 +3,13 @@
 % Erstelldatum: 24.08.2023
 % Autor: Simon Hellmann
 
-function xIn = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich)
+function [xIn,TS] = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich)
 
-% used lab data of one sample and transforms it into inlet concentrations
-% of ADM1-R3-frac model
+% uses lab data of one sample and transforms it into inlet concentrations
+% of ADM1-R3-frac model and TS
 
 % xIn       - vector of inlet concentrations for ADM1-R3-frac 
+% TS        - total solids content of sample [-]
 % lab data  - results from lab analysis of one substrate sample
 % BMP       - BMP of specific substrate acc. to KTBL
 % BMP_stoich- max. BMP for agricultural substrates [L_N/kg_FoTS]
