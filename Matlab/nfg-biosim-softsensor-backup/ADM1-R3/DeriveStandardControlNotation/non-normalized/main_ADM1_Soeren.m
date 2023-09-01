@@ -40,6 +40,7 @@ model = 'ADM1_R3';
 
 %% Run selected model 
 systemParameters = system.Variables; 
+systemParameters(3) = 1.0133;   % Zahlendreher für p_atm in Sörens GitHub
 systemInput = input.ADM1_R3.Variables;
 systemInputSS = systemInput(2,:);   % only take the second feeding, which perturbes the system out of its steady state
 systemInputSS(1) = 0;   % set initial feeding time to zero

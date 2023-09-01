@@ -141,7 +141,7 @@ xIn([1:5,8:end]) = xInPre([1:5,7:end])';    % all states except ch
 xIn(6) = XInCh; 
 xIn(7) = 0; 
 % overwrite values in positions for S_an and S_cat with those for S_ion and X_ash:
-xAshIn = 14; % selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
+xAshIn = 17; % selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
 xIn(12) = xAshIn;  
 xIn(13) = SionIN; 
 
@@ -263,6 +263,11 @@ TxNum = x0;
 y0 = g(x0,cNum);    % steady state output
 TyNum = y0; 
 TuNum = feedVolFlowSS; 
+% summarize in stuct to save them: 
+TNum        = struct; 
+TNum.Tx     = TxNum; 
+TNum.Ty     = TyNum; 
+TNum.Tu     = TuNum;    
 
 % normalize simulation inputs:
 uNorm = feedVolFlowSS./TuNum; 
@@ -341,24 +346,25 @@ toc
 q = 8;   
 idxGridOn = ismember(tOverall, tOnline); 
 xSolNormOn = xSimNorm(idxGridOn,:);
-NOn = size(xSolNormOn,1);    % number of online sampling points
-yCleanNorm = nan(NOn,q);  % allocate memory
+NOn = size(xSolNormOn,1);   % number of online sampling points
+yCleanNorm = nan(NOn,q);    % allocate memory
 for k = 1:NOn
     yCleanNorm(k,:) = gNorm(xSolNormOn(k,:)', cNum, TxNum, TyNum)';
 end
 
-% case 2: online and 2 offline (standard and acid) measurements (no delay):
+%% case 2: online and 2 offline (standard and acid) measurements (no delay):
 % standard measurements: 
-dtStd = 3;      % sample time for standard analyses [d]
+dtStd = 3;          % sample time for standard analyses [d]
 tStdOffset = 0.5;   % dont start first std. measurement right at beginning 
 % times when standard samples are taken (TS, VS, NH4-N):
 tStdSample = (tStdOffset:dtStd:tEnd)';  % no delay 
 NStd = numel(tStdSample);   % # std. measurement samples
 
-% acid measurements:
+% obtain acid measurements in multiple measurement campaigns:
 dtAcid = 1/24;              % sample time for atline measurements [h] -> [d]
 nAcidMeasCampaigns = 5;     % # intensive measurement campaigns
 nAcidMeasPerCampaign = 6;   % # samples taken during 1 campaign
+NAcid = nAcidMeasCampaigns*nAcidMeasPerCampaign; 
 % measure acids at higher-frequency regular sampling intervals (without start time instant of campaign): 
 sampleArrayAcids = cumsum(dtAcid*ones(nAcidMeasPerCampaign-1,1));     % [d]
 tAcidOffsetNominal = 12/24; % nominal offset from midnight [h] -> [d]
@@ -367,7 +373,7 @@ tAcidOffset = tAcidOffsetNominal*rand(nAcidMeasCampaigns,1); % random offset fro
 tAcidSampleStartNom = cumsum([1;randi(5,nAcidMeasCampaigns-1,1)]); % max 5 days between meas. campaigns (nominal)
 % add random time offsets to not start all campaigns at midnight: 
 tAcidSampleStart = tAcidSampleStartNom + tAcidOffset; 
-tAcidSample = nan(nAcidMeasCampaigns*nAcidMeasPerCampaign,1);   % allocate memory
+tAcidSample = nan(NAcid,1);   % allocate memory
 % fill entries of tAcidSample measurement campaign by measurement campaign:
 for k = 1:nAcidMeasCampaigns
     % fill in only the start values of campaigns: 
@@ -381,12 +387,9 @@ end % for
 % time grid of tEvents:
 tAcidSampleShift = interp1(tOnline,tOnline,tAcidSample,'next'); 
 
-% interpolate xSimNorm at online/offline/atline sample times: 
-xSolNormOff = interp1(tOverall,xSimNorm,tOfflineSample);
-xSolNormAt = interp1(tOverall,xSimNorm,tAcidSample);
-
-NOff = numel(tOfflineSample); 
-NAt = numel(tAcidSample); 
+% interpolate xSimNorm at online/standard/acid sample times: 
+xSolNormStd = interp1(tOverall,xSimNorm,tStdSample);
+xSolNormAcid = interp1(tOverall,xSimNorm,tAcidSampleShift);
 
 % number of measurement signals: 
 qOn = 4; 
@@ -394,62 +397,36 @@ qStd = 3;
 qAcid = 1; 
 % allocate memory:
 yCleanNormOn = nan(NOn,qOn);
-yCleanNormStd = nan(NOff,qStd);
-yCleanNormAcid = nan(NAt,qAcid);
+yCleanNormStd = nan(NStd,qStd);
+yCleanNormAcid = nan(NAcid,qAcid);
 % evaluate model outputs at different sampling times:
 for k = 1:NOn
     fullOutput = gNorm(xSolNormOn(k,:)', cNum, TxNum, TyNum)';
     yCleanNormOn(k,:) = fullOutput(1:qOn); 
 end
-for kk = 1:NOff
-    fullOutput = gNorm(xSolNormOff(kk,:)', cNum, TxNum, TyNum)';
+for kk = 1:NStd
+    fullOutput = gNorm(xSolNormStd(kk,:)', cNum, TxNum, TyNum)';
     yCleanNormStd(kk,:) = fullOutput(qOn+1:qOn+qStd); 
 end
-for kkk = 1:NAt
-    fullOutput = g(xSolNormAt(kkk,:)',cNum)';
+for kkk = 1:NAcid
+    fullOutput = g(xSolNormAcid(kkk,:)',cNum)';
     yCleanNormAcid(kkk,:) = fullOutput(qOn+qStd+1:end);
 end
 
 %% de-normalize states and outputs in different resolutions
 % states: 
 xSolOn = repmat(TxNum',NOn,1).*xSolNormOn;
-xSolOff = repmat(TxNum',NOff,1).*xSolNormOff;
-xSolAt = repmat(TxNum',NAt,1).*xSolNormAt;
+xSolStd = repmat(TxNum',NStd,1).*xSolNormStd;
+xSolAcid = repmat(TxNum',NAcid,1).*xSolNormAcid;
 % outputs: 
-% separate normalization matrices into online/offline/atline entries first: 
+% separate normalization matrices into online/standard/acid entries first: 
 TyNumOn = TyNum(1:qOn); 
-TyNumOff = TyNum(qOn+1:qOn+qStd); 
-TyNumAt = TyNum(qOn+qStd+1:end);
+TyNumStd = TyNum(qOn+1:qOn+qStd); 
+TyNumAcid = TyNum(qOn+qStd+1:end);
 yClean = repmat(TyNum',NOn,1).*yCleanNorm;
 yCleanOn = repmat(TyNumOn',NOn,1).*yCleanNormOn;
-yCleanOff = repmat(TyNumOff',NOff,1).*yCleanNormStd;
-yCleanAt = repmat(TyNumAt',NAt,1).*yCleanNormAcid;
-
-%% add time delays for return times of sample times
-% construct times when offline and atline measurements return from lab: 
-delayMin = 0.8;     % [d]
-delaySpread = 1/7;  % [d] (manually chosen)
-delayOff = delayMin + rand(NOff,1)*delaySpread;
-delayAt = delayMin + rand(NAt,1)*delaySpread;
-tOfflineRet = tOfflineSample + delayOff;  % Ret = return
-tAtlineRet = tAcidSample + delayAt;     % Ret = return
-
-% optional clipping of return times by tEnd: 
-% idxCliptOff = tOfflineRet <= tEnd; 
-% idxCliptAt = tAtlineRet <= tEnd; 
-% tOfflineRetClip = tOfflineRet(idxCliptOff); 
-% tAtlineRetClip = tAtlineRet(idxCliptAt); 
-% % correct remaining number of elements
-% NOffClip = numel(tOfflineRetClip); 
-% NAtClip = numel(tAtlineRetClip); 
-
-% incorporate knowledge of sampling sequence and incoming sequence: 
-[tOfflineRetSorted,indexOffline] = sort(tOfflineRet); 
-[tAtlineRetSorted,indexAtline] = sort(tAtlineRet); 
-trueIndexOffline = 1:NOff; 
-trueIndexAtline = 1:NAt;
-indexDevOffline = indexOffline' - trueIndexOffline; 
-indexDevAtline = indexAtline' - trueIndexAtline; 
+yCleanStd = repmat(TyNumStd',NStd,1).*yCleanNormStd;
+yCleanAcid = repmat(TyNumAcid',NAcid,1).*yCleanNormAcid;
 
 %% add noise to measurements acc to sensor data sheets 
 % define std. deviations of sensors assuming zero mean (see Übersicht_Messrauschen.xlsx):
@@ -467,36 +444,36 @@ sigmaAc = 0.04;     % FOS [g/L]. Aber Achtung: brauchbarere Messgröße für
 % combine all in sigma matrix and covariance matrix:
 sigmas = [sigmaV, sigmaCh4, sigmaCo2, sigmaPh, sigmaSIN, sigmaTS, sigmaVS, sigmaAc]; 
 sigmasOn = [sigmaV, sigmaCh4, sigmaCo2, sigmaPh]; 
-sigmasOff = [sigmaSIN, sigmaTS, sigmaVS];
-sigmasAt = [sigmaAc]; 
+sigmasStd = [sigmaSIN, sigmaTS, sigmaVS];
+sigmasAcid = [sigmaAc]; 
 
 sigmaMat = repmat(sigmas,NOn,1);
 sigmaMatOn = repmat(sigmasOn,NOn,1);
-sigmaMatOff = repmat(sigmasOff,NOff,1);
-sigmaMatAt = repmat(sigmasAt,NAt,1);
+sigmaMatStd = repmat(sigmasStd,NStd,1);
+sigmaMatAcid = repmat(sigmasAcid,NAcid,1);
 
 % create normally distributed measurement noise matrices:
 % zero mean for all measurements 
-yMean = nan(NOn,q); 
-yMeanOn = nan(NOn,qOn); 
-yMeanOff = nan(NOff,qStd); 
-yMeanAt = nan(NAt,qAcid); 
+yMean = zeros(NOn,q); 
+yMeanOn = zeros(NOn,qOn); 
+yMeanStd = zeros(NStd,qStd); 
+yMeanAcid = zeros(NAcid,qAcid); 
 normalMeasNoise = normrnd(yMean,sigmaMat);
 normalMeasNoiseOn = normrnd(yMeanOn,sigmaMatOn);
-normalMeasNoiseOff = normrnd(yMeanOff,sigmaMatOff);
-normalMeasNoiseAt = normrnd(yMeanAt,sigmaMatAt);
+normalMeasNoiseStd = normrnd(yMeanStd,sigmaMatStd);
+normalMeasNoiseAcid = normrnd(yMeanAcid,sigmaMatAcid);
 
 % add noise to clean model outputs:
 yMeas = yClean + normalMeasNoise; 
 yMeasOn = yCleanOn + normalMeasNoiseOn; 
-yMeasOff = yCleanOff + normalMeasNoiseOff; 
-yMeasAt = yCleanAt + normalMeasNoiseAt; 
+yMeasStd = yCleanStd + normalMeasNoiseStd; 
+yMeasAcid = yCleanAcid + normalMeasNoiseAcid; 
 
 % construct measurement noise covariance matrices:
 noiseCovMat = diag(sigmas.^2);  
 noiseCovMatOn = diag(sigmasOn.^2);  
-noiseCovMatOff = diag(sigmasOff.^2); 
-noiseCovMatAt = diag(sigmasAt.^2); 
+noiseCovMatOStd = diag(sigmasStd.^2); 
+noiseCovMatAcid = diag(sigmasAcid.^2); 
 
 %% Plot results (separated into Online/Offline/Atline Measurements)
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
@@ -569,14 +546,16 @@ ylabel('feed vol flow [l/h]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
-% Offline measurements:
+% Standard measurements (offline):
 % SIN:  
 subplot(4,2,5)
-scatter(tOfflineSample,yMeasOff(:,1),'DisplayName','noisy',...
+scatter(tStdSample,yMeasStd(:,1),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
-plot(tOfflineSample,yCleanOff(:,1),'DisplayName','clean',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+% hold last measurement value till end of simulation:
+stairs([tStdSample;tEnd],[yCleanStd(:,1);yCleanStd(end,1)],...
+    'DisplayName','clean','LineStyle','-.',...
+    'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('SIN [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
@@ -589,11 +568,13 @@ title('Offline')
 
 % TS:  
 subplot(4,2,6)
-scatter(tOfflineSample,yMeasOff(:,2),'DisplayName','noisy',...
+scatter(tStdSample,yMeasStd(:,2),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
-plot(tOfflineSample,yCleanOff(:,2),'DisplayName','clean',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+% hold last measurement value till end of simulation:
+stairs([tStdSample;tEnd],[yCleanStd(:,2);yCleanStd(end,2)],...
+    'DisplayName','clean','LineStyle','-.',...
+    'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('total solids [-]')
 xlabel('time [d]')
 yyaxis right
@@ -606,11 +587,13 @@ set(gca, "YColor", 'k')
 
 % VS:  
 subplot(4,2,7)
-scatter(tOfflineSample,yMeasOff(:,3),'DisplayName','noisy',...
+scatter(tStdSample,yMeasStd(:,3),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
 hold on; 
-plot(tOfflineSample,yCleanOff(:,3),'DisplayName','clean',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+% hold last measurement value till end of simulation:
+stairs([tStdSample;tEnd],[yCleanStd(:,3);yCleanStd(end,3)],...
+        'DisplayName','clean','LineStyle','-.', ...
+        'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('volatile solids [-]')
 xlabel('time [d]')
 yyaxis right
@@ -624,11 +607,13 @@ set(gca, "YColor", 'k')
 % Atline measurements:
 % Sac:  
 subplot(4,2,8)
-scatter(tAcidSample,yMeasAt(:,1),'DisplayName','noisy',...
+scatter(tAcidSample,yMeasAcid(:,1),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
 hold on; 
-plot(tAcidSample,yCleanAt(:,1),'DisplayName','clean',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+% hold last measurement value till end of simulation:
+stairs([tAcidSample;tEnd],[yCleanAcid(:,1);yCleanAcid(end,1)],...
+        'DisplayName','clean','LineStyle','-.', ...
+        'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('acetic acid [g/l]')
 xlabel('time [d]')
 yyaxis right
@@ -640,33 +625,33 @@ legend('Location','NorthEast');
 set(gca, "YColor", 'k')
 title('Atline')
 
-sgtitle('Clean and noisy simulation outputs (4 Online/3 Offline/1 Atline)')
+sgtitle('Clean and noisy simulation outputs (4 Online/3 Std/1 Acid)')
 
 %% save results in struct MESS: 
 
-MESS.tOnline = tOnline;
-MESS.tOfflineSend = tOfflineSample; % sampling times 
-MESS.tAtlineSend = tAcidSample;     
-MESS.tOfflineRet = tOfflineRet;     % return times  
-MESS.tAtlineRet = tAtlineRet; 
-MESS.x0 = x0DynR3frac; 
+MESS.tOnline = tOnline;             % online sample times
+MESS.tStdSample = tStdSample;       % standard (offline) sampling times 
+MESS.tAcidSample = tAcidSample;     % acid sample times (in campaigns)
+% MESS.tOfflineRet = tOfflineRet;     % return times  
+% MESS.tAtlineRet = tAtlineRet; 
+MESS.x0 = x0DynR3frac;  
 MESS.xSolOn = xSolOn;   % state trajectories evaluated at diff. sampling times
-MESS.xSolOff = xSolOff; 
-MESS.xSolAt = xSolAt; 
+MESS.xSolStd = xSolStd; 
+MESS.xSolAcid = xSolAcid; 
 MESS.xSolNormOn = xSolNormOn; 
-MESS.xSolNormOff = xSolNormOff; 
-MESS.xSolNormAt = xSolNormAt; 
+MESS.xSolNormStd = xSolNormStd; 
+MESS.xSolNormAcid = xSolNormAcid; 
 MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
 MESS.yCleanOn = yCleanOn;  
-MESS.yCleanOff = yCleanOff;  
-MESS.yCleanAt = yCleanAt;  
+MESS.yCleanStd = yCleanStd;  
+MESS.yCleanAcid = yCleanAcid;  
 MESS.yMeasOn = yMeasOn; 
-MESS.yMeasOff = yMeasOff; 
-MESS.yMeasAt = yMeasAt; 
+MESS.yMeasStd = yMeasStd; 
+MESS.yMeasAcid = yMeasAcid; 
 MESS.C = noiseCovMat; % accurate values from sensor data sheets
 MESS.COn = noiseCovMatOn;
-MESS.COff = noiseCovMatOff;
-MESS.CAt = noiseCovMatAt;
+MESS.CStd = noiseCovMatOStd;
+MESS.CAcid = noiseCovMatAcid;
 
 % create sub-folder (if non-existent yet) and save results there
 currPath = pwd; 

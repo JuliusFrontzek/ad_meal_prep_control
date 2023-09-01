@@ -36,9 +36,7 @@ function dx = ADM1_R3_mass_edit(t,x,s,input,parameter)
  
 V_liq = s(1); 
 V_gas = s(2); 
-% p_atm = s(3);  % atmospheric pressure [bar] % XY: Achtung: Typo im GitHub
-p_atm = 1.0133; 
-
+p_atm = s(3);  
  
 % Model parameters 
  

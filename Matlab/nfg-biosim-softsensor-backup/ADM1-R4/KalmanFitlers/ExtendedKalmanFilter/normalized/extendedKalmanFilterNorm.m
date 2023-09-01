@@ -33,11 +33,11 @@ global counter
 % make print-statement if xOld contains any negative concentrations: 
 if any(xOldNorm<0)
     % print statement: 
-    disp(['neg. Konzentration bei ',num2str(tSpan(1)),' Tagen'])
-    xOldNorm(xOldNorm<0)
+%     disp(['neg. Konzentration bei ',num2str(tSpan(1)),' Tagen'])
+%     xOldNorm(xOldNorm<0)
     % apply clipping: 
     xOldNorm(xOldNorm < 0) = 0; 
-    counter = counter + 1
+    counter = counter + 1;
 end 
 
 %% Time Update
@@ -101,9 +101,6 @@ xPlusNorm = xMinusNorm + KvNorm;    % updated state estimation
 leftMat = eye(nStates) - KNorm*HNorm; 
 rightMat = leftMat'; 
 PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated covariance of estimation error
-
-% old: without Joseph Algorithm:
-% PPlus = PMinus - K*H*PMinus; % updated covariance of estimation error
 
 % clipping of negative state estimations: 
 % xPlus(xPlus<0) = 0; 

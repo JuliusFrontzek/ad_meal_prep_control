@@ -3,7 +3,7 @@
 % Erstelldatum: 2.3.2023
 % Autor: Simon Hellmann
 
-function  [RMSSE,squaredNum,squaredDenom] = computeRMSSE(yMeas,yEst)
+function  [RMSSE] = computeRMSSE(yMeas,yEst)
 
 N = numel(yMeas);   % number of samples
 

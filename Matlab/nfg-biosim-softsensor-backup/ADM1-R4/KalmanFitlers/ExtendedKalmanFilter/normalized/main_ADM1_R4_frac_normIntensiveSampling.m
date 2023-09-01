@@ -320,11 +320,11 @@ sigmaVS = 0.31/100; % [%] -> [-]
 % combine all in sigma matrix and covariance matrix:
 sigmas = [sigmaV, sigmaCh4, sigmaCo2, sigmaSIN, sigmaTS, sigmaVS]; 
 sigmasOn = [sigmaV, sigmaCh4, sigmaCo2]; 
-sigmasOff = [sigmaSIN, sigmaTS, sigmaVS];
+sigmasStd = [sigmaSIN, sigmaTS, sigmaVS];
 
 sigmaMat = repmat(sigmas,NOn,1);
 sigmaMatOn = repmat(sigmasOn,NOn,1);
-sigmaMatOff = repmat(sigmasOff,NStd,1);
+sigmaMatStd = repmat(sigmasStd,NStd,1);
 
 % create normally distributed measurement noise matrices:
 % zero mean for all measurements 
@@ -335,17 +335,17 @@ yMeanStd = zeros(NStd,qOff);
 rng('default');     % fix seed for random number generation (for replicable results)
 normalMeasNoise = normrnd(yMean,sigmaMat);
 normalMeasNoiseOn = normrnd(yMeanOn,sigmaMatOn);
-normalMeasNoiseOff = normrnd(yMeanStd,sigmaMatOff);
+normalMeasNoiseStd = normrnd(yMeanStd,sigmaMatStd);
 
 % add noise to clean model outputs:
 yMeas = yClean + normalMeasNoise; 
 yMeasOn = yCleanOn + normalMeasNoiseOn; 
-yMeasStd = yCleanStd + normalMeasNoiseOff; 
+yMeasStd = yCleanStd + normalMeasNoiseStd; 
 
 % construct measurement noise covariance matrices:
 noiseCovMat = diag(sigmas.^2);
 noiseCovMatOn = diag(sigmasOn.^2);  
-noiseCovMatOff = diag(sigmasOff.^2); 
+noiseCovMatStd = diag(sigmasStd.^2); 
 
 %% Plot results (separated into Online/Offline Measurements)
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
@@ -476,20 +476,20 @@ MESS.x0Norm = x0Norm;
 MESS.xSolOn = xSolOn;   
 MESS.xSolStd = xSolStd;
 MESS.xSolOnNorm = xSolOnNorm;   % normalized state trajectories
-MESS.xSolOffNorm = xSolStdNorm;
+MESS.xSolStdNorm = xSolStdNorm;
 MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
 % clean outputs: 
 MESS.yClean = yClean; 
 MESS.yCleanOn = yCleanOn;  
-MESS.yCleanOff = yCleanStd;
+MESS.yCleanStd = yCleanStd;
 MESS.yCleanOnNorm = yCleanOnNorm;   % normalized outputs
-MESS.yCleanOffNorm = yCleanStdNorm; 
+MESS.yCleanStdNorm = yCleanStdNorm; 
 % noisy outputs: 
 MESS.yMeas = yMeas; 
 MESS.yMeasOn = yMeasOn; 
-MESS.yMeasOff = yMeasStd; 
+MESS.yMeasStd = yMeasStd; 
 MESS.C = noiseCovMat; % accurate values from sensor data sheets
 MESS.COn = noiseCovMatOn;
-MESS.COff = noiseCovMatOff;
+MESS.CStd = noiseCovMatStd;
 
 save('Messung_ADM1_R4_frac_norm_IntensiveSampling.mat', 'MESS', 'params','TNum')
