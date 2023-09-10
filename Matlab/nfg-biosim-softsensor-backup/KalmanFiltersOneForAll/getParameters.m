@@ -3,13 +3,14 @@
 % Erstelldatum: 12.07.2023
 % Autor: Simon Hellmann
 
-function  params = getParameters(flagModel, flagFrac, system, parameters)
+function  params = getParameters(flagModel, flagFrac, system, parameters,varargin)
 % returns model parameters summarized in struct params
 % params - struct containing model parameters as arrays aNum, cNum and thNum
 % flagModel -   3: ADM1-R3; 4: ADM1-R4
 % flagFrac -    0: no -frac (only 1 CH-fraction); 1: -frac (second CH-fraction)
 % system -      table containing system parameters V_liq, V_gas and p_atm
 % parameters    struct containing model parameters for given model
+% optional: fracChFast - share of fast carbohydrates in total carbohydrates
 
 % time-invariant parameters
 s = system.Variables;   % s = systemParameters
@@ -18,9 +19,10 @@ V_liq = s(1);  % gas volume
 V_gas = s(2);  % liquid volume
 % p_atm = s(3);  % atmospheric pressure [bar] XY: Achtung: Typo im GitHub
 p_atm = 1.0133; 
-
-% global value for fraction of fast carbohydrates:
-fracChFast = 0.5; 
+ 
+if flagFrac == 1
+    fracChFast = varargin{1}; 
+end
 
 switch flagModel
     case 3
@@ -43,7 +45,8 @@ switch flagModel
         K_S_ac =  parameters(8);  % half-saturation constant acetoclastic methanogenesis [g/l]
         K_w =  parameters(9);    % ion product of water [mol/l]
         R =  parameters(10);    % universal gas constant [bar l/mol/K]
-        T =  parameters(11);    % operating temperature [K]
+%         T =  parameters(11);    % operating temperature [K]
+        T = 273.15;             % XY: enforce normal conditions
         k_AB_IN =  parameters(12);    % kin. dissociation constant ammonia [l/mol/d] 
         k_AB_ac =  parameters(13);    % kin. dissociation constant acetic acid [l/mol/d]
         k_AB_co2 =  parameters(14);   % kin. dissociation constant carbonate [l/mol/d]
@@ -131,9 +134,9 @@ switch flagModel
         % check if pH2O is zero!
         k_La = parameters(5);       % mass transfer coefficient [1/d]
         k_p = parameters(9);       % friction parameter [l/bar/d]
-        T = parameters(4);     % operating temperature [K]
-        % XY: check if normal conditions!
-        rho = 1;        % mass density of digestate [kg/l]
+%         T = parameters(4);     % operating temperature [K]
+        T = 273.15;             % XY: enforce normal conditions
+        rho = 1000;        % mass density of digestate [kg/l]
         Mch4 = 16;      % molar mass CH4 [kg/kmol]
         Mco2 = 44;      % molar mass CO2 [kg/kmol]
         
@@ -172,7 +175,7 @@ switch flagModel
         if flagFrac == 0    % R3
             thNum = [k_ch, 0, k_pr, k_li, k_dec, k_m_ac, K_S_ac, K_I_nh3, 0]';
         else                % R3-frac
-            thNum = [k_ch_F, k_ch_S, k_pr, k_li, k_dec, k_m_ac, K_S_ac, K_I_nh3, 0]';
+            thNum = [k_ch_F, k_ch_S, k_pr, k_li, k_dec, k_m_ac, K_S_ac, K_I_nh3, fracChFast]';
         end
     
     case 4

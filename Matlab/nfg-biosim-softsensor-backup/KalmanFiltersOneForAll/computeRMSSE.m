@@ -4,6 +4,9 @@
 % Autor: Simon Hellmann
 
 function  [RMSSE] = computeRMSSE(yMeas,yEst)
+% computes the root mean squared scaled error RMSSE for each measurement, 
+% i.e. each vector in yMeas. RMSSE is the integrated error between yMeas
+% and the naive forecast (sample and hold) of the previous measurement
 
 N = numel(yMeas);   % number of samples
 

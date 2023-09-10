@@ -14,11 +14,12 @@ addpath('ODEs/')
 addpath('measurementEquations/')
 
 %% choose model type, normalization, and optionally -frac
-flagModel = 3;  % 3: ADM1-R3; 4: ADM1-R4
-flagNorm = 0;   % 0: absolute coordinates; 1: normalized coordinates
+flagModel = 4;  % 3: ADM1-R3; 4: ADM1-R4
 flagFrac = 0;   % 0: no -frac (only 1 CH-fraction); 1: -frac (second CH-fraction)
+flagNorm = 1;   % 0: absolute coordinates; 1: normalized coordinates
 
-fracChFast = 0.8; 
+% global value for fraction of fast carbohydrates:
+fracChFast = 0.7; 
 
 switch flagModel
     case 3
@@ -37,7 +38,7 @@ load(['generatedOutput/SteadyState_',num2str(model),'_Soeren.mat'])
 
 %% inlet concentrations:
 % obtain parameters:
-params = getParameters(flagModel,flagFrac,system,parameters); 
+params = getParameters(flagModel,flagFrac,system,parameters,fracChFast); 
 cNum = params.c; 
 thNum = params.th; 
 aNum = params.a; 
@@ -86,17 +87,12 @@ xInMat = zeros(nIntervals,nStates);         % allocate memory
 xInMat(idxFeedOn,:) = repmat(xIn',nFeedings,1); 
 inputMat = [feedVolFlow,xInMat]; 
 
-% obtain system equations from symbolic formulation:
+% obtain system equations from symbolic formulation (abs. coordinates):
 % define sizes of a, c and th: 
 sza = size(aNum); 
 szc = size(cNum); 
 szth = size(thNum); 
-if flagNorm == 0
-    [f,g] = getSystemEquations(flagModel,flagFrac,nStates,sza,szc,szth); 
-else 
-    % XY: diese Funktion noch testen!
-    [fNorm,gNorm] = getSystemEquationsNorm(flagModel,flagFrac,nStates,sza,szc,szth); 
-end
+[f,g] = getSystemEquations(flagModel,flagFrac,nStates,sza,szc,szth); 
 
 %% determine steady state as initial value for simulation: 
 tSpanSS = [0,tSS]; 
@@ -121,18 +117,13 @@ if flagNorm == 1
     TNum.Tu = TuNum;
     
     % normalize simulation inputs:
-    uNorm = feedVolFlowSS./TuNum; 
+    uSSNorm = feedVolFlowSS./TuNum; 
     x0SSNorm = x0SS./TxNum; 
     xInNorm = xIn./TxNum; 
 
-    %% simulate transition into steady state in normalized coordinates:
-    % XY: das ist hier nicht unbedingt nötig, denn du könntest auch direkt x0
-    % normieren. War eher zur Validierung gedacht!
-    odeFunNormSS = @(t,xNorm) fNorm(xNorm,uNorm,xInNorm,thNum,cNum,aNum,TxNum,TuNum); 
-    [tVecSSNorm,xSSNorm] = ode15s(odeFunNormSS,tSpanSS,x0SSNorm);
-    nSamplesTillSS = size(xSSNorm,1); 
-    x0DynNorm = xSSNorm(end,:)'; % extract only last value as actual steady state
-    x0Norm = x0DynNorm;
+    %% obtain numeric ode functions from symbolic formulation
+    [fNorm,gNorm] = getSystemEquationsNorm(flagModel,flagFrac,nStates,sza,szc,szth); 
+    x0Norm = x0./TxNum; % steady state in normalized coordinates
 end
  
 %% compute state trajectories during dynamic feeding scenario:
@@ -185,7 +176,7 @@ MESS.yMeas = yMeas;
 MESS.R = noiseCovMat; % accurate values from sensor data sheets
 
 if flagNorm == 1
-    MESS.x0Norm = x0DynNorm;   % normalized initial state
+    MESS.x0Norm = x0Norm;   % normalized initial state
     MESS.xNorm = xSolNorm; 
     MESS.yCleanNorm = yCleanNorm; % normalized outputs
 end
@@ -193,10 +184,20 @@ end
 % create sub-folder (if non-existent yet) and save results there
 currPath = pwd; 
 pathToResults = fullfile(currPath,'generatedOutput');
-mkdir(pathToResults);   % create subfolder (gives warning if exists yet)
-fileName = 'Messung_ADM1_R3_norm.mat'; 
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+
+% assemble the file name and save:
+fileNamePre = ['Messung_',model]; 
+if flagFrac == 1 % extend name by '_frac':
+    fileNamePre = [fileNamePre,'_frac'];
+end
+
 if flagNorm == 0
+    fileName = [fileNamePre,'.mat'];
     save(fullfile(pathToResults,fileName), 'MESS', 'params')
 else
+    fileName = [fileNamePre,'_norm.mat'];
     save(fullfile(pathToResults,fileName), 'MESS', 'params', 'TNum')
-end
+end 

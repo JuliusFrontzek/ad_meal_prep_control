@@ -1,6 +1,18 @@
 function xSol = computeXTrajectories(x0,f,inputMat,tEvents,tOverall,tGrid,tEnd,thNum,cNum,aNum,nStates)
-% computes absolute state trajectories xSol starting at x0
-% XY: input und output variablen beschreiben!
+% computes state trajectories xSol in absolute coordinates starting at x0
+
+% xSol -        complete state trajectories in abs coordinates resulting 
+% from ODE f and inputMat over time tOverall starting in x0
+% x0 -          initial state value
+% f -           numerical function handle of ODE
+% inputMat -    array of feed volume flow u and inlet concentrations at feedings xInMat [u,xInMat] 
+% tEvents -     time vector of feeding events (on or off)
+% tOverall -    unified time vector of time grid tGrid and feeding events
+% tGrid -       time grid
+% tEnd -        end time of simulation
+% thNum,cNum,aNum - arrays of time-variant, time-invariant and
+% stoichiometric parameters
+% nStates -     # states
 
 % Solve ODE via iterative solution of constant feeding regimes (on or off)
 xSim = zeros(length(tOverall), nStates);% allocate memory

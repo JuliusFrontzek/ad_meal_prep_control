@@ -4,7 +4,14 @@
 % Autor: Simon Hellmann
 
 function  [yMeas,noiseCovMat] = addNoiseToMeasurements(flagModel,yClean)
-% XY: Zweck der Funktion und Argumente beschreiben
+% adds random noise to clean measurements yClean (normally distributed), 
+% and returns noise covariance matrix
+
+% yMeas -       noisy synthetic measurements
+% noiseCovMat - noise covariance matrix (diagonal with squared std.
+% deviations of sigma on diagonal)
+% flagModel -   3: ADM1-R3; 4: ADM1-R4
+% yClean -      noise-free outputs
 
 N = size(yClean,1); 
 sigmaV = 0.2*24;    % Trommelgaszähler Labor [l/h] --> [l/d]

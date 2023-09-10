@@ -1,6 +1,21 @@
 function xSolNorm = computeXTrajectoriesNorm(x0Norm,fNorm,inputMat,tEvents,tOverall,tGrid,tEnd,thNum,cNum,aNum,nStates,TxNum,TuNum)
-% computes normalized state trajectories xSolNorm starting at x0Norm
-% XY: input und output variablen beschreiben!
+% computes state trajectories xSolNorm in absolute coordinates starting at 
+% x0Norm
+
+% xSolNorm -        complete state trajectories in normalized coordinates
+% resulting from ODE fNorm and inputMat over time tOverall starting in x0Norm
+% x0Norm -      normalized initial state value
+% f -           numerical function handle of ODE
+% inputMat -    array of feed volume flow u and inlet concentrations at feedings xInMat [u,xInMat] 
+% tEvents -     time vector of feeding events (on or off)
+% tOverall -    unified time vector of time grid tGrid and feeding events
+% tGrid -       time grid
+% tEnd -        end time of simulation
+% thNum,cNum,aNum - arrays of time-variant, time-invariant and
+% stoichiometric parameters
+% nStates -     # states
+% TxNum -       normalization vector of states
+% TuNum -       normalization vector of inputs
 
 % Solve ODE via iterative solution of constant feeding regimes (on or off)
 xSimNorm = zeros(length(tOverall), nStates);% allocate memory

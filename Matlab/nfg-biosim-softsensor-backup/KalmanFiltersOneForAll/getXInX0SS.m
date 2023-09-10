@@ -86,16 +86,9 @@ switch flagModel
             % overwrite values in positions of S_an/S_cat with those for S_ion/X_ash:
             x0SS(11) = xAsh0;
             x0SS(12) = Sion0;   
-            % since the dissociation constants KaIN and Kaco2 were increased 
-            % compared with Sörens false values on GitHub, increase the
-            % initial values of biomass to sustain a positive steady state:
-            x0SS(9) = 1.5*x0SS(9);      % microbial biomass 
-            x0SS(10) = 1.5*x0SS(10);    % methanogens
         else
-            % consider additional CH fraction
-            % XY: Werte für XchS hinzufügen!
             x0SS = nan(nStatesSoeren + 1,1); % allocate memory
-            x0SS([1:5,8:11,14:end]) = xInPre([1:5,7:10,13:end])'; % all states except Xch (slow and fast), Xash and Sion
+            x0SS([1:5,8:11,14:end]) = x0Pre([1:5,7:10,13:end])'; % all states except Xch (slow and fast), Xash and Sion
             % overwrite values in positions of S_an/S_cat with those for S_ion/X_ash:
             x0SS(12) = xAsh0;
             x0SS(13) = Sion0;
@@ -111,7 +104,6 @@ switch flagModel
             x0SS([1:8,10:end]) = x0Pre;         % all states up to X_ash 
             x0SS(9) = xAsh0; 
         else 
-            % XY: Werte für XchS einfügen!
             x0SS = nan(nStatesSoeren + 2,1); % mind that Soeren has no Ash and no 2nd CH fraction   
 %             x0SS = [0.091, 0.508, 0.944, 956.97, fracChFast*x0ch, (1-fracChFast)*x0ch, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
             x0chTot = x0Pre(5); 

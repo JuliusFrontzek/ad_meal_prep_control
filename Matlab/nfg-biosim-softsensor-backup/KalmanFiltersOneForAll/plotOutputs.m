@@ -173,7 +173,7 @@ switch flagModel
         plot(tGrid,yClean(:,1)/24,'DisplayName','clean',...
              'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
         ylabel('gas vol flow [l/h]')
-        ylim([0,16])
+%         ylim([0,16])
         yyaxis right
         stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
                'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
