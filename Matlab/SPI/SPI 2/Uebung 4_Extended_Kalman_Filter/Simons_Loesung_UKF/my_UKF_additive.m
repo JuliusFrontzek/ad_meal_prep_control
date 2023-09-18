@@ -133,8 +133,7 @@ xPlus = sum(Wx.*sigmaX,2);
 % only for comparison: 
 Kv = K*(yMeas - yAggregated);
 xPlusvdM = xMinus + Kv; % standard formulation of vdMerwe
-disp('max. Abweichung xPlus:')
-max(abs(xPlusvdM - xPlus))
+disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusvdM - xPlus)))])
 
 % mind that Kolas proved the fully augmented case. For additive noise, the
 % measurement update of P-Matrix must be slightly adapted:
@@ -144,12 +143,12 @@ PPlusReformulatedKolasAdditive = PPlusReformulatedKolasFullyAugmented + Q + K*R*
 
 % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 
-disp('max. Abweichung PPlus:')
-max(max(abs(PPlusTempvdM - PPlusReformulatedKolasAdditive)))
+PPlusvdM = 1/2*(PPlusTempvdM + PPlusTempvdM');  % regularization
+disp(['max. Abweichung PPlus (add.): ', ...
+      num2str(max(max(abs(PPlusvdM - PPlusReformulatedKolasAdditive))))])
 
 % make sure PPlus is symmetric:
 PPlus = 1/2*(PPlusReformulatedKolasAdditive + PPlusReformulatedKolasAdditive');   
-disp('sum of PPlus diagonal:')
-sum(diag(PPlus)) % show potential divergence/falling asleep of P-Matrix live
+disp(['sum of PPlus diagonal (add.): ', num2str(sum(diag(PPlus)))])
 
 end

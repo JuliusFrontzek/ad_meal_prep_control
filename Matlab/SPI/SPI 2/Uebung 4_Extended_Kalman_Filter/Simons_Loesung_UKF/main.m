@@ -4,6 +4,16 @@ close all
 clear all
 clc
 
+global counterSigmaInit
+global counterSigmaProp
+global counterSigmaX
+global counterX
+
+counterSigmaInit = 0; 
+counterSigmaProp = 0; 
+counterSigmaX = 0; 
+counterX = 0; 
+
 %% 1) Startwerte und Simulationsparameter
 
 t0 = 0;
@@ -31,6 +41,10 @@ GAINEKF = zeros(3,nEval);
 ESTIMATESUKF = zeros(3,nEval);
 COVARIANCEUKF = zeros(3,nEval);
 GAINUKF = zeros(3,nEval);
+ESTIMATESUKFAug = zeros(3,nEval);
+COVARIANCEUKFAug = zeros(3,nEval);
+ESTIMATESUKFFullyAug = zeros(3,nEval);
+COVARIANCEUKFFullyAug = zeros(3,nEval);
 
 STATES(:,1) = x0;
 MESS(1,1) = x0(1)/x0(3);
@@ -39,16 +53,21 @@ ESTIMATESEKF(:,1) = x_hat;
 COVARIANCEEKF(:,1) = diag(P0);
 ESTIMATESUKF(:,1) = x_hat;
 COVARIANCEUKF(:,1) = diag(P0);
+ESTIMATESUKFAug(:,1) = x_hat;
+COVARIANCEUKFAug(:,1) = diag(P0);
+ESTIMATESUKFFullyAug(:,1) = x_hat;
+COVARIANCEUKFFullyAug(:,1) = diag(P0);
 
 %% Tuning
 % Initialisierung
 R = diag([1.15^2,0.25^2]);      % für Messrauschen (ist dank gegebener Sensordaten (Varianzen) fest)
 % Q = diag([0.03,0.03,1]);      % für Prozessrauschen
-Q = zeros(3);                   % (2a)
-Q = diag([0.0527,0.3504,0.25]); % (2d) - mit Werten aus plainSimulation; bis 3% Fehler in x0 (bioprocess.m) gehen noch gut
-
+% Q = zeros(3);                   % (2a)
+% Q = diag([0.0527,0.3504,0.25]); % (2d) - mit Werten aus plainSimulation; bis 3% Fehler in x0 (bioprocess.m) gehen noch gut
 Q = diag([0.0527,0.7,   0.25]); % (2d) - Simons beste Lösung bei 5% Ungenauigkeit
 Q(1,3) = 0.03;                  % (2d) - gehört noch dazu (weil x1 und x3 am Ende stark in ihrer Unsicherheit korrelieren)
+% make Q symmetric: 
+Q = Q + triu(Q,1)';
 
 % Q = 0.01*diag([10,75,5]);       % (2d) - aus MuLö, funktioniert auch bei 5% Modell-Ungenauigkeit noch sehr gut!
 
@@ -72,6 +91,10 @@ xMinusEKF = x_hat;
 PMinusEKF = P0;
 xMinusUKF = x_hat;
 PMinusUKF = P0;
+xMinusUKFAug = x_hat;
+PMinusUKFAug = P0;
+xMinusUKFFullyAug = x_hat;
+PMinusUKFFullyAug = P0;
 
 rng('default');     % fix seed for random number generation (for replicable results)
 % integriere für jedes Zeitintervall separat:
@@ -86,10 +109,11 @@ for time = t0:dt:tend
     STATES(:,i) = xReal;
     MESS(:,i) = yMeas;
     
-    %% Aufruf des EKFs
+    %% Aufruf der EKF/UKFs
     [xPlusEKF,PPlusEKF,KvEKF] = my_extended_kalman_filter(xMinusEKF,PMinusEKF,u(i),yMeas,t_span,p_KF,Q,R);
     [xPlusUKF,PPlusUKF,KvUKF] = my_UKF_additive(xMinusUKF,PMinusUKF,u(i),yMeas,t_span,p_KF,Q,R);
-    [xPlusUKF,PPlusUKF] = my_UKF_fullyAugmented(xMinusUKF,PMinusUKF,u(i),yMeas,t_span,p_KF,Q,R);
+    [xPlusUKFAug,PPlusUKFAug] = my_UKF_augmented(xMinusUKFAug,PMinusUKFAug,u(i),yMeas,t_span,p_KF,Q,R);
+    [xPlusUKFFullyAug,PPlusUKFFullyAug] = my_UKF_fullyAugmented(xMinusUKFFullyAug,PMinusUKFFullyAug,u(i),yMeas,t_span,p_KF,Q,R);
 %     [xPlus,PPlus,Kv] = extended_kalman_filter(xMinus,u(i),yMeas,t_span,POld);
     ESTIMATESEKF(:,i) = xPlusEKF;
     COVARIANCEEKF(:,i) = diag(PPlusEKF);
@@ -97,6 +121,10 @@ for time = t0:dt:tend
     ESTIMATESUKF(:,i) = xPlusUKF;
     COVARIANCEUKF(:,i) = diag(PPlusUKF);
     GAINUKF(:,i) = KvUKF; 
+    ESTIMATESUKFAug(:,i) = xPlusUKFAug;
+    COVARIANCEUKFAug(:,i) = diag(PPlusUKFAug);
+    ESTIMATESUKFFullyAug(:,i) = xPlusUKFFullyAug;
+    COVARIANCEUKFFullyAug(:,i) = diag(PPlusUKFFullyAug);
 
     % Update für nächste Iteration:
     i = i+1;  
@@ -105,6 +133,10 @@ for time = t0:dt:tend
     PMinusEKF = PPlusEKF; 
     xMinusUKF = xPlusUKF; 
     PMinusUKF = PPlusUKF;
+    xMinusUKFAug = xPlusUKFAug; 
+    PMinusUKFAug = PPlusUKFAug;
+    xMinusUKFFullyAug = xPlusUKFFullyAug; 
+    PMinusUKFFullyAug = PPlusUKFFullyAug;
 end
 
 %% 3) Plots der Ergebnisse
@@ -158,7 +190,50 @@ ylabel('Volumen [l]')
 xlim([0,t(end)])
 xlabel('Zeit [h]')
 
-% Kalman Gains
+%% compare all 3 different UKF implementations: 
+figure()
+% Biomasse
+% subplot(311)
+plot(t,MESS(1,:)'.*STATES(3,:)','ok')
+hold on
+plot(t,STATES(1,:)','k')
+plot(t,ESTIMATESEKF(1,:)','r')
+plot(t,ESTIMATESUKF(1,:)',':b','LineWidth',2)
+plot(t,ESTIMATESUKF(1,:)','--g','LineWidth',1.4)
+plot(t,ESTIMATESUKF(1,:)','-.c','LineWidth',0.8)
+ylabel('Biomasse m_X [g]')
+xlim([0,t(end)])
+title('Simulierte und geschätzte Zustände')
+legend('Messung', 'Simulation', 'EKF', 'UKF', 'UKF-aug', 'UKF-fully-aug')
+
+% Substrat
+subplot(312)
+plot(t,STATES(2,:)','k')
+hold on
+plot(t,ESTIMATESEKF(2,:)','r')
+plot(t,ESTIMATESUKF(2,:)',':b','LineWidth',2)
+plot(t,ESTIMATESUKFAug(2,:)','--g','LineWidth',1.4)
+plot(t,ESTIMATESUKFFullyAug(2,:)','-.c','LineWidth',0.8)
+ylabel('Substrat m_S [g]')
+title('Simulierte und geschätzte Zustände')
+legend('Simulation', 'EKF', 'UKF', 'UKF-aug', 'UKF-fully-aug')
+xlim([0,t(end)])
+
+% Volumen
+subplot(313)
+plot(t,STATES(3,:)','k')
+hold on
+plot(t,MESS(2,:)','ok')
+plot(t,ESTIMATESEKF(3,:)','r')
+plot(t,ESTIMATESUKF(3,:)',':b','LineWidth',2)
+plot(t,ESTIMATESUKFAug(3,:)','--g','LineWidth',1.4)
+plot(t,ESTIMATESUKFFullyAug(3,:)','-.c','LineWidth',0.8)
+ylabel('Volumen [l]')
+legend('Messung','Simulation', 'EKF', 'UKF', 'UKF-aug', 'UKF-fully-aug')
+xlim([0,t(end)])
+xlabel('Zeit [h]')
+
+%% Kalman Gains
 figure
 subplot(311)
 stairs(t,GAINEKF(1,:),'b')
