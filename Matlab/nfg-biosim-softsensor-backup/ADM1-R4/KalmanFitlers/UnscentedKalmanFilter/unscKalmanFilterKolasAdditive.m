@@ -47,7 +47,7 @@ nSigmaPoints = 2*nStates + 1;
 
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
-beta = 2;   % for Gaussian prior (Diss vdM, S.56)
+beta = 0;   % for Gaussian prior (Diss vdM, S.56)
 kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
@@ -120,6 +120,7 @@ end
 xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 
 % if any state priors violate constraints, apply clipping:
+
 if any(any(xMinus < 0))
     xMinus(xMinus < 0) = 0; 
     counterX = counterX + 1; 
@@ -170,14 +171,17 @@ xPlus = sum(Wx.*sigmaX,2);
 % only for comparison: 
 Kv = K*(yMeas' - yAggregated);
 xPlusvdM = xMinus + Kv; % standard formulation of vdMerwe
+disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusvdM - xPlus)))])
 
 diffxPlusFromSigmaX = sigmaX - xPlus; 
 PPlusAugmentedCase = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
-
 PPlusTemp = PPlusAugmentedCase + Q + K*R*K'; % different formula for additive noise case!
 
 % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 
+disp(['max. Abweichung PPlus (add.): ', ...
+      num2str(max(max(abs(PPlusTempvdM - PPlusTemp))))])
+
 
 PPlus = 1/2*(PPlusTemp + PPlusTemp');   % make sure PPlus is symmetric!
 % sum(diag(PPlus)) % show potential divergence of P-Matrix live

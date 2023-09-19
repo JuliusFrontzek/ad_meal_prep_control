@@ -45,7 +45,7 @@ nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
 
 % re-define scaling parameters and weights for fully augmented case: 
 alpha = 1;  % Kolas 2009, (18)
-beta = 0;   % for Gaussian prior (Diss vdM, S.56)
+beta = 2;   % for Gaussian prior (Diss vdM, S.56)
 kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
 % lambda = alpha^2*(nStates + kappa) - nStates; 
 lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 

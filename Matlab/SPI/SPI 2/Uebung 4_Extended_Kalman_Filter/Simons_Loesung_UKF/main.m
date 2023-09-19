@@ -193,7 +193,7 @@ xlabel('Zeit [h]')
 %% compare all 3 different UKF implementations: 
 figure()
 % Biomasse
-% subplot(311)
+subplot(311)
 plot(t,MESS(1,:)'.*STATES(3,:)','ok')
 hold on
 plot(t,STATES(1,:)','k')

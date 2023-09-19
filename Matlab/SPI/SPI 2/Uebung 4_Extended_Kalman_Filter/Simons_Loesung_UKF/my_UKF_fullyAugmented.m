@@ -8,12 +8,6 @@ function [xPlus,PPlus] = my_UKF_fullyAugmented(xOld,POld,u,yMeas,tSpan,p,Q,R)
 % compute time and measurement update acc. to Joseph-version of the UKF
 % acc. to Kolas et al. (2009) for non-additive noise (Table 8) (no clipping)
 
-% XY: füge hier process und measurement noise entsprechend der
-% Cov.-Matrizen R und Q hinzu. Sonst haben die effektiv keine Wirkung mehr!
-
-% nutze dann die gesamten arrays der unterschiedlichen Sigmapunkte! -->
-% slicing weg!
-
 global counterSigmaInit
 global counterSigmaProp
 global counterSigmaX
@@ -52,7 +46,7 @@ nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
 
 % re-define scaling parameters and weights for fully augmented case: 
 alpha = 1;  % Kolas 2009, (18)
-beta = 0;   % for Gaussian prior (Diss vdM, S.56)
+beta = 2;   % for Gaussian prior (Diss vdM, S.56)
 kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
 % lambda = alpha^2*(nStates + kappa) - nStates; 
 lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 

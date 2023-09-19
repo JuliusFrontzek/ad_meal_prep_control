@@ -3,7 +3,9 @@
 % Erstelldatum: 31.08.2023
 % Autor: Simon Hellmann
 
-function [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xOldNorm,POldNorm,tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,TxNum,TyNum,TuNum)
+function [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xOldNorm,POldNorm, ...
+                                    tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm, ...
+                                    fNorm,gNorm,TxNum,TyNum,TuNum)
 
 % compute time and measurement update acc. to Joseph-version of the UKF
 % acc. to Kolas et al. (2009) with clipping wherever possible (normalized)
@@ -49,7 +51,7 @@ nSigmaPoints = 2*nStates + 1;
 
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
-beta = 2;   % for Gaussian prior (Diss vdM, S.56)
+beta = 0;   % for Gaussian prior (Diss vdM, S.56)
 kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
@@ -92,6 +94,8 @@ if isempty(tRelEvents)
         sigmaXPropNorm(:,k) = XTUSolNorm(end,:)';
     end 
 % Fall b: veränderliche Fütterung während Messintervalls:
+% XY: nicht notwendigerweise! Kann auch sein, dass einfach Beginn oder Ende 
+% des Intervalls mit einem Fütterungszeitpunkt (on/off) zusammenfallen!
 else 
     % erstelle 'feines' Zeitraster aus Fütterungs- und Messzeiten:
     tOverall = unique(sort([tSpan, tRelEvents]));
@@ -171,16 +175,18 @@ end
 xPlusNorm = sum(Wx.*sigmaXNorm,2); 
 
 % only for comparison: 
-KvNorm = KNorm*(yMeasNorm' - yAggregatedNorm);
+KvNorm = KNorm*(yMeasNorm - yAggregatedNorm);
 xPlusNormvdM = xMinusNorm + KvNorm; % standard formulation of vdMerwe, normalized
+disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusNormvdM - xPlusNorm)))])
 
 diffxPlusFromSigmaXNorm = sigmaXNorm - xPlusNorm; 
 PPlusAugmentedCaseNorm = Wc.*diffxPlusFromSigmaXNorm*diffxPlusFromSigmaXNorm'; 
-
 PPlusTempNorm = PPlusAugmentedCaseNorm + QNorm + KNorm*RNorm*KNorm'; % different formula for additive noise case (normalized)!
 
 % only for comparison: 
 PPlusTempNormvdM = PMinusNorm - KNorm*PyyNorm*KNorm'; 
+disp(['max. Abweichung PPlus (add.): ', ...
+      num2str(max(max(abs(PPlusTempNormvdM - PPlusTempNorm))))])
 
 PPlusNorm = 1/2*(PPlusTempNorm + PPlusTempNorm');   % make sure PPlus is symmetric!
 % sum(diag(PPlusNorm)) % show potential divergence of P-Matrix live
