@@ -47,10 +47,13 @@ nSigmaPoints = 2*nStates + 1;
 
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
-beta = 0;   % for Gaussian prior (Diss vdM, S.56)
-kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
+beta = 2;   % for Gaussian prior (Diss vdM, S.56)
+beta = 0; 
+kappa = 3 - nStates;  % acc. to Julier & Uhlmann
+kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
+gamma = 0.2;  % XY just to check
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
 Wx0 = lambda/(nStates + lambda); 
@@ -94,7 +97,8 @@ else
     % erstelle 'feines' Zeitraster aus Fütterungs- und Messzeiten:
     tOverall = unique(sort([tSpan, tRelEvents]));
     nIntervals = length(tOverall) - 1; 
-    XAtEndOfInt = sigmaXInit;    % Startwerte für erstes Intervall (wird überschrieben)
+    XAtBeginOfInt = sigmaXInit;    % Startwerte für erstes Intervall (wird nicht überschrieben)
+    XAtEndOfInt = nan(size(sigmaXInit)); % allocate memory
     % integriere Intervall-weise, sodass während der Intervalle konstante
     % Fütterungen herrschen:
     for m = 1:nIntervals
@@ -103,9 +107,10 @@ else
         tEval = [tOverall(m), tOverall(m+1)];
         odeFun = @(t,X) f(X,feedVolFlow,xInCurr,th,c,a); 
         for kk = 1:nSigmaPoints
-            [~,XTUSol] = ode15s(odeFun,tEval,XAtEndOfInt(:,kk));
+            [~,XTUSol] = ode15s(odeFun,tEval,XAtBeginOfInt(:,kk));
             XAtEndOfInt(:,kk) = XTUSol(end,:)';
         end
+        XAtBeginOfInt = XAtEndOfInt; % overwrite for next interval
     end
     sigmaXProp = XAtEndOfInt;
 end

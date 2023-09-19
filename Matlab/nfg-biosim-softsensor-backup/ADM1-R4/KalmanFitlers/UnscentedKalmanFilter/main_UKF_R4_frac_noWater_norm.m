@@ -34,6 +34,7 @@ x0 = x0Init;            % x0 will be replaced in every iteration later
 nStates = length(x0); 
 nTheta = length(params.th); % number of time-variant parameters
 rng('default');     % fix seed for random number generation (for replicable results)
+% xHat = x0.*(1 + 0.1*abs(randn(nStates,1))); 
 xHat = x0.*abs(randn(nStates,1)); 
 xMinus = xHat;      % to be overwritten
 % xMinus = x0Init;    % XY Rania
@@ -72,23 +73,23 @@ COVARIANCE(:,:,1) = P0;
 PMinus = P0;      % to overwrite
 % same for normalized coordinates: 
 ESTIMATESNorm(1,:) = xHatNorm;
-P0Norm = eye(nStates)./(TxNum.^2); % for comparison with non-normalized case
+P0Norm = eye(nStates);
 COVARIANCENorm(:,:,1) = P0Norm; 
 PMinusNorm = P0Norm;  % to overwrite
 
 buffer = 1.5;   % conservative safety margin of 50% for measurement noise covariance
 R = buffer * MESS.R; 
-RNorm = R./(TyNum.^2); 
 % fine-tuning of Kalman Filter - measurement uncertainty: 
-% R(4,4) = 1E2*R(4,4);    % SIN
+% R(4,4) = 5E1*R(4,4);    % SIN
 % R(5,5) = 5E2*R(5,5);    % TS
+RNorm = R./(TyNum.^2); 
 % fine-tuning of Kalman Filter - process uncertainty: 
 Q = diag([0.016, 0.555, 0.563, 1.263, 2.816, 2.654, 0.972, 2.894, 0.374, 0.948]);
 % Q = eye(nStates); 
 % Q(4,4) = 1E-3*Q(4,4);       % unit change for h2o [g/l] --> [kg/l]
 % Q(10,10) = 1E-3*Q(10,10);   % unit change for ash [g/l] --> [kg/l]  
-QNorm = eye(nStates);   % XY: sicher besser auszulegen
-% QNorm = Q./(TxNum.^2); % for comparison with non-normalized case
+% QNorm = eye(nStates);   % XY: sicher besser auszulegen
+QNorm = Q./(TxNum.^2); % for comparison with non-normalized case
 
 % obtain feeding information:
 inputMat = MESS.inputMat;   % [tEvents,feed vol flow,inlet concentrations]
@@ -370,21 +371,21 @@ set(gca, "YColor", 'k')     % make right y-axis black
 sgtitle('Comparison of UKF and clean model output')
 
 %% Biomass X_bac:
-sigmaBacArray = sqrt(COVARIANCE(8,8,:)); 
-sigmaBac = reshape(sigmaBacArray,nSamples + 1,1);
-
-figure
-plot(tMeas,STATES(:,8)','DisplayName','true',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
-hold on
-plot(t,ESTIMATES(:,8)','DisplayName','estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
-plot(t,ESTIMATES(:,8)+sigmaBac,'--b','DisplayName','+1 \sigma boundary')
-plot(t,ESTIMATES(:,8)-sigmaBac,':b','DisplayName','-1 \sigma boundary')
-hold off
-ylabel('biomass X_{bac} [g/L]')
-title('Estimated and true biomass concentration')
-legend()
+% sigmaBacArray = sqrt(COVARIANCE(8,8,:)); 
+% sigmaBac = reshape(sigmaBacArray,nSamples + 1,1);
+% 
+% figure
+% plot(tMeas,STATES(:,8)','DisplayName','true',...
+%      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+% hold on
+% plot(t,ESTIMATES(:,8)','DisplayName','estimate',...
+%      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
+% plot(t,ESTIMATES(:,8)+sigmaBac,'--b','DisplayName','+1 \sigma boundary')
+% plot(t,ESTIMATES(:,8)-sigmaBac,':b','DisplayName','-1 \sigma boundary')
+% hold off
+% ylabel('biomass X_{bac} [g/L]')
+% title('Estimated and true biomass concentration')
+% legend()
 
 %% Plot trajectories of relevant states: 
 trueStates = MESS.x; 
@@ -392,12 +393,14 @@ trueStates = MESS.x;
 figure()
 
 % S_IN:
-subplot(3,1,1)
+subplot(2,2,1)
 plot(tMeas,trueStates(:,3),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,ESTIMATES(:,3),'DisplayName','estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+     'LineStyle',':', 'Color', colorPaletteHex(4), 'LineWidth',1.2); 
+plot(t,xUKFDeNorm(:,3),'DisplayName','estimate deNorm',...
+     'LineStyle','-.', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('S_{IN} [g/L]')
 xlabel('time [d]')
@@ -407,7 +410,7 @@ stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
-% legend('Location','NorthEast'); 
+legend('Location','NorthEast'); 
 
 % % S_h2o:
 % subplot(3,2,2)
@@ -427,11 +430,13 @@ set(gca, "YColor", 'k')     % make right y-axis black
 % legend('Location','NorthEast'); 
 
 % X_ch_fast:
-subplot(3,1,2)
+subplot(2,2,2)
 plot(tMeas,trueStates(:,4),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,ESTIMATES(:,4),'DisplayName','estimate',...
+     'LineStyle',':', 'Color', colorPaletteHex(4), 'LineWidth',1.2); 
+plot(t,xUKFDeNorm(:,4),'DisplayName','estimate deNorm',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('X_{ch,fast} [g/L]')
@@ -440,15 +445,17 @@ stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
-xlabel('time [d]')
+% xlabel('time [d]')
 % legend('Location','NorthEast'); 
 
 % X_ch_slow:
-subplot(3,1,3)
+subplot(2,2,3)
 plot(tMeas,trueStates(:,5),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,ESTIMATES(:,5),'DisplayName','estimate',...
+     'LineStyle','-.', 'Color', colorPaletteHex(4), 'LineWidth',1.2); 
+plot(t,xUKFDeNorm(:,5),'DisplayName','estimate deNorm',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('X_{ch,slow} [g/L]')
@@ -460,22 +467,23 @@ set(gca, "YColor", 'k')     % make right y-axis black
 xlabel('time [d]')
 % legend('Location','NorthEast'); 
 
-% % X_bac:
-% subplot(3,2,5)
-% plot(tMeas,trueStates(:,9),'DisplayName','true',...
-%      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
-% hold on; 
-% plot(t,ESTIMATES(:,9),'DisplayName','estimate',...
-%      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
-% % ylim([0.4,0.7])
-% ylabel('X_{bac} [g/L]')
-% yyaxis right
-% stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
-%        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-% ylabel('feed vol flow [l/h]')
-% set(gca, "YColor", 'k')     % make right y-axis black 
-% xlabel('time [d]')
-% % legend('Location','NorthEast'); 
+% X_bac:
+subplot(2,2,4)
+plot(tMeas,trueStates(:,8),'DisplayName','true',...
+     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+hold on; 
+plot(t,ESTIMATES(:,8),'DisplayName','estimate',...
+     'LineStyle','-.', 'Color', colorPaletteHex(4), 'LineWidth',1.2); 
+plot(t,xUKFDeNorm(:,8),'DisplayName','estimate deNorm',...
+     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); % ylim([0.4,0.7])
+ylabel('X_{bac} [g/L]')
+yyaxis right
+stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+ylabel('feed vol flow [l/h]')
+set(gca, "YColor", 'k')     % make right y-axis black 
+xlabel('time [d]')
+% legend('Location','NorthEast'); 
 % 
 % % S_ch4_gas:
 % subplot(3,2,6)

@@ -51,10 +51,13 @@ nSigmaPoints = 2*nStates + 1;
 
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
-beta = 0;   % for Gaussian prior (Diss vdM, S.56)
-kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
+beta = 2;   % for Gaussian prior (Diss vdM, S.56)
+beta = 0; 
+kappa = 3 - nStates;  % acc. to Julier & Uhlmann
+kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
+gamma = 0.2;  % XY just to check
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
 Wx0 = lambda/(nStates + lambda); 
@@ -94,13 +97,12 @@ if isempty(tRelEvents)
         sigmaXPropNorm(:,k) = XTUSolNorm(end,:)';
     end 
 % Fall b: veränderliche Fütterung während Messintervalls:
-% XY: nicht notwendigerweise! Kann auch sein, dass einfach Beginn oder Ende 
-% des Intervalls mit einem Fütterungszeitpunkt (on/off) zusammenfallen!
 else 
     % erstelle 'feines' Zeitraster aus Fütterungs- und Messzeiten:
     tOverall = unique(sort([tSpan, tRelEvents]));
     nIntervals = length(tOverall) - 1; 
-    XAtEndOfIntNorm = sigmaXInitNorm;    % Startwerte für erstes Intervall (wird überschrieben)
+    XAtBeginOfIntNorm = sigmaXInitNorm;    % Startwerte für erstes Intervall (wird nicht mehr überschrieben)
+    XAtEndOfIntNorm = nan(size(sigmaXInitNorm)); % allocate memory
     % integriere Intervall-weise, sodass während der Intervalle konstante
     % Fütterungen herrschen:
     for m = 1:nIntervals
@@ -109,9 +111,10 @@ else
         tEval = [tOverall(m), tOverall(m+1)];
         odeFunNorm = @(t,XNorm) fNorm(XNorm,feedVolFlowNorm,xInCurrNorm,th,c,a,TxNum,TuNum); 
         for kk = 1:nSigmaPoints
-            [~,XTUSolNorm] = ode15s(odeFunNorm,tEval,XAtEndOfIntNorm(:,kk));
+            [~,XTUSolNorm] = ode15s(odeFunNorm,tEval,XAtBeginOfIntNorm(:,kk));
             XAtEndOfIntNorm(:,kk) = XTUSolNorm(end,:)';
         end
+        XAtBeginOfIntNorm = XAtEndOfIntNorm; % overwrite for next interval
     end
     sigmaXPropNorm = XAtEndOfIntNorm;
 end
@@ -189,6 +192,6 @@ disp(['max. Abweichung PPlus (add.): ', ...
       num2str(max(max(abs(PPlusTempNormvdM - PPlusTempNorm))))])
 
 PPlusNorm = 1/2*(PPlusTempNorm + PPlusTempNorm');   % make sure PPlus is symmetric!
-% sum(diag(PPlusNorm)) % show potential divergence of P-Matrix live
+sum(diag(PPlusNorm)) % show potential divergence of P-Matrix live
 
 end
