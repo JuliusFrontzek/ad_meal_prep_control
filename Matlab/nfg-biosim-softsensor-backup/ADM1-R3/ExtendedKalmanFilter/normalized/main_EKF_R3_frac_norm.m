@@ -245,7 +245,7 @@ yEKFDeNorm = repmat(TyNum',nSamples+1,1).*EKFOutputNorm;
 % plot model output based on EKF estimation and compare with real
 % measurements:
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
-figure
+figOutputs = figure;
 
 % gas volume flow: 
 subplot(4,2,1)
@@ -423,12 +423,12 @@ xlabel('time [d]')
 % legend('Location','NorthEast'); 
 
 sgtitle('Comparison of EKF-R3-frac-norm and clean outputs')
+fontsize(figOutputs, 14,'points')
 
 %% Plot trajectories of relevant states: 
 trueStates = repmat(TxNum',nSamples,1).*STATESNorm;
 
-figure()
-
+figStates = figure; 
 % S_IN:
 subplot(3,2,1)
 plot(tMeas,trueStates(:,4),'DisplayName','true',...
@@ -453,7 +453,7 @@ plot(tMeas,trueStates(:,5),'DisplayName','true',...
 hold on; 
 plot(t,xEKFDeNorm(:,5),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
-% ylim([0.8,1.1])
+ylim([900,1000])
 ylabel('S_{h2o} [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
@@ -532,3 +532,4 @@ xlabel('time [d]')
 % legend('Location','NorthEast'); 
 
 sgtitle('Comparison of true and estimated states of EKF-R3-frac-norm')
+fontsize(figStates, 14,'points')

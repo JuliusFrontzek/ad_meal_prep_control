@@ -193,7 +193,7 @@ tFeedOff = tFeedOn + feedingDurations; % end times of feedings
 tEvents = sort([0;tFeedOn;tFeedOff]); 
 dt = 5/60/24;             % sample time [min], converted to [d]
 tOnline = (0:dt:tEnd)';   % time grid for online measurements. highest frequency in this script
-tOverall = unique([tOnline; tEvents]);% Join and sort timestamps
+tMinor = unique([tOnline; tEvents]);% Join and sort timestamps
 
 % construct vector of feeding volume flows at times tFeedOn (we start in
 % steady state but with no feeding first)
@@ -291,8 +291,8 @@ ySSDeNorm = TyNum.*ySSNorm;     % compare relevant entries with Sören's SS:
 ySSSoeren = resultsSoeren.ySS';
 
 %% Solve ODE via iterative solution of constant feeding regimes (on or off)
-xSimNorm = nan(length(tOverall), nStates);% allocate memory
-tSim = nan(length(tOverall),1);       % allocate memory
+xSimNorm = nan(length(tMinor), nStates);% allocate memory
+tSim = nan(length(tMinor),1);       % allocate memory
 
 % integrate ODEs for each interval (=time when feeding constantly =on or
 % =off):
@@ -320,8 +320,8 @@ for cI = 1:nIntervals
     odeFunNorm = @(t,xNorm) fNorm(xNorm,uCurrNorm,xInCurrNorm,thNum,cNum,aNum,TxNum,TuNum); 
     
     % Construct time vector for ODE (t_ode) by filtering of tOverall:
-    idxTimeInterval = (tOverall >= tCurrent & tOverall <= tNext);
-    t_ode           = tOverall(idxTimeInterval); 
+    idxTimeInterval = (tMinor >= tCurrent & tMinor <= tNext);
+    t_ode           = tMinor(idxTimeInterval); 
     if length(t_ode) == 2   % in this case, the solver would interpret 
         % t_ode as a time span and choose integration time points on his own
         t_ode   = linspace(t_ode(1), t_ode(end), 3);    % request to evaluate at exactly 3 time points
@@ -344,7 +344,7 @@ toc
 % case 1: only online measurements
 % Evaluate xSol only in tOnline, discard the rest
 q = 8;   
-idxGridOn = ismember(tOverall, tOnline); 
+idxGridOn = ismember(tMinor, tOnline); 
 xSolNormOn = xSimNorm(idxGridOn,:);
 NOn = size(xSolNormOn,1);   % number of online sampling points
 yCleanNorm = nan(NOn,q);    % allocate memory
@@ -360,7 +360,7 @@ tStdOffset = 0.5;   % dont start first std. measurement right at beginning
 tStdSample = (tStdOffset:dtStd:tEnd)';  % no delay 
 NStd = numel(tStdSample);   % # std. measurement samples
 
-% obtain acid measurements in multiple measurement campaigns:
+% construct time vector of acid measurements (measured in multiple campaigns)
 dtAcid = 1/24;              % sample time for atline measurements [h] -> [d]
 nAcidMeasCampaigns = 5;     % # intensive measurement campaigns
 nAcidMeasPerCampaign = 6;   % # samples taken during 1 campaign
@@ -387,9 +387,9 @@ end % for
 % time grid of tEvents:
 tAcidSampleShift = interp1(tOnline,tOnline,tAcidSample,'next'); 
 
-% interpolate xSimNorm at online/standard/acid sample times: 
-xSolNormStd = interp1(tOverall,xSimNorm,tStdSample);
-xSolNormAcid = interp1(tOverall,xSimNorm,tAcidSampleShift);
+% interpolate xSimNorm at standard (=online)/acid sample times: 
+xSolNormStd = interp1(tMinor,xSimNorm,tStdSample);
+xSolNormAcid = interp1(tMinor,xSimNorm,tAcidSampleShift);
 
 % number of measurement signals: 
 qOn = 4; 
@@ -475,6 +475,31 @@ noiseCovMatOn = diag(sigmasOn.^2);
 noiseCovMatOStd = diag(sigmasStd.^2); 
 noiseCovMatAcid = diag(sigmasAcid.^2); 
 
+%% add time delays to arrival times of samplings of std. measurements
+% construct times when offline and atline measurements return from lab: 
+delayMin = 0.8;     % [d]
+delaySpread = 1/7;  % [d] range of possible delays on top of delayMin (manually chosen) 
+rng('default');     % fix seed for random number generation (for replicable results)
+delayStd = delayMin + rand(NStd,1)*delaySpread;
+tStdArrival = tStdSample + delayStd;
+
+% ensure sampling and arrival times of std measurements fit into fine time 
+% grid of tMinor. 
+tStdSampleShift = interp1(tMinor,tMinor,tStdSample,'next'); 
+tStdArrivalShiftPre = interp1(tMinor,tMinor,tStdArrival,'next'); % includes NaN where extrapolation would be necessary (cause beyond simulation horizon)
+% note: tStdArrivalShiftPre might include NaNs where extrapolation would be necessary 
+% (because it contains instances beyond end of simulation)
+if any(isnan(tStdArrivalShiftPre))
+    idxKeepStdMeasurements = ~isnan(tStdArrivalShiftPre); % remove NaNs
+    tStdArrivalShift = tStdArrivalShiftPre(idxKeepStdMeasurements); % remove NaNs
+    % If so, also apply slicing to corresponding measurements 
+    yMeasStdArrival = yMeasStd(idxKeepStdMeasurements,:); 
+else 
+    % if not, keep time vector and measurements complete:
+    tStdArrivalShift = tStdArrival; 
+    yMeasStdArrival = yMeasStd; 
+end
+
 %% Plot results (separated into Online/Offline/Atline Measurements)
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
 % plot and compare the clean results with noisy measurements: 
@@ -546,14 +571,18 @@ ylabel('feed vol flow [l/h]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
-% Standard measurements (offline):
+% Standard measurements (offline) (show sample and arriva times!)
 % SIN:  
 subplot(4,2,5)
-scatter(tStdSample,yMeasStd(:,1),'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+% measurements at their sampling times:
+scatter(tStdSampleShift,yMeasStd(:,1),'DisplayName','noisy samples',...
+        'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1); 
 hold on; 
-% hold last measurement value till end of simulation:
-stairs([tStdSample;tEnd],[yCleanStd(:,1);yCleanStd(end,1)],...
+% measurements at their arrival times: 
+scatter(tStdArrivalShift,yMeasStdArrival(:,1),'DisplayName','noisy arrivals',...
+        'Marker','*', 'Color', colorPaletteHex(1), 'LineWidth',1);
+% hold last clean output value till end of simulation:
+stairs([tStdSampleShift;tEnd],[yCleanStd(:,1);yCleanStd(end,1)],...
     'DisplayName','clean','LineStyle','-.',...
     'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('SIN [g/l]')
@@ -568,10 +597,14 @@ title('Offline')
 
 % TS:  
 subplot(4,2,6)
-scatter(tStdSample,yMeasStd(:,2),'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+% measurements at their sampling times:
+scatter(tStdSampleShift,yMeasStd(:,2),'DisplayName','noisy samples',...
+        'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1); 
 hold on; 
-% hold last measurement value till end of simulation:
+% measurements at their arrival times: 
+scatter(tStdArrivalShift,yMeasStdArrival(:,2),'DisplayName','noisy arrivals',...
+        'Marker','*', 'Color', colorPaletteHex(1), 'LineWidth',1);
+% hold last clean output value till end of simulation:
 stairs([tStdSample;tEnd],[yCleanStd(:,2);yCleanStd(end,2)],...
     'DisplayName','clean','LineStyle','-.',...
     'Color', colorPaletteHex(2), 'LineWidth',1.5);
@@ -587,10 +620,14 @@ set(gca, "YColor", 'k')
 
 % VS:  
 subplot(4,2,7)
-scatter(tStdSample,yMeasStd(:,3),'DisplayName','noisy',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
+% measurements at their sampling times:
+scatter(tStdSampleShift,yMeasStd(:,3),'DisplayName','noisy samples',...
+        'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1); 
 hold on; 
-% hold last measurement value till end of simulation:
+% measurements at their arrival times: 
+scatter(tStdArrivalShift,yMeasStdArrival(:,3),'DisplayName','noisy arrvals',...
+        'Marker','*', 'Color', colorPaletteHex(1), 'LineWidth',1);
+% hold last clean output value till end of simulation:
 stairs([tStdSample;tEnd],[yCleanStd(:,3);yCleanStd(end,3)],...
         'DisplayName','clean','LineStyle','-.', ...
         'Color', colorPaletteHex(2), 'LineWidth',1.5);
@@ -607,11 +644,11 @@ set(gca, "YColor", 'k')
 % Atline measurements:
 % Sac:  
 subplot(4,2,8)
-scatter(tAcidSample,yMeasAcid(:,1),'DisplayName','noisy',...
+scatter(tAcidSampleShift,yMeasAcid(:,1),'DisplayName','noisy',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5)
 hold on; 
 % hold last measurement value till end of simulation:
-stairs([tAcidSample;tEnd],[yCleanAcid(:,1);yCleanAcid(end,1)],...
+stairs([tAcidSampleShift;tEnd],[yCleanAcid(:,1);yCleanAcid(end,1)],...
         'DisplayName','clean','LineStyle','-.', ...
         'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('acetic acid [g/l]')
@@ -631,9 +668,9 @@ sgtitle('Clean and noisy simulation outputs (4 Online/3 Std/1 Acid)')
 
 MESS.tOnline = tOnline;             % online sample times
 MESS.tStdSample = tStdSample;       % standard (offline) sampling times 
-MESS.tAcidSample = tAcidSample;     % acid sample times (in campaigns)
-% MESS.tOfflineRet = tOfflineRet;     % return times  
-% MESS.tAtlineRet = tAtlineRet; 
+MESS.tStdArrivalShift = tStdArrivalShift;   % corresponding return times  
+MESS.tAcidSample = tAcidSampleShift;        % acid sample times (in campaigns)
+% MESS.tAcidArrival = tAcidArrival; 
 MESS.x0 = x0DynR3frac;  
 MESS.xSolOn = xSolOn;   % state trajectories evaluated at diff. sampling times
 MESS.xSolStd = xSolStd; 
@@ -647,6 +684,7 @@ MESS.yCleanStd = yCleanStd;
 MESS.yCleanAcid = yCleanAcid;  
 MESS.yMeasOn = yMeasOn; 
 MESS.yMeasStd = yMeasStd; 
+MESS.yMeasStdArrival = yMeasStdArrival; 
 MESS.yMeasAcid = yMeasAcid; 
 MESS.C = noiseCovMat; % accurate values from sensor data sheets
 MESS.COn = noiseCovMatOn;
@@ -656,6 +694,8 @@ MESS.CAcid = noiseCovMatAcid;
 % create sub-folder (if non-existent yet) and save results there
 currPath = pwd; 
 pathToResults = fullfile(currPath,'generatedOutput');
-mkdir(pathToResults);   % create subfolder (gives warning if exists yet)
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
 fileName = 'Messung_ADM1_R3_frac_norm_IntensiveSampling.mat'; 
 save(fullfile(pathToResults,fileName), 'MESS', 'params', 'TNum')

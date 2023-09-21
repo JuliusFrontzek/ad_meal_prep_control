@@ -64,7 +64,7 @@ Mch4 = 16;      % molar mass CH4 [kg/kmol]
 Mco2 = 44;      % molar mass CO2 [kg/kmol]
 nac = 3/(pHUL - pHLL); 
 
-fracChFast = 1-1e-10; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
+fracChFast = 0.5; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
 
 %% order model parameters in the rights structures (prepare simulation)
 c1 = 1/Vl; 
@@ -162,7 +162,11 @@ x0SS(8:end) = x0Pre(7:end);
 % overwrite values in positions for S_an and S_cat with those for S_ion and X_ash:
 xAsh0 = 1; % assume 1 g/l initial ash concentration
 x0SS(12) = xAsh0;
-x0SS(13) = Sion0;   
+x0SS(13) = Sion0;
+% increase biomass concentration: 
+% x0SS(10) = 2*x0SS(10); 
+% x0SS(11) = 2*x0SS(11); 
+
 
 %% miscellaneous parameters for simulation
 % combine constant parameters in struct (index "Num" for numeric values): 

@@ -13,10 +13,20 @@ global counterSigmaInit
 global counterSigmaProp
 global counterSigmaX
 global counterX
+global counterSigmaInitNorm
+global counterSigmaPropNorm
+global counterSigmaXNorm
+global counterXNorm
+
 counterSigmaInit = 0;
 counterSigmaProp = 0;
 counterSigmaX = 0; 
 counterX = 0; 
+counterSigmaInitNorm = 0;
+counterSigmaPropNorm = 0;
+counterSigmaXNorm = 0; 
+counterXNorm = 0;
+counterWater = 0; 
 
 % Load Measurement Data:
 load Messung_ADM1_R4_frac_norm
@@ -209,9 +219,10 @@ end
 Time(jj) = toc; 
 end
 % print # total clippings: 
-disp('number of clippings in total:')
 sumOfClippings = counterSigmaInit + counterSigmaProp + counterSigmaX + counterX;
-disp(sumOfClippings); 
+sumOfClippingsNorm = counterSigmaInitNorm + counterSigmaPropNorm + counterSigmaXNorm + counterXNorm;
+disp(['total number of clippings in abs. coordinates: ',num2str(sumOfClippings)])
+disp(['total number of clippings in norm. coordinates: ',num2str(sumOfClippingsNorm)]) 
 
 %% compute system outputs from estimated states:
 q = size(MESS.yMeas,2);                 % number of measurement signals
@@ -231,32 +242,39 @@ xUKFDeNorm = repmat(TxNum',nSamples+1,1).*ESTIMATESNorm;
 yUKFDeNorm = repmat(TyNum',nSamples+1,1).*UKFOutputNorm;
 
 %% compute goodness of fit for all measurements
-RMSSE = nan(q,1);         % allocate memory (difference between true measurements and EKF outputs
-RMSSENorm = nan(q,1);     % allocate memory (difference between EKF and EKFNorm)
+% RMSSE = nan(q,1);         % allocate memory (difference between true measurements and EKF outputs
+% RMSSENorm = nan(q,1);     % allocate memory (difference between EKF and EKFNorm)
+RMSSE = nan(q,1);         % allocate memory (difference between true measurements and UKF outputs)
+RMSSEClean = nan(q,1);    % allocate memory (difference between clean measurements and UKF outputs)
+RMSSENorm = nan(q,1);     % allocate memory (difference between UKF and UKFNorm)
 
 % compute RMSSE for each measurement signal:
 for kk = 1:q
     measurements = MESS.yMeas(:,kk); 
+    cleanMeasurements = MESS.yClean(:,kk);
     
     % ignore the first value because that's only the output of x0:
     estimatedMeasurements = UKFOutput(2:end,kk);
     estimatedMeasurementsDeNorm = yUKFDeNorm(2:end,kk); 
     
-    % get RMSSEs of denormed UKF-output and measurements:
+    % get RMSSEs of denormed UKF-output and noisy measurements:
     [RMSSE(kk)] = computeRMSSE(measurements,estimatedMeasurementsDeNorm); 
+    % same with clean measurements: 
+    [RMSSEClean(kk)] = computeRMSSE(cleanMeasurements,estimatedMeasurementsDeNorm); 
     % ... and between UKF and UKFDeNorm: 
     [RMSSENorm(kk)] = computeRMSSE(estimatedMeasurements,estimatedMeasurementsDeNorm); 
 end
 
 RMSSE_mean = mean(RMSSE); 
+RMSSEClean_mean = mean(RMSSEClean); 
 RMSSENorm_mean = mean(RMSSENorm); 
 
 %% Plot results
 
-% plot model output based on EKF estimation and compare with real
+% plot model output based on UKF estimation and compare with real
 % measurements:
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
-figure
+figOutputs = figure; 
 
 % gas volume flow: 
 subplot(3,2,1)
@@ -390,6 +408,7 @@ xlabel('time [d]')
 % legend('Location','NorthEast'); 
 
 sgtitle('Comparison of UKF-deNorm and clean model outputs')
+fontsize(figOutputs, 14,'points')
 
 %% Biomass X_bac:
 % in absolute coordinates:

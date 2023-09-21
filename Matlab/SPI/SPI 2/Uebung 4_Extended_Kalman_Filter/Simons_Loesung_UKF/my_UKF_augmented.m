@@ -175,7 +175,9 @@ disp(['max. Abweichung xPlus (aug.):', num2str(max(abs(xPlusvdM - xPlus)))])
 % Kolas (2009), Table 8:
 % diffxPlusFromSigmaX = sigmaX(:,1:nSigmaPointsNom) - xPlus; 
 diffxPlusFromSigmaX = sigmaX - xPlus; 
-PPlusReformulatedKolasAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
+PPlusReformulatedKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
+PPlusReformulatedKolasAugmented = PPlusReformulatedKolasFullyAugmented + K*R*K'; % + Q in fully augmented
+% XY: überprüfe, ob die augmentation von PPlus hier korrekt ist!
 
 % % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 

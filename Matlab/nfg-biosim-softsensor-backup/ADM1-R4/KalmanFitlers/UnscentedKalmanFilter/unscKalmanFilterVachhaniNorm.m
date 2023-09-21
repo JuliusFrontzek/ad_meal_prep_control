@@ -3,14 +3,16 @@
 % Erstelldatum: 31.08.2023
 % Autor: Simon Hellmann
 
-function [xPlusNorm,PPlusNorm] = unscKalmanFilterVachhaniNorm(xOldNorm,POldNorm,tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,TxNum,TyNum,TuNum)
+function [xPlusNorm,PPlusNorm] = unscKalmanFilterVachhaniNorm(xOldNorm,POldNorm, ...
+                        tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm, ...
+                        fNorm,gNorm,TxNum,TyNum,TuNum)
 
 % compute time and measurement update acc. to Joseph-version of the UKF
 % acc. to Vachhani et al. (2006) but withoug optimzing measurement update (normalized)
 
-global counterSigmaInit
-global counterSigmaProp
-global counterX
+global counterSigmaInitNorm
+global counterSigmaPropNorm
+global counterXNorm
 
 % xPlusNorm - new normalized state estimate
 % PPlusNorm - new normalized state error covariance matrix
@@ -38,7 +40,7 @@ a = params.a;
 if any(xOldNorm<0)
     % apply clipping: 
     xOldNorm(xOldNorm < 0) = 0; 
-    counterX = counterX + 1;
+    counterXNorm = counterXNorm + 1;
 end 
 
 nStates = length(xOldNorm); 
@@ -64,6 +66,8 @@ sijNorm = [sqrtPOldNorm, -sqrtPOldNorm];    % 2n Einträge
 
 xMinNorm = zeros(nStates,1);    % no negative concentrations
 xMaxNorm = 1E2*ones(nStates,1); % there is theoretically no upper limit on concentrations, but set a practical one
+% apply clipping for water concentration:
+xMaxNorm(4) = 990/TxNum(4); % g/l
 
 theta_ik = nan(1,2*nStates);     % allocate memory (früher: 1,nStates)
 % go through sij column by column to recompute the scaling paramters of all 
@@ -92,7 +96,7 @@ sigmaXInitNorm = [xOldNorm, repmat(xOldNorm,1,2*nStates) + theta_ik.*sijNorm];
 epsilon = 1e-10; 
 if any(any(sigmaXInitNorm < -epsilon))
     sigmaXInitNorm(sigmaXInitNorm < 0) = 0; 
-    counterSigmaInit = counterSigmaInit + 1;
+    counterSigmaInitNorm = counterSigmaInitNorm + 1;
 end
 
 %% Propagate Sigma Points
@@ -139,7 +143,7 @@ end
 epsilon = 1e-4; 
 if any(any(sigmaXPropNorm < -epsilon))
     sigmaXPropNorm(sigmaXPropNorm < 0) = 0; 
-    counterSigmaProp = counterSigmaProp + 1;
+    counterSigmaPropNorm = counterSigmaPropNorm + 1;
 end
 
 %% compute weights acc. to Vachhani 2006: 

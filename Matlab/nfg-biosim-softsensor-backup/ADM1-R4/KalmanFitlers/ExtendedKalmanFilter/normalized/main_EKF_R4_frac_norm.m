@@ -229,24 +229,29 @@ xEKFDeNorm = repmat(TxNum',nSamples+1,1).*ESTIMATESNorm;
 yEKFDeNorm = repmat(TyNum',nSamples+1,1).*EKFOutputNorm;
 
 %% compute goodness of fit for all measurements
-RMSSE = zeros(q,1);         % allocate memory (difference between true measurements and EKF outputs
+RMSSE = zeros(q,1);         % allocate memory (difference between true measurements and EKF outputs)
+RMSSEClean = nan(q,1);      % allocate memory (difference between clean measurements and EKF outputs)
 RMSSENorm = zeros(q,1);     % allocate memory (difference between EKF and EKFNorm)
 
 % compute RMSSE for each measurement signal:
 for kk = 1:q
     measurements = MESS.yMeas(:,kk); 
+    cleanMeasurements = MESS.yClean(:,kk); 
     
     % ignore the first value because that's only the output of x0:
     estimatedMeasurements = EKFOutput(2:end,kk);
-    estimatedMeasurementsNorm = yEKFDeNorm(2:end,kk); 
+    estimatedMeasurementsDeNorm = yEKFDeNorm(2:end,kk); 
     
     % get RMSSEs of EKF and measurements:
-    [RMSSE(kk)] = computeRMSSE(measurements,estimatedMeasurementsNorm); 
+    [RMSSE(kk)] = computeRMSSE(measurements,estimatedMeasurementsDeNorm); 
+    % same with clean measurements: 
+    [RMSSEClean(kk)] = computeRMSSE(cleanMeasurements,estimatedMeasurementsDeNorm); 
     % ... and between EKF and EKFNorm: 
-    [RMSSENorm(kk)] = computeRMSSE(estimatedMeasurements,estimatedMeasurementsNorm); 
+    [RMSSENorm(kk)] = computeRMSSE(estimatedMeasurements,estimatedMeasurementsDeNorm); 
 end
 
 RMSSE_mean = mean(RMSSE); 
+RMSSEClean_mean = mean(RMSSEClean); 
 RMSSENorm_mean = mean(RMSSENorm); 
 
 %% Plot results
@@ -377,7 +382,7 @@ plot(t,yEKFDeNorm(:,6),'DisplayName','EKFNorm-Output',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
 % plot(t,EKFOutput(:,6),'DisplayName','EKF-Output',...
 %      'LineStyle',':', 'Color', colorPaletteHex(5), 'LineWidth',1)
-ylim([0,1])
+ylim([0.5,0.65])
 ylabel('volatile solids [-]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...

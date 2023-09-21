@@ -10,10 +10,20 @@ function [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xOldNorm,POld
 % compute time and measurement update acc. to Joseph-version of the UKF
 % acc. to Kolas et al. (2009) with clipping wherever possible (normalized)
 
-global counterSigmaInit
-global counterSigmaProp
-global counterSigmaX
-global counterX
+global counterSigmaInitNorm
+global counterSigmaPropNorm
+global counterSigmaXNorm
+global counterXNorm
+
+% counterSigmaInit = 0;
+% counterSigmaProp = 0;
+% counterSigmaX = 0; 
+% counterX = 0; 
+% counterSigmaInitNorm = 0;
+% counterSigmaPropNorm = 0;
+% counterSigmaXNorm = 0; 
+% counterXNorm = 0;
+% counterWater = 0; 
 
 % xPlusNorm - new normalized state estimate
 % PPlusNorm - new normalized state error covariance matrix
@@ -40,7 +50,7 @@ a = params.a;
 % If xOldNorm contains negative concentrations, apply clipping: 
 if any(xOldNorm<0)
     xOldNorm(xOldNorm < 0) = 0; 
-    counterX = counterX + 1;
+    counterXNorm = counterXNorm + 1;
 end 
 
 nStates = numel(xOldNorm); 
@@ -75,7 +85,7 @@ sigmaXInitNorm = [xOldNorm, repmat(xOldNorm,1,nStates) + gamma*sqrtPOldNorm, ...
 % Apply clipping to negative Sigma Points: 
 if any(any(sigmaXInitNorm < 0))
     sigmaXInitNorm(sigmaXInitNorm < 0) = 0; 
-    counterSigmaInit = counterSigmaInit + 1;
+    counterSigmaInitNorm = counterSigmaInitNorm + 1;
 end
 
 %% Propagate Sigma Points
@@ -122,7 +132,7 @@ end
 % if any propagated sigma points violate constraints, apply clipping: 
 if any(any(sigmaXPropNorm < 0))
     sigmaXPropNorm(sigmaXPropNorm < 0) = 0; 
-    counterSigmaProp = counterSigmaProp + 1;
+    counterSigmaPropNorm = counterSigmaPropNorm + 1;
 end
 
 %% Aggregate Sigma Points to Priors for x and P
@@ -131,7 +141,7 @@ xMinusNorm = sum(Wx.*sigmaXPropNorm,2);  % state prior
 % if any state priors violate constraints, apply clipping: 
 if any(any(xMinusNorm < 0))
     xMinusNorm(xMinusNorm < 0) = 0; 
-    counterX = counterX + 1;
+    counterXNorm = counterXNorm + 1;
 end
 
 % aggregate state error cov. matrix P:
@@ -171,7 +181,7 @@ sigmaXNorm = sigmaXPropNorm + KNorm*(repmat(yMeasNorm,1,nSigmaPoints) - YNorm);
 % if updated sigma points violate constraints, apply clipping: 
 if any(any(sigmaXNorm < 0))
     sigmaXNorm(sigmaXNorm < 0) = 0;
-    counterSigmaX = counterSigmaX + 1; 
+    counterSigmaXNorm = counterSigmaXNorm + 1; 
 end
 
 %% compute posteriors:
@@ -182,6 +192,8 @@ KvNorm = KNorm*(yMeasNorm - yAggregatedNorm);
 xPlusNormvdM = xMinusNorm + KvNorm; % standard formulation of vdMerwe, normalized
 disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusNormvdM - xPlusNorm)))])
 
+% mind that Kolas proved the fully augmented case. For additive noise, the
+% measurement update of P-Matrix must be slightly adapted:
 diffxPlusFromSigmaXNorm = sigmaXNorm - xPlusNorm; 
 PPlusAugmentedCaseNorm = Wc.*diffxPlusFromSigmaXNorm*diffxPlusFromSigmaXNorm'; 
 PPlusTempNorm = PPlusAugmentedCaseNorm + QNorm + KNorm*RNorm*KNorm'; % different formula for additive noise case (normalized)!
