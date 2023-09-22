@@ -352,7 +352,7 @@ for k = 1:NOn
     yCleanNorm(k,:) = gNorm(xSolNormOn(k,:)', cNum, TxNum, TyNum)';
 end
 
-%% case 2: online and 2 offline (standard and acid) measurements (no delay):
+%% case 2: online and 2 offline (standard and acid) measurements (no delay yet):
 % standard measurements: 
 dtStd = 3;          % sample time for standard analyses [d]
 tStdOffset = 0.5;   % dont start first std. measurement right at beginning 
@@ -475,7 +475,7 @@ noiseCovMatOn = diag(sigmasOn.^2);
 noiseCovMatOStd = diag(sigmasStd.^2); 
 noiseCovMatAcid = diag(sigmasAcid.^2); 
 
-%% add time delays to arrival times of samplings of std. measurements
+%% add time delays to arrival times of std. measurements' samplings
 % construct times when offline and atline measurements return from lab: 
 delayMin = 0.8;     % [d]
 delaySpread = 1/7;  % [d] range of possible delays on top of delayMin (manually chosen) 

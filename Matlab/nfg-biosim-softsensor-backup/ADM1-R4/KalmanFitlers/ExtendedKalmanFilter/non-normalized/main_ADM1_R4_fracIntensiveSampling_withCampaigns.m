@@ -1,0 +1,533 @@
+%% Version
+% (R2022b) Update 5
+% Erstelldatum: 22.09.2023
+% Autor: Simon Hellmann
+
+% create synthetic measurement data for Kalman Filtering
+% scenario: online + offline rates (Std.-Analyses), among which Nitrogen
+% is measured in campaigns (like in reality Sac) and with delays.
+% model: ADM1-R4-frac (including ash and 2 carbohydrate fractions)
+
+clc
+clear
+close all
+
+%% define numeric values of parameters
+% kinetic constants [1/d] (Tab. B.7 in Sörens Diss): 
+k_chF = 0.25;        % war vorher der Wert für kch
+k_chS = 1E-1*k_chF;   % selbst gewählt
+k_pr = 0.2; 
+k_li = 0.1; 
+k_dec = 0.02; 
+fracChFast = 0.5; % fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
+
+% Henry coefficients: [mol/l/bar] (Tab. B.7 in Sörens Diss)
+K_H_ch4 = 0.0011;      
+K_H_co2 = 0.025; 
+
+% miscellaneous parameters (Weinrich, 2017, Tab. B.7): 
+R = 0.08315;    % id. gas constant [bar l/mol/K]
+p_h2o = 0;       % 0.0657 partial pressure of water in gas phase (saturated) [bar]
+p_atm = 1.0130;    % atmospheric pressure [bar]
+k_La = 200;      % mass transfer coefficient [1/d]
+k_p = 5e4;       % friction parameter [l/bar/d]
+T = 273.15;     % operating temperature [K]
+V_liq = 100;       % liquid volume, aus Sörens GitHub [l]
+V_gas = 10;        % gas volume, aus Sörens GitHub [l]
+rho = 1000;     % mass density of digestate [g/l]
+Mch4 = 16;      % molar mass CH4 [kg/kmol]
+Mco2 = 44;      % molar mass CO2 [kg/kmol]
+
+%% order model parameters in the rights structures (prepare simulation)
+c1 = 1/V_liq; 
+c2 = k_La; 
+c3 = k_La*K_H_ch4*R*T; 
+c4 = k_La*K_H_co2*R*T; 
+c5 = k_La*V_liq/V_gas; 
+c6 = k_p/p_atm*(R*T/Mch4)^2;
+c7 = 2*k_p/p_atm*(R*T)^2/Mch4/Mco2;
+c8 = k_p/p_atm*(R*T/Mco2)^2;
+c9 = k_p/p_atm*R*T/Mch4*(2*p_h2o - p_atm); 
+c10 = k_p/p_atm*R*T/Mco2*(2*p_h2o - p_atm); 
+c11 = k_p/p_atm*(p_h2o - p_atm)*p_h2o; 
+c12 = R*T/Mch4;
+c13 = R*T/Mco2;
+c14 = rho; 
+c15 = -k_p/p_atm/V_gas*(R*T/Mch4)^2;
+c16 = -2*k_p/p_atm/V_gas*(R*T)^2/Mch4/Mco2;
+c17 = -k_p/p_atm/V_gas*(R*T/Mco2)^2;
+c18 = -k_p/p_atm/V_gas*(R*T/Mch4)*(2*p_h2o - p_atm);
+c19 = -k_p/p_atm/V_gas*(R*T/Mco2)*(2*p_h2o - p_atm);
+c20 = -k_La*V_liq/V_gas*K_H_ch4*R*T - k_p/p_atm/V_gas*(p_h2o - p_atm)*p_h2o;
+c21 = -k_La*V_liq/V_gas*K_H_co2*R*T - k_p/p_atm/V_gas*(p_h2o - p_atm)*p_h2o;
+c22 = V_liq/V_gas;
+c23 = -k_p/p_atm/V_gas*(p_h2o - p_atm)*p_h2o;
+% combine all in column vector: 
+cNum = [c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23]';
+
+% petersen matrix acc. to Weinrich 2021
+% Note:all aij with |aij ~= 1|, only take the absolute value (see arXiv paper). 
+% Index "Num" for Numeric
+aNum = [0.2482,  0.6809,   0.0207,     0.0456,    -1,      0,      0,      0,       0.1372,    0,      0,          0; 
+        0.2482,  0.6809,   0.0207,     0.0456,     0,     -1,      0,      0,       0.1372,    0,      0,          0;
+        0.3221,  0.7954,   0.1689,     0.4588,     0,      0,     -1,      0,       0.1723,    0,      0,          0; 
+        0.6393,  0.5817,   0.0344,     0.4152,     0,      0,      0,     -1,       0.2286,    0,      0,          0; 
+        0,       0,        0,          0,          0.18,   0,      0.77,   0.05,   -1,         0,      0,          0;
+       -1,       0,        0,          0,          0,      0,      0,      0,       0,         0,      c22,        0; 
+        0,      -1,        0,          0,          0,      0,      0,      0,       0,         0,      0,          c22]';
+
+% inlet concentrations [GitHub Sören], vmtl. Rindergülle
+%      S_ch4, S_IC,S_IN,  S_h2o,   X_chF,  X_chS, X_pr,  X_li,  X_bac,X_ash,  S_ch4,g, S_co2,g
+xIn = [0,     0,   0.592, 960.512, 23.398, 0,     4.75,  1.381, 0,    17,     0,    0]'; % [g/l], 
+% xAshIn = 17 selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
+
+% initial value: 50/50 allocation of carbohydrates to fast/slow fraction; 
+% assume 1 g/l ash concentration:
+x0ch = 3.26;    % total carbohydrates initial value
+x0SS = [0.091, 0.508, 0.944, 956.97, fracChFast*x0ch, (1-fracChFast)*x0ch, 0.956, 0.413, 2.569, 1, 0.315, 0.78]'; 
+
+% combine constant parameters in struct (index "Num" for numeric values): 
+params = struct;    % allocate memory 
+params.a = aNum; 
+params.c = cNum; 
+% time-variant parameters (hydrolysis constants):
+thNum = [k_chF, k_chS, k_pr, k_li, k_dec, fracChFast]'; % [kchF, kchS, kpr, kli, kdec, fracChFast] 
+params.th = thNum; 
+
+% times: 
+tEnd = 14;      % [d] End of Simulation
+tSS = 300;      % [d] Dauer, bis steady state als erreicht gilt (~ 1/3 Jahr) 
+
+% feeding intervals: 
+intShort = 0.25;    % [d]
+intLong = 1.5;      % [d]
+intMed = 0.5;       % [d]
+% start with feeding right after steady state and some pause: 
+% ints = [intLong,intShort,intLong,intMed]';
+% ... and transform intervals to absolute times:
+% cumInts = cumsum(ints);     % cumulated intervals
+tFeedOnWeek = [1;2.5;4.5;6];  % beginning times of feedings (1 week)
+tFeedOn = [tFeedOnWeek;tFeedOnWeek + 7]; 
+feedingDurationsWeek = [intMed; intShort; intMed; intShort];
+feedingDurations = repmat(feedingDurationsWeek,2,1); 
+tFeedOff = tFeedOn + feedingDurations; % end times of feedings
+tEvents = sort([0;tFeedOn;tFeedOff]); 
+dt = 5/60/24;           % sample time [min], converted to [d]
+tOnline = (0:dt:tEnd)'; % time grid. The model outputs will be evaluated here later on
+tMinor = unique([tOnline; tEvents]);% Join and sort timestamps
+
+% construct vector of feeding volume flows at times tFeedOn (we start in
+% steady state but with no feeding first)
+nIntervals = length(tEvents); 
+[~,idxFeedOn] = ismember(tFeedOn,tEvents); 
+feedMax = 60*24;  % max. feed volume flow [l/h] converted to [l/d]
+feedFactorsWeek = [70,30,50,40]'/100; 
+feedFactors = repmat(feedFactorsWeek,2,1); 
+portions = feedFactors*feedMax; % [l/d]         	
+% steady state feed volume flow [l/d] should be the average of what is fed
+% during dynamic operation:
+totalFeed = sum(feedingDurations.*portions);  
+feedVolFlow = zeros(nIntervals,1);  % allocate memory
+feedVolFlow(idxFeedOn) = portions;       
+
+% construct matrix of inlet concentrations at tFeedOn: 
+nStates = length(xIn);
+nFeedings = length(tFeedOn); 
+xInMat = zeros(nIntervals,nStates);         % allocate memory 
+% at times when there is feeding, introduce the input concentrations:
+xInMat(idxFeedOn,:) = repmat(xIn',nFeedings,1); 
+inputMat = [feedVolFlow,xInMat]; 
+
+%% derive odeFun from symbolic model definition and determine steady state
+% define symbolic ("S") variables (all vector are defined as column vectors)
+xS = sym('x', [12 1]);   % states as col. vector
+syms uS real             % input
+xiS = sym('xi', [12,1]); % inlet concentrations (assumed known) 
+thS = sym('th', [6,1]);  % 6 time-variant parameters (theta)
+cS = sym('c', [21,1]);   % 21 known & constant time-invariant parameters 
+aS = sym('a', [12,7]);% petersen matrix with stoichiometric constants
+
+dynamics = BMR4_AB_frac_ode_sym(xS, uS, xiS, thS, cS, aS); % symbolic object
+outputs = BMR4_AB_frac_mgl_sym(xS,cS); 
+
+% transform into numeric function handle. Note that the independet
+% variables are explicitely defined. Their order must be followed when 
+% using the function handle!
+f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
+g = matlabFunction(outputs, 'Vars', {xS, cS}); 
+
+% define ODE function handle and integrate system dynamics: 
+feedVolFlowSS = totalFeed/tEnd; 
+tSpanSS = [0,tSS]; 
+odeFunSS = @(t,x) f(x,feedVolFlowSS,xIn,thNum,cNum,aNum); 
+[tVecSS,xSS] = ode15s(odeFunSS,tSpanSS,x0SS); 
+x0Init = xSS(end,:)';   % start actual simulation in steady state
+x0 = x0Init; 
+
+%% Solve ODE via iterative solution of constant feeding regimes (on or off)
+xSim = zeros(length(tMinor), nStates);% allocate memory
+tSim = zeros(length(tMinor),1);       % allocate memory
+
+% integrate ODEs for each interval (=time when feeding constantly =on or
+% =off):
+tic
+for cI = 1:nIntervals
+    if cI == nIntervals   % letztes Intervall geht von letztem Fütterungsimpuls (aus) bis Simulationsende ...
+        tCurrent   = tEvents(end);
+        tNext      = tEnd;
+    else    % ... alle anderen Fütterungsintervalle:
+        tCurrent   = tEvents(cI);
+        tNext      = tEvents(cI + 1);
+    end
+    
+    % Get current feeding volume flow and inlet concentrations:
+    inputVector = interp1(tEvents, inputMat, tCurrent, 'nearest', 0); 
+    % split into current values of feedVolFlow and xIn: 
+    feedVolFlowCurr = inputVector(1); 
+    xInCurr = inputVector(2:end)'; 
+    odeFun = @(t,x) f(x,feedVolFlowCurr,xInCurr,thNum,cNum,aNum); 
+    
+    % Construct time vector for ODE (t_ode) by filtering of tOverall:
+    idxTimeInterval = (tMinor >= tCurrent & tMinor <= tNext);
+    t_ode           = tMinor(idxTimeInterval); 
+    if length(t_ode) == 2   % in this case, the solver would interpret 
+        % t_ode as a time span and choose integration time points on his own
+        t_ode   = linspace(t_ode(1), t_ode(end), 3);    % request to evaluate at exactly 3 time points
+        [tVec, solVec] = ode15s(odeFun, t_ode, x0);
+        % of the 3 time points evaluated, only save 2 (first and last):
+        xSim(idxTimeInterval,:) = solVec([1 end], :);  
+        tSim(idxTimeInterval) = tVec([1 end]);
+    else    % t_ode has more than two time instants, which are the times 
+        % when the integration is evaluated:
+        [tVec, solVec] = ode15s(odeFun, t_ode, x0); % Returns >= 3 values
+        xSim(idxTimeInterval,:) = solVec;
+        tSim(idxTimeInterval) = tVec;
+    end
+    
+    x0 = solVec(end, :);    % update initial value for next interval
+end
+toc
+
+%% compute output variables
+% case 1: only online measurements
+% Evaluate xSol only in tOnline, discard the rest
+idxGridOn = ismember(tMinor, tOnline); 
+xSolOn = xSim(idxGridOn,:);
+NOn = size(xSolOn,1);    % number of survived sampling points
+q = 6;   
+yClean = zeros(NOn,q); % allocate memory
+for k = 1:NOn
+    yClean(k,:) = g(xSolOn(k,:)',cNum)'; % Simons Implementierung (arXiv)
+end
+
+%% case 2: online and 2 offline (standard and acid) measurements (no delay yet):
+% standard measurements: 
+dtStd = 3;          % sample time for standard analyses [d]
+tStdOffset = 0.5;   % dont start first std. measurement right at beginning 
+% times when standard samples are taken (TS, VS, NH4-N):
+tStdSample = (tStdOffset:dtStd:tEnd)';  % no delay 
+NStd = numel(tStdSample);   % # std. measurement samples
+
+% construct time vector of acid measurements (measured in multiple campaigns)
+dtNitro = 1/24;              % sample time for atline measurements [h] -> [d]
+nNitroMeasCampaigns = 5;     % # intensive measurement campaigns
+nNitroMeasPerCampaign = 2;   % # samples taken during 1 campaign
+NNitro = nNitroMeasCampaigns*nNitroMeasPerCampaign; 
+% measure Nitrogen at higher-frequency regular sampling intervals (without start time instant of campaign): 
+sampleArrayNitro = cumsum(dtNitro*ones(nNitroMeasPerCampaign-1,1));     % [d]
+tNitroOffsetNominal = 12/24; % nominal offset from midnight [h] -> [d]
+rng('default');             % fix seed for random number generation (for replicable results)
+tNitroOffset = tNitroOffsetNominal*rand(nNitroMeasCampaigns,1); % random offset from midnight
+tNitroSampleStartNom = cumsum([1;randi(5,nNitroMeasCampaigns-1,1)]); % max 5 days between meas. campaigns (nominal)
+% add random time offsets to not start all campaigns at midnight: 
+tNitroSampleStart = tNitroSampleStartNom + tNitroOffset; 
+tNitroSample = nan(NNitro,1);   % allocate memory
+% fill entries of tNitroSample measurement campaign by measurement campaign:
+for k = 1:nNitroMeasCampaigns
+    % fill in only the start values of campaigns: 
+    tCampaignStart = tNitroSampleStart(k); 
+    tNitroSample(1+(k-1)*nNitroMeasPerCampaign) = tCampaignStart; 
+    % add higher-frequent Nitro measurements of each campaign: 
+    tNitroSample(2+(k-1)*nNitroMeasPerCampaign:k*nNitroMeasPerCampaign) = ...
+        tCampaignStart + sampleArrayNitro; 
+end % for
+% interpolate (=pad) entries of Nitro measurements to be in line with fine 
+% time grid of tEvents:
+tNitroSampleShift = interp1(tOnline,tOnline,tNitroSample,'next'); 
+
+% interpolate xSim at standard (=online)/Nitro sample times: 
+xSolStd = interp1(tMinor,xSim,tStdSample);
+xSolNitro = interp1(tMinor,xSim,tNitroSampleShift);
+
+% number of measurement signals: 
+qOn = 3; 
+qStd = 2;
+qNitro = 1; 
+% allocate memory:
+yCleanOn = zeros(NOn,qOn);
+yCleanStd = zeros(NStd,qStd);
+yCleanNitro = nan(NNitro,qNitro);
+% evaluate model outputs at different sampling times:
+for k = 1:NOn
+    fullOutput = g(xSolOn(k,:)',cNum)';
+    yCleanOn(k,:) = fullOutput(1:qOn); 
+end
+for kk = 1:NNitro
+    fullOutput = g(xSolNitro(kk,:)',cNum)';
+    yCleanNitro(kk,:) = fullOutput(qOn+1:qOn+qNitro);
+end
+for kkk = 1:NStd
+    fullOutput = g(xSolStd(kkk,:)',cNum)';
+    yCleanStd(kkk,:) = fullOutput(qOn+qNitro+1:end); 
+end
+
+
+%% add noise to measurements acc. to sensor data sheets
+% define std. deviations of sensors assuming zero mean (see Übersicht_Messrauschen.xlsx):
+% sigmaV = 0.08*1000; % Trommelgaszähler FBGA [m³/h] -> [L/h]
+sigmaV = 0.2*24;    % Trommelgaszähler Labor [L/h] --> [L/d]
+sigmaCh4 = 0.2/100; % [Vol-%] -> [-]; für ideale Gase und p0 ungefähr 1 bar: -> [bar]
+sigmaCo2 = 0.2/100; % [Vol-%] -> [-]; für ideale Gase und p0 ungefähr 1 bar: -> [bar]
+sigmaSIN = 0.12;    % NH4-N [g/L]
+sigmaTS = 1.73/100; % Trockenschrank großer Tiegel [%] -> [-]
+sigmaVS = 0.31/100; % [%] -> [-]
+
+% combine all in sigma matrix and covariance matrix:
+sigmas = [sigmaV, sigmaCh4, sigmaCo2, sigmaSIN, sigmaTS, sigmaVS]; 
+sigmasOn = [sigmaV, sigmaCh4, sigmaCo2]; 
+sigmasStd = [sigmaTS, sigmaVS]; % standard measurements' sigmas (Nitrogen excluded)
+sigmasNitro = [sigmaSIN];
+
+sigmaMat = repmat(sigmas,NOn,1);
+sigmaMatOn = repmat(sigmasOn,NOn,1);
+sigmaMatStd = repmat(sigmasStd,NStd,1);
+sigmaMatNitro = repmat(sigmasNitro,NNitro,1);
+
+% create normally distributed measurement noise matrices:
+% zero mean for all measurements 
+yMean = zeros(NOn,q); 
+yMeanOn = zeros(NOn,qOn); 
+yMeanStd = zeros(NStd,qStd); 
+yMeanNitro = zeros(NNitro,qNitro); 
+
+rng('default');     % fix seed for random number generation (for replicable results)
+normalMeasNoise = normrnd(yMean,sigmaMat);
+normalMeasNoiseOn = normrnd(yMeanOn,sigmaMatOn);
+normalMeasNoiseStd = normrnd(yMeanStd,sigmaMatStd);
+normalMeasNoiseNitro = normrnd(yMeanNitro,sigmaMatNitro);
+
+% add noise to clean model outputs:
+yMeas = yClean + normalMeasNoise; 
+yMeasOn = yCleanOn + normalMeasNoiseOn; 
+yMeasStd = yCleanStd + normalMeasNoiseStd; 
+yMeasNitro = yCleanNitro + normalMeasNoiseNitro; 
+
+% construct measurement noise covariance matrices:
+noiseCovMat = diag(sigmas.^2);
+noiseCovMatOn = diag(sigmasOn.^2);  
+noiseCovMatStd = diag(sigmasStd.^2); 
+noiseCovMatNitro = diag(sigmasNitro.^2); 
+
+%% add time delays to arrival times of offline measurements' samplings
+% construct times when offline measurements return from lab: 
+delayMin = 0.5;     % [d]
+delaySpread = 1/10;  % [d] range of possible delays on top of delayMin (manually chosen) 
+rng('default');     % fix seed for random number generation (for replicable results)
+delayStd = delayMin + rand(NStd,1)*delaySpread;
+delayNitro = delayMin + rand(NNitro,1)*delaySpread;
+tStdArrival = tStdSample + delayStd;
+tNitroArrival = tNitroSample + delayNitro;
+
+% ensure sampling and arrival times of std measurements fit into fine time 
+% grid of tMinor. 
+tStdSampleShift = interp1(tMinor,tMinor,tStdSample,'next'); 
+tNitroSampleShift = interp1(tMinor,tMinor,tNitroSample,'next'); 
+tStdArrivalShiftPre = interp1(tMinor,tMinor,tStdArrival,'next'); % includes NaN where extrapolation would be necessary (cause beyond simulation horizon)
+tNitroArrivalShiftPre = interp1(tMinor,tMinor,tNitroArrival,'next'); % same
+% note: tArrivalShiftPre might include NaNs where extrapolation would be necessary 
+% (because it contains instances beyond end of simulation)
+if any(isnan(tStdArrivalShiftPre))
+    idxKeepStdMeasurements = ~isnan(tStdArrivalShiftPre); % remove NaNs
+    tStdArrivalShift = tStdArrivalShiftPre(idxKeepStdMeasurements); % remove NaNs
+    % If so, also apply slicing to corresponding measurements 
+    yMeasStdArrival = yMeasStd(idxKeepStdMeasurements,:); 
+else 
+    % if not, keep time vector and measurements complete:
+    tStdArrivalShift = tStdArrival; 
+    yMeasStdArrival = yMeasStd; 
+end
+% same for Nitrogen measurements:
+if any(isnan(tNitroArrivalShiftPre))
+    idxKeepNitroMeasurements = ~isnan(tNitroArrivalShiftPre); % remove NaNs
+    tNitroArrivalShift = tNitroArrivalShiftPre(idxKeepNitroMeasurements); % remove NaNs
+    % If so, also apply slicing to corresponding measurements 
+    yMeasNitroArrival = yMeasNitro(idxKeepNitroMeasurements,:); 
+else 
+    % if not, keep time vector and measurements complete:
+    tNitroArrivalShift = tNitroArrival; 
+    yMeasNitroArrival = yMeasNitro; 
+end
+
+% XY: plotte Messungen mit sample und arrival time (wie für R3)
+% XY: check, ob das schon alles war! 
+
+%% Plot results (separated into Online/Offline Measurements)
+colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
+% plot and compare the clean results with noisy measurements: 
+figOutput = figure;
+
+% online measurements:
+% gas volume flow: 
+subplot(3,2,1)
+scatter(tOnline,yMeasOn(:,1)/24,'DisplayName','noisy',...
+        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+hold on; 
+plot(tOnline,yClean(:,1)/24,'DisplayName','clean',...
+     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+ylabel('gas vol flow [l/h]')
+ylim([0,18])
+yyaxis right
+stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+set(gca, "YColor", 'k')     % make right y-axis black 
+ylabel('feed vol flow [l/h]')
+legend('Location','NorthEast'); 
+
+% pch4: 
+subplot(3,2,2)
+scatter(tOnline,yMeasOn(:,2),'DisplayName','noisy',...
+        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5);
+hold on
+plot(tOnline,yClean(:,2),'DisplayName','clean',...
+     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+ylabel('p_{ch4} in bar')
+ylim([0,0.85])
+yyaxis right
+stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+set(gca, "YColor", 'k')     % make right y-axis black 
+ylabel('feed vol flow [l/h]')
+% legend('Location','NorthEast'); 
+set(gca, "YColor", 'k')
+
+% pco2:
+subplot(3,2,3)
+scatter(tOnline,yMeasOn(:,3),'DisplayName','noisy',...
+        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+hold on; 
+plot(tOnline,yClean(:,3),'DisplayName','clean',...
+     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
+ylabel('p_{co2} in bar')
+ylim([0.2,0.6])
+yyaxis right
+stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+set(gca, "YColor", 'k')     % make right y-axis black 
+ylabel('feed vol flow [l/h]')
+% legend('Location','NorthEast'); 
+set(gca, "YColor", 'k')
+
+% offline measurements (show sample and arriva times!):
+% SIN:  
+subplot(3,2,4)
+scatter(tNitroSampleShift,yMeasNitro(:,1),'DisplayName','noisy samples',...
+        'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1); 
+hold on; 
+% measurements at their arrival times: 
+scatter(tNitroArrivalShift,yMeasNitroArrival(:,1),'DisplayName','noisy arrivals',...
+        'Marker','*', 'Color', colorPaletteHex(1), 'LineWidth',1);
+% hold last measurement value till end of simulation:
+stairs([0;tNitroSample;tEnd],[yCleanNitro(1,1);yCleanNitro(:,1);yCleanNitro(end,1)], ...
+        'LineStyle','-.', 'Color', colorPaletteHex(2), ...
+        'LineWidth',1.5, 'DisplayName','clean')
+ylabel('inorg. nitrogen in g/L')
+ylim([0.35,0.85])
+yyaxis right
+stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+set(gca, "YColor", 'k')     % make right y-axis black 
+ylabel('feed vol flow [l/h]')
+legend('Location','NorthEast'); 
+set(gca, "YColor", 'k')
+
+% TS:  
+subplot(3,2,5)
+scatter(tStdSampleShift,yMeasStd(:,1),'DisplayName','noisy samples',...
+        'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1); 
+hold on; 
+% measurements at their arrival times: 
+scatter(tStdArrivalShift,yMeasStdArrival(:,1),'DisplayName','noisy arrivals',...
+        'Marker','*', 'Color', colorPaletteHex(1), 'LineWidth',1);
+% hold last measurement value till end of simulation:
+stairs([0;tStdSample;tEnd],[yCleanStd(1,1);yCleanStd(:,1);yCleanStd(end,1)],...
+        'DisplayName','clean', 'LineStyle','-.', ...
+        'Color', colorPaletteHex(2), 'LineWidth',1.5);
+ylabel('total solids [-]')
+xlabel('time [d]')
+ylim([0.02,0.07])
+yyaxis right
+stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+set(gca, "YColor", 'k')     % make right y-axis black 
+ylabel('feed vol flow [l/h]')
+% legend('Location','NorthEast'); 
+set(gca, "YColor", 'k')
+
+% VS:  
+subplot(3,2,6)
+scatter(tStdSampleShift,yMeasStd(:,2),'DisplayName','noisy samples',...
+        'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1); 
+hold on; 
+% measurements at their arrival times: 
+scatter(tStdArrivalShift,yMeasStdArrival(:,2),'DisplayName','noisy arrivals',...
+        'Marker','*', 'Color', colorPaletteHex(1), 'LineWidth',1);
+% hold last measurement value till end of simulation:
+stairs([0;tStdSample;tEnd],[yCleanStd(1,2);yCleanStd(:,2);yCleanStd(end,2)], ...
+        'DisplayName','clean', 'LineStyle','-.', ...
+        'Color', colorPaletteHex(2), 'LineWidth',1.5);
+ylabel('volatile solids [-]')
+xlabel('time [d]')
+ylim([0.55,0.6])
+yyaxis right
+stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+set(gca, "YColor", 'k')     % make right y-axis black 
+ylabel('feed vol flow [l/h]')
+% legend('Location','NorthEast'); 
+set(gca, "YColor", 'k')
+
+sgtitle('clean and noisy measurements from ADM1-R4-frac')
+fontsize(figOutput, 14,'points')
+
+%% save results in struct MESS: 
+
+MESS.tOnline = tOnline;
+MESS.tOfflineSample = tStdSample; 
+% MESS.tOfflineArrival = tOfflineArrival; 
+MESS.x0 = x0Init; 
+MESS.xSolOn = xSolOn;   % state trajectories evaluated at diff. sampling times
+MESS.xSolOff = xSolStd; 
+MESS.xSolNitro = xSolNitro; 
+MESS.xSim = [tSim,xSim]; 
+MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
+MESS.yClean = yClean; 
+MESS.yCleanOn = yCleanOn;  
+MESS.yCleanOff = yCleanStd;
+MESS.yCleanNitro = yCleanNitro;
+MESS.yMeas = yMeas; 
+MESS.yMeasOn = yMeasOn; 
+MESS.yMeasOff = yMeasStd; 
+MESS.yMeasNitroArrival = yMeasNitroArrival; 
+MESS.C = noiseCovMat; % accurate values from sensor data sheets
+MESS.COn = noiseCovMatOn;
+MESS.COff = noiseCovMatStd;
+MESS.CNitro = noiseCovMatNitro;
+
+% create sub-folder (if non-existent yet) and save results there
+currPath = pwd; 
+pathToResults = fullfile(currPath,'generatedOutput');
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+fileName = 'Messung_ADM1_R4_fracIntensiveSampling_withCampaigns.mat'; 
+save(fullfile(pathToResults,fileName), 'MESS', 'params')

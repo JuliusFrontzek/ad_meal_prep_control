@@ -1,5 +1,5 @@
 %% Version
-% (R2022b) Update 2
+% (R2022b) Update 5
 % Erstelldatum: 25.04.2023
 % Autor: Simon Hellmann
 
@@ -110,9 +110,9 @@ if flagMajor == 0
     h = h(1:qOn); 
     yMeas = yMeas(1:qOn); 
 end
+
 % during major instance, you must use all of the measurements available
 % (merged online and offline measurements together)
-
 S = H*PMinus*H' + R;    % auxiliary matrix
 SInv = S\eye(size(R));  % efficient least squares (numerically more efficient alternative for inverse)
 K = PMinus*H'*SInv;     % Kalman Gain matrix
