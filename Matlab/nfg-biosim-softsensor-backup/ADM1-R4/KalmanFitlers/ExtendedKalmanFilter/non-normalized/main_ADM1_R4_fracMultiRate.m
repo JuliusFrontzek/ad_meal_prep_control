@@ -432,4 +432,11 @@ MESS.C = noiseCovMat; % accurate values from sensor data sheets
 MESS.COn = noiseCovMatOn;
 MESS.COff = noiseCovMatOff;
 
-save('Messung_ADM1_R4_fracMultiRate.mat', 'MESS', 'params')
+% create sub-folder (if non-existent yet) and save results there
+currPath = pwd; 
+pathToResults = fullfile(currPath,'generatedOutput');
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+fileName = 'Messung_ADM1_R4_fracMultiRate.mat'; 
+save(fullfile(pathToResults,fileName), 'MESS', 'params')

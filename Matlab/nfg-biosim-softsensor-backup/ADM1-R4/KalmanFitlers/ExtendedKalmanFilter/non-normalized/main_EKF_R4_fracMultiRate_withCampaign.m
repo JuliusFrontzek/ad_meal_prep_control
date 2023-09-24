@@ -14,7 +14,7 @@ global counter
 counter = 0; 
 
 % load steady-state values from Sören's implementation: 
-load('generatedOutput\Messung_ADM1_R4_fracIntensiveSampling_withCampaigns.mat')
+load('generatedOutput/Messung_ADM1_R4_fracIntensiveSampling_withCampaigns.mat')
 
 %% Initialization and Tuning of EKF 
 % initial state values:
@@ -36,34 +36,37 @@ diff_t = diff(tMinor);
 dt = diff_t(1);                 % sampling time
 tKF = [tMinor;tMinor(end)+dt];  % time vector for Kalman Filter
 
-% XY: hier Zeitschriebe updaten! 
-% obtain true time instances:
-tOfflineSample = MESS.tOfflineSample;   
-tOfflineArrival = MESS.tOfflineArrival; 
-% shift/pad sampling and arrival times of offline measurements into fine 
-% time grid of tMinor: 
-tOfflineSampleShift = interp1(tMinor,tMinor,tOfflineSample,'next'); 
-tOfflineArrivalShiftPre = interp1(tMinor,tMinor,tOfflineArrival,'next'); % includes NaN where extrapolation would be necessary
-idxKeepOfflineMeasurements = ~isnan(tOfflineArrivalShiftPre); % remove NaNs
-tOfflineArrivalShift = tOfflineArrivalShiftPre(idxKeepOfflineMeasurements); % remove NaNs
-
-% XY: MEASUnite für Intensivbeprobung updaten
-% get measurements and unite them in one united array containing NaNs when 
-% no (offline) measurement was returned
+% create unified measurement matrix in which all measurements go at their
+% respective arrival times:
 MEASOn = MESS.yMeasOn;
-MEASOffPre = MESS.yMeasOff; % contains measurements arriving AFTER the end of simulation...
-MEASOff = MEASOffPre(idxKeepOfflineMeasurements,:); % ... so drop those
-qOn = size(MEASOn,2);       % # secondary (online) measurements
-qOff = size(MEASOffPre,2);  % # primary (online) measurements
-MEASUnite = nan(nSamplesMinor,qOn+qOff);     % allocate memory
-% insert minor instances in first qOn columns: 
+MEASStd = MESS.yMeasStdArrival; 
+MEASCamp = MESS.yMeasCampArrival; 
+q = size(MESS.yMeas,2);     % # signals all together 
+qOn = size(MEASOn,2);       % # secondary (online) measurement signals
+qStd = size(MEASStd,2);     % # offline measurement signals (not measured in campaigns)
+qCamp = size(MEASCamp,2);   % # offline measurement signals (measured in campaigns)
+MEASUnite = nan(nSamplesMinor,q);     % allocate memory 
+% insert minor instances in first qOn columns of MEASUnite: 
 MEASUnite(:,1:qOn) = MEASOn; 
-% insert minor instances (at right timing) in last qOff cols of MEASUnite:
-[Lia,idxTOfflineArrPre] = ismember(tOfflineArrivalShift,tMinor); % determine correct row positioning of major instances in MEASUnite (right timing)
-MEASUnite(idxTOfflineArrPre,qOn+1:qOn+qOff) = MEASOff; 
+% determine correct row positioning of major instances and insert respective
+% measurements:
+tStdArrivalShift = MESS.tStdArrivalShift; 
+tCampArrivalShift = MESS.tCampArrivalShift;
+[~,idxTStdArrival] = ismember(tStdArrivalShift,tMinor); 
+[~,idxTCampArrival] = ismember(tCampArrivalShift,tMinor); 
+MEASUnite(idxTCampArrival,qOn+1:qOn+qCamp) = MEASCamp;      % Nitrogen measurements 
+MEASUnite(idxTStdArrival,qOn+qCamp+1:end) = MEASStd;        % other std. measurements
 
-% set up raw matrices. all matrices which require initialization have 1 
-% column more than the number of measurement instances:
+% create united time vectors of whenever offline measurements are sampled:
+tStdSampleShift = MESS.tStdSampleShift;
+tCampSampleShift = MESS.tCampSampleShift; 
+tOfflineSampleShift = unique([tStdSampleShift;tCampSampleShift]);
+% ... or returned:
+tOfflineArrivalShift = unique([tStdArrivalShift;tCampArrivalShift]);
+
+%% set up raw matrices and structure for Kalman Filterin
+% Note: all matrices which require initialization have 1 column more than the 
+% number of measurement instances.
 STATES = MESS.xSolOn; 
 ESTIMATES = zeros(nSamplesMinor + 1,nStates);
 COVARIANCE = zeros(nStates,nStates,nSamplesMinor + 1);
@@ -98,9 +101,9 @@ end
 xS = sym('x', [nStates,1]);     % states as col. vector
 syms uS real                    % input
 xiS = sym('xi', [nStates,1]);   % inlet concentrations (assumed known) 
-thS = sym('th', [nTheta,1]);    % time-variant parameters (theta)
-cS = sym('c', [21,1]);          % time-invariant parameters (known & constant)
-aS = sym('a', [nStates,7]); % petersen matrix with stoichiometric constants
+thS = sym('th', size(params.th));   % time-variant parameters (theta)
+cS = sym('c', size(params.c));      % time-invariant parameters (known & constant)
+aS = sym('a', size(params.a));  % petersen matrix with stoichiometric constants
 
 % obtain symbolic objects of model equations:
 dynamics = BMR4_AB_frac_ode_sym(xS, uS, xiS, thS, cS, aS); 
@@ -118,11 +121,14 @@ dhdxSym = jacobian(outputs,xS);
 dfdx = matlabFunction(dfdxSym, 'Vars', {xS, uS, thS, cS, aS}); 
 dhdx = matlabFunction(dhdxSym, 'Vars', {xS, cS}); 
 
+%% call EKF repeatedly
 tic
 % flagAugmented = 0;      % 0: non-augmented; 1: augmented
-nAug = 0;               % # augmentations
 % flagDelayPeriod = 0;    % 0: not in delay period; 1: in delay period
-flagArrival = 0;       % 0: no lab measurement returned in current time step. 1: lab measurement returned
+
+nAug = 0;           % # state augmentations
+flagArrival = 0;    % 0: no lab measurement returned in current time step. 1: lab measurement returned
+
 % integrate across all (online) measurement intervals (like in reality):
 for k = 1:nSamplesMinor 
     
@@ -130,15 +136,15 @@ for k = 1:nSamplesMinor
     tk = tSpan(1);      % t_k
     tkp1 = tSpan(2);    % t_k+1
         
-    % check if you're AT primary sampling (k==s): 
+    % check if you're AT any primary sampling (k==s): 
     if ismember(tk,tOfflineSampleShift)
-        disp('sample sent to lab'); 
+        disp('sample got sent to lab'); 
         nAug = nAug + 1; 
-        % augment and initialize state x & state err. cov. matrix P
-        % to this end, extract topmost core of x and P, then replicate
+        % augment and initialize state x & state err. cov. matrix P.
+        % for this purpose, extract topmost core of x and P, then replicate
         xMinusCore = xMinus(1:nStates); 
         PMinusCore = PMinus(1:nStates,1:nStates); 
-        xAugMinus = repmat(xMinus,1,1+nAug); 
+        xAugMinus = repmat(xMinusCore,1+nAug,1); 
         PAugMinus = repmat(PMinusCore,1+nAug,1+nAug); 
         % overwrite old (unaugmented) entities: 
         xMinus = xAugMinus; 
@@ -151,6 +157,8 @@ for k = 1:nSamplesMinor
         disp('waiting for some lab measurements...')
     end
 
+    disp(['# augmentations currently: ',num2str(nAug)]);
+
     % get most recent measurement:
     yMeas = MEASUnite(k,:);    % simulated measurement
 %     % check if you're at minor or major instance: 
@@ -160,7 +168,7 @@ for k = 1:nSamplesMinor
     % XY: check, ob das stimmt
 
     if flagArrival == 1
-        disp('now received lab measurement!')
+        disp('just received lab measurements!')
     end    
 
     %% get feeding information:
@@ -187,7 +195,7 @@ for k = 1:nSamplesMinor
 %     [xPlus,PPlus,Kv] = constrainedExtendedKalmanFilter(xMinus,POld,tSpan,feedInfo,yMeas,AC,R); % constrained EKF
     [xPlus,PPlus] = extendedKalmanFilterMultiRateCampaigns(xMinus,PMinus,feedInfo, ...
                         yMeas,params,Q,R,f,g,dfdx,dhdx, ...
-                        tSpan,nStates,qOn,qOff,nAug,flagArrival); % mulirate EKF with multiple augmentation
+                        tSpan,nStates,qOn,qStd,qCamp,nAug,flagArrival); % mulirate EKF with multiple augmentation
     
     % save results:
     ESTIMATES(k+1,:) = xPlus(1:nStates)';   % only keep the "real" states, not the sample state in case of augmentation
@@ -204,16 +212,16 @@ for k = 1:nSamplesMinor
               'remove 1 augmentation']); 
         % remove augmentation of state and state err. cov. matrix P:
         nAug = nAug - 1; 
-        xMinusUnAug = xMinus(1:nAug*nStates); 
-        PMinusUnAug = PMinus(1:nAug*nStates,1:nAug*nStates); 
+        xMinusOneAugLess = xMinus(1:(1+nAug)*nStates); 
+        PMinusOneAugLess = PMinus(1:(1+nAug)*nStates,1:(1+nAug)*nStates); 
         % overwrite old (augmented) enteties: 
-        xMinus = xMinusUnAug; 
-        PMinus = PMinusUnAug; 
+        xMinus = xMinusOneAugLess; 
+        PMinus = PMinusOneAugLess; 
 %         flagAugmented = 0; 
         flagArrival = 0; 
     end
 
-    % XY: check, ob nAug und flagArrival sinn machen! 
+    % XY: check, ob nAug und flagArrival Sinn machen! 
 end
 toc
 
@@ -243,11 +251,12 @@ RMSSE_mean = mean(RMSSE);
 %% Plot results
 % plot model output based on EKF estimates, compare with real measurements:
 yCleanOn = MESS.yCleanOn; 
-yCleanOff = MESS.yCleanOff; % clean model outputs without delay (use with tOfflineSampleShift) 
+yCleanStd = MESS.yCleanStd; % clean model outputs of std. measurements
+yCleanCamp = MESS.yCleanCamp; % clean model outputs of std. measurements
 feedVolFlow = inputMat(:,2);% [l/d]
 
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
-figure
+figOutputs = figure;
 
 % gas volume flow: 
 subplot(3,2,1)

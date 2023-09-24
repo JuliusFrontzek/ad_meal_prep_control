@@ -229,56 +229,56 @@ tStdSample = (tStdOffset:dtStd:tEnd)';  % no delay
 NStd = numel(tStdSample);   % # std. measurement samples
 
 % construct time vector of acid measurements (measured in multiple campaigns)
-dtNitro = 1/24;              % sample time for atline measurements [h] -> [d]
-nNitroMeasCampaigns = 5;     % # intensive measurement campaigns
-nNitroMeasPerCampaign = 2;   % # samples taken during 1 campaign
-NNitro = nNitroMeasCampaigns*nNitroMeasPerCampaign; 
+dtCamp = 1/24;      % sample time for offline measurements [h] -> [d] taken in measurement campaigns
+nMeasCampaigns = 5;     % # intensive measurement campaigns
+nMeasPerCampaign = 2;   % # samples taken during 1 campaign
+NCamp = nMeasCampaigns*nMeasPerCampaign; 
 % measure Nitrogen at higher-frequency regular sampling intervals (without start time instant of campaign): 
-sampleArrayNitro = cumsum(dtNitro*ones(nNitroMeasPerCampaign-1,1));     % [d]
-tNitroOffsetNominal = 12/24; % nominal offset from midnight [h] -> [d]
+sampleArrayCamp = cumsum(dtCamp*ones(nMeasPerCampaign-1,1));     % [d]
+tCampOffsetNominal = 12/24; % nominal offset from midnight [h] -> [d]
 rng('default');             % fix seed for random number generation (for replicable results)
-tNitroOffset = tNitroOffsetNominal*rand(nNitroMeasCampaigns,1); % random offset from midnight
-tNitroSampleStartNom = cumsum([1;randi(5,nNitroMeasCampaigns-1,1)]); % max 5 days between meas. campaigns (nominal)
+tCampOffset = tCampOffsetNominal*rand(nMeasCampaigns,1); % random offset from midnight
+tCampSampleStartNom = cumsum([1;randi(5,nMeasCampaigns-1,1)]); % max 5 days between meas. campaigns (nominal)
 % add random time offsets to not start all campaigns at midnight: 
-tNitroSampleStart = tNitroSampleStartNom + tNitroOffset; 
-tNitroSample = nan(NNitro,1);   % allocate memory
-% fill entries of tNitroSample measurement campaign by measurement campaign:
-for k = 1:nNitroMeasCampaigns
+tCampSampleStart = tCampSampleStartNom + tCampOffset; 
+tCampSample = nan(NCamp,1);   % allocate memory
+% fill entries of tCampSample measurement campaign by measurement campaign:
+for k = 1:nMeasCampaigns
     % fill in only the start values of campaigns: 
-    tCampaignStart = tNitroSampleStart(k); 
-    tNitroSample(1+(k-1)*nNitroMeasPerCampaign) = tCampaignStart; 
-    % add higher-frequent Nitro measurements of each campaign: 
-    tNitroSample(2+(k-1)*nNitroMeasPerCampaign:k*nNitroMeasPerCampaign) = ...
-        tCampaignStart + sampleArrayNitro; 
+    tCampStart = tCampSampleStart(k); 
+    tCampSample(1+(k-1)*nMeasPerCampaign) = tCampStart; 
+    % add higher-frequent Nitrogen measurements of each campaign: 
+    tCampSample(2+(k-1)*nMeasPerCampaign:k*nMeasPerCampaign) = ...
+        tCampStart + sampleArrayCamp; 
 end % for
-% interpolate (=pad) entries of Nitro measurements to be in line with fine 
+% interpolate (=pad) entries of Nitrogen measurements to be in line with fine 
 % time grid of tEvents:
-tNitroSampleShift = interp1(tOnline,tOnline,tNitroSample,'next'); 
+tCampSampleShift = interp1(tOnline,tOnline,tCampSample,'next'); 
 
-% interpolate xSim at standard (=online)/Nitro sample times: 
+% interpolate xSim at standard (=online)/Nitrogen sample times: 
 xSolStd = interp1(tMinor,xSim,tStdSample);
-xSolNitro = interp1(tMinor,xSim,tNitroSampleShift);
+xSolCamp = interp1(tMinor,xSim,tCampSampleShift);
 
 % number of measurement signals: 
 qOn = 3; 
 qStd = 2;
-qNitro = 1; 
+qCamp = 1; 
 % allocate memory:
 yCleanOn = zeros(NOn,qOn);
 yCleanStd = zeros(NStd,qStd);
-yCleanNitro = nan(NNitro,qNitro);
+yCleanCamp = nan(NCamp,qCamp);
 % evaluate model outputs at different sampling times:
 for k = 1:NOn
     fullOutput = g(xSolOn(k,:)',cNum)';
     yCleanOn(k,:) = fullOutput(1:qOn); 
 end
-for kk = 1:NNitro
-    fullOutput = g(xSolNitro(kk,:)',cNum)';
-    yCleanNitro(kk,:) = fullOutput(qOn+1:qOn+qNitro);
+for kk = 1:NCamp
+    fullOutput = g(xSolCamp(kk,:)',cNum)';
+    yCleanCamp(kk,:) = fullOutput(qOn+1:qOn+qCamp);
 end
 for kkk = 1:NStd
     fullOutput = g(xSolStd(kkk,:)',cNum)';
-    yCleanStd(kkk,:) = fullOutput(qOn+qNitro+1:end); 
+    yCleanStd(kkk,:) = fullOutput(qOn+qCamp+1:end); 
 end
 
 
@@ -296,37 +296,37 @@ sigmaVS = 0.31/100; % [%] -> [-]
 sigmas = [sigmaV, sigmaCh4, sigmaCo2, sigmaSIN, sigmaTS, sigmaVS]; 
 sigmasOn = [sigmaV, sigmaCh4, sigmaCo2]; 
 sigmasStd = [sigmaTS, sigmaVS]; % standard measurements' sigmas (Nitrogen excluded)
-sigmasNitro = [sigmaSIN];
+sigmasCamp = [sigmaSIN];
 
 sigmaMat = repmat(sigmas,NOn,1);
 sigmaMatOn = repmat(sigmasOn,NOn,1);
 sigmaMatStd = repmat(sigmasStd,NStd,1);
-sigmaMatNitro = repmat(sigmasNitro,NNitro,1);
+sigmaMatCamp = repmat(sigmasCamp,NCamp,1);
 
 % create normally distributed measurement noise matrices:
 % zero mean for all measurements 
 yMean = zeros(NOn,q); 
 yMeanOn = zeros(NOn,qOn); 
 yMeanStd = zeros(NStd,qStd); 
-yMeanNitro = zeros(NNitro,qNitro); 
+yMeanCamp = zeros(NCamp,qCamp); 
 
 rng('default');     % fix seed for random number generation (for replicable results)
 normalMeasNoise = normrnd(yMean,sigmaMat);
 normalMeasNoiseOn = normrnd(yMeanOn,sigmaMatOn);
 normalMeasNoiseStd = normrnd(yMeanStd,sigmaMatStd);
-normalMeasNoiseNitro = normrnd(yMeanNitro,sigmaMatNitro);
+normalMeasNoiseCamp = normrnd(yMeanCamp,sigmaMatCamp);
 
 % add noise to clean model outputs:
 yMeas = yClean + normalMeasNoise; 
 yMeasOn = yCleanOn + normalMeasNoiseOn; 
 yMeasStd = yCleanStd + normalMeasNoiseStd; 
-yMeasNitro = yCleanNitro + normalMeasNoiseNitro; 
+yMeasCamp = yCleanCamp + normalMeasNoiseCamp; 
 
 % construct measurement noise covariance matrices:
 noiseCovMat = diag(sigmas.^2);
 noiseCovMatOn = diag(sigmasOn.^2);  
 noiseCovMatStd = diag(sigmasStd.^2); 
-noiseCovMatNitro = diag(sigmasNitro.^2); 
+noiseCovMatCamp = diag(sigmasCamp.^2); 
 
 %% add time delays to arrival times of offline measurements' samplings
 % construct times when offline measurements return from lab: 
@@ -334,16 +334,16 @@ delayMin = 0.5;     % [d]
 delaySpread = 1/10;  % [d] range of possible delays on top of delayMin (manually chosen) 
 rng('default');     % fix seed for random number generation (for replicable results)
 delayStd = delayMin + rand(NStd,1)*delaySpread;
-delayNitro = delayMin + rand(NNitro,1)*delaySpread;
+delayCamp = delayMin + rand(NCamp,1)*delaySpread;
 tStdArrival = tStdSample + delayStd;
-tNitroArrival = tNitroSample + delayNitro;
+tCampArrival = tCampSample + delayCamp;
 
 % ensure sampling and arrival times of std measurements fit into fine time 
 % grid of tMinor. 
 tStdSampleShift = interp1(tMinor,tMinor,tStdSample,'next'); 
-tNitroSampleShift = interp1(tMinor,tMinor,tNitroSample,'next'); 
+tCampSampleShift = interp1(tMinor,tMinor,tCampSample,'next'); 
 tStdArrivalShiftPre = interp1(tMinor,tMinor,tStdArrival,'next'); % includes NaN where extrapolation would be necessary (cause beyond simulation horizon)
-tNitroArrivalShiftPre = interp1(tMinor,tMinor,tNitroArrival,'next'); % same
+tCampArrivalShiftPre = interp1(tMinor,tMinor,tCampArrival,'next'); % same
 % note: tArrivalShiftPre might include NaNs where extrapolation would be necessary 
 % (because it contains instances beyond end of simulation)
 if any(isnan(tStdArrivalShiftPre))
@@ -353,23 +353,20 @@ if any(isnan(tStdArrivalShiftPre))
     yMeasStdArrival = yMeasStd(idxKeepStdMeasurements,:); 
 else 
     % if not, keep time vector and measurements complete:
-    tStdArrivalShift = tStdArrival; 
+    tStdArrivalShift = tStdArrivalShiftPre; 
     yMeasStdArrival = yMeasStd; 
 end
 % same for Nitrogen measurements:
-if any(isnan(tNitroArrivalShiftPre))
-    idxKeepNitroMeasurements = ~isnan(tNitroArrivalShiftPre); % remove NaNs
-    tNitroArrivalShift = tNitroArrivalShiftPre(idxKeepNitroMeasurements); % remove NaNs
+if any(isnan(tCampArrivalShiftPre))
+    idxKeepCampMeasurements = ~isnan(tCampArrivalShiftPre); % remove NaNs
+    tCampArrivalShift = tCampArrivalShiftPre(idxKeepCampMeasurements); % remove NaNs
     % If so, also apply slicing to corresponding measurements 
-    yMeasNitroArrival = yMeasNitro(idxKeepNitroMeasurements,:); 
+    yMeasCampArrival = yMeasCamp(idxKeepCampMeasurements,:); 
 else 
     % if not, keep time vector and measurements complete:
-    tNitroArrivalShift = tNitroArrival; 
-    yMeasNitroArrival = yMeasNitro; 
+    tCampArrivalShift = tCampArrivalShiftPre; 
+    yMeasCampArrival = yMeasCamp; 
 end
-
-% XY: plotte Messungen mit sample und arrival time (wie für R3)
-% XY: check, ob das schon alles war! 
 
 %% Plot results (separated into Online/Offline Measurements)
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
@@ -430,17 +427,17 @@ set(gca, "YColor", 'k')
 % offline measurements (show sample and arriva times!):
 % SIN:  
 subplot(3,2,4)
-scatter(tNitroSampleShift,yMeasNitro(:,1),'DisplayName','noisy samples',...
+scatter(tCampSampleShift,yMeasCamp(:,1),'DisplayName','noisy samples',...
         'Marker','o', 'Color', colorPaletteHex(1), 'LineWidth',1); 
 hold on; 
 % measurements at their arrival times: 
-scatter(tNitroArrivalShift,yMeasNitroArrival(:,1),'DisplayName','noisy arrivals',...
+scatter(tCampArrivalShift,yMeasCampArrival(:,1),'DisplayName','noisy arrivals',...
         'Marker','*', 'Color', colorPaletteHex(1), 'LineWidth',1);
 % hold last measurement value till end of simulation:
-stairs([0;tNitroSample;tEnd],[yCleanNitro(1,1);yCleanNitro(:,1);yCleanNitro(end,1)], ...
+stairs([0;tCampSample;tEnd],[yCleanCamp(1,1);yCleanCamp(:,1);yCleanCamp(end,1)], ...
         'LineStyle','-.', 'Color', colorPaletteHex(2), ...
         'LineWidth',1.5, 'DisplayName','clean')
-ylabel('inorg. nitrogen in g/L')
+ylabel('inorg. Nitrogen in g/L')
 ylim([0.35,0.85])
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
@@ -502,26 +499,30 @@ fontsize(figOutput, 14,'points')
 %% save results in struct MESS: 
 
 MESS.tOnline = tOnline;
-MESS.tOfflineSample = tStdSample; 
-% MESS.tOfflineArrival = tOfflineArrival; 
+MESS.tStdSampleShift = tStdSampleShift;         % sample times in line with time grid
+MESS.tCampSampleShift = tCampSampleShift; 
+MESS.tStdArrivalShift = tStdArrivalShift;       % arrival times in line with time grid
+MESS.tCampArrivalShift = tCampArrivalShift;
 MESS.x0 = x0Init; 
 MESS.xSolOn = xSolOn;   % state trajectories evaluated at diff. sampling times
 MESS.xSolOff = xSolStd; 
-MESS.xSolNitro = xSolNitro; 
+MESS.xSolCamp = xSolCamp; 
 MESS.xSim = [tSim,xSim]; 
 MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
 MESS.yClean = yClean; 
 MESS.yCleanOn = yCleanOn;  
-MESS.yCleanOff = yCleanStd;
-MESS.yCleanNitro = yCleanNitro;
+MESS.yCleanStd = yCleanStd;
+MESS.yCleanCamp = yCleanCamp;
 MESS.yMeas = yMeas; 
 MESS.yMeasOn = yMeasOn; 
-MESS.yMeasOff = yMeasStd; 
-MESS.yMeasNitroArrival = yMeasNitroArrival; 
+MESS.yMeasStd = yMeasStd; 
+MESS.yMeasCamp = yMeasCamp; 
+MESS.yMeasStdArrival = yMeasStdArrival; 
+MESS.yMeasCampArrival = yMeasCampArrival; 
 MESS.C = noiseCovMat; % accurate values from sensor data sheets
 MESS.COn = noiseCovMatOn;
 MESS.COff = noiseCovMatStd;
-MESS.CNitro = noiseCovMatNitro;
+MESS.CCamp = noiseCovMatCamp;
 
 % create sub-folder (if non-existent yet) and save results there
 currPath = pwd; 
