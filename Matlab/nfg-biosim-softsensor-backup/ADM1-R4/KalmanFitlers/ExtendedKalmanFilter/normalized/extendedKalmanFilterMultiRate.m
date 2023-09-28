@@ -1,9 +1,12 @@
 %% Version
-% (R2022b) Update 2
+% (R2022b) Update 5
 % Erstelldatum: 25.04.2023
+% last modified: 24.09.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = extendedKalmanFilterMultiRate(xOld,POld,feedInfo,yMeas,params,Q,R,f,g,dfdx,dhdx,tSpan,nStates,qOn,qOff,flagAugmented,flagMajor)
+function [xPlus,PPlus] = extendedKalmanFilterMultiRate(xOld,POld,feedInfo,...
+                        yMeas,params,Q,R,f,g,dfdx,dhdx, ...
+                        tSpan,nStates,qOn,qOff,flagAugmented,flagDelayPeriod,flagMajor)
 
 % compute time & measurement update with Joseph-version of EKF for
 % multirate measurements
@@ -27,6 +30,7 @@ function [xPlus,PPlus] = extendedKalmanFilterMultiRate(xOld,POld,feedInfo,yMeas,
 % qOn - # online measurement signals
 % qOff - # offline measurement signals
 % flagAugmented - 0: non-augmented, 1: augmented
+% flagDelayPeriod - 0: NOT waiting for sample from lab to return. 1: waiting
 % flagMajor - 0: minor instance, 1: major instance
 
 global counter
@@ -42,8 +46,6 @@ if any(xOld<0)
 end 
 
 %% Time Update
-% XY: Achtung: du musst drauf achten, wie viele Einträge x und P
-% normalerweise und während der delay period haben!
 xPOld = [xOld;reshape(POld,[],1)];  % combined vector of xHat and P
 
 tEvents = feedInfo(:,1);    % feeding time points (an/aus)
@@ -84,7 +86,7 @@ end
 if flagAugmented == 1
     xAugMinus = xPMinus(1:2*nStates);
     PAugMinus = reshape(xPMinus(2*nStates+1:end),[2*nStates,2*nStates]);
-    xMinus = xAugMinus(1:nStates); % ignore the sample state for now
+    xMinus = xAugMinus(1:2*nStates); 
     PMinus = PAugMinus; 
 else % non-augmented case:
     xMinus = xPMinus(1:nStates);
@@ -92,16 +94,17 @@ else % non-augmented case:
 end
 
 %% Measurement Update
-h = g(xMinus,params.c);     % predicted model output
+xMinusCore = xMinus(1:nStates); % without augmentation
+h = g(xMinusCore,params.c);     % predicted model output
 if flagAugmented == 1
     Ha = zeros(qOn+qOff,2*nStates);     % allocate memory
-    Ha(:,1:nStates) = dhdx(xMinus,params.c);  % the remaining nStates cols stay 0
+    Ha(:,1:nStates) = dhdx(xMinusCore,params.c);  % the remaining nStates cols stay 0
     H = Ha; 
 else % non-augmented case:
-    H = dhdx(xMinus,params.c);  % partial derivative of output, evaluated at xMinus
+    H = dhdx(xMinusCore,params.c);  % partial derivative of output, evaluated at xMinus
 end
 
-% during minor instance...
+% Slicing: during minor instance...
 if flagMajor == 0
     % ... reduce H and R to # of measurement signals during minor instance:
     H = H(1:qOn,:); 
@@ -110,26 +113,29 @@ if flagMajor == 0
     h = h(1:qOn); 
     yMeas = yMeas(1:qOn); 
 end
-% during major instance, you must use all of the measurements available
-% (merged online and offline measurements together)
 
+% ...whereas during major instance, use all of the measurements available
+% (merged online and offline measurements together)
 S = H*PMinus*H' + R;    % auxiliary matrix
 SInv = S\eye(size(R));  % efficient least squares (numerically more efficient alternative for inverse)
 K = PMinus*H'*SInv;     % Kalman Gain matrix
 Kv = K*(yMeas' - h);    % effective correction of Kalman Gain on state estimate (n,1); 
 % Kv = zeros(nStates,1);  % XY Rania
 
-if flagAugmented == 1
+% Achtung: only during delay period suppress measurement update of sample
+% state through indicator matrix:
+if flagDelayPeriod == 1
     M = blkdiag(eye(nStates),zeros(nStates)); % indicator matrix
     xPlus = xAugMinus + M*Kv;    % updated state estimation
     % Joseph-Algorithm for measurement update of P: 
     leftMat = eye(2*nStates) - M*K*H; 
     rightMat = leftMat'; 
     PPlus = leftMat*PMinus*rightMat + K*R*K'; % updated covariance of estimation error
-else % non-augmented case:
+else % outside delay period, i.e. when not waiting for lab measurement to 
+    % return, update all of x and P, regardless whether augmented or not:
     xPlus = xMinus + Kv;    % updated state estimation
     % Joseph-Algorithm for measurement update of P: 
-    leftMat = eye(nStates) - K*H; 
+    leftMat = eye(size(xMinus)) - K*H; 
     rightMat = leftMat'; 
     PPlus = leftMat*PMinus*rightMat + K*R*K'; % updated covariance of estimation error
 end

@@ -112,7 +112,7 @@ feedingDurationsWeek = [intMed; intShort; intMed; intShort];
 feedingDurations = repmat(feedingDurationsWeek,2,1); 
 tFeedOff = tFeedOn + feedingDurations; % end times of feedings
 tEvents = sort([0;tFeedOn;tFeedOff]); 
-dt = 5/60/24;           % sample time [min], converted to [d]
+dt = 15/60/24;           % sample time [min], converted to [d]
 tOnline = (0:dt:tEnd)'; % time grid. The model outputs will be evaluated here later on
 tMinor = unique([tOnline; tEvents]);% Join and sort timestamps
 
@@ -220,7 +220,7 @@ for k = 1:NOn
     yClean(k,:) = g(xSolOn(k,:)',cNum)'; % Simons Implementierung (arXiv)
 end
 
-%% case 2: online and 2 offline (standard and acid) measurements (no delay yet):
+%% case 2: online and 2 offline (standard and acid) measurements (delay added later):
 % standard measurements: 
 dtStd = 3;          % sample time for standard analyses [d]
 tStdOffset = 0.5;   % dont start first std. measurement right at beginning 
@@ -228,9 +228,9 @@ tStdOffset = 0.5;   % dont start first std. measurement right at beginning
 tStdSample = (tStdOffset:dtStd:tEnd)';  % no delay 
 NStd = numel(tStdSample);   % # std. measurement samples
 
-% construct time vector of acid measurements (measured in multiple campaigns)
+% construct time vector of outputs measured in multiple campaigns
 dtCamp = 1/24;      % sample time for offline measurements [h] -> [d] taken in measurement campaigns
-nMeasCampaigns = 5;     % # intensive measurement campaigns
+nMeasCampaigns = 4;     % # intensive measurement campaigns
 nMeasPerCampaign = 2;   % # samples taken during 1 campaign
 NCamp = nMeasCampaigns*nMeasPerCampaign; 
 % measure Nitrogen at higher-frequency regular sampling intervals (without start time instant of campaign): 

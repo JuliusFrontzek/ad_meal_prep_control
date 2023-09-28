@@ -75,14 +75,16 @@ buffer = 1.5;   % conservative safety margin of 50% for measurement noise covari
 R = buffer * MESS.R;
 RNorm = R./(TyNum.^2); % apply normalization to Tuning of R
 % fine-tuning:
-RNorm(4,4) = RNorm(4,4)*1E-2;   % pH
-RNorm(5,5) = RNorm(5,5)*1E2;    % SIN
+RNorm(4,4) = RNorm(4,4)*1E2;    % pH
+% RNorm(5,5) = RNorm(5,5)*1E1;    % SIN -> better adjust Q for S_IN, not R!
+RNorm(6,6) = RNorm(6,6)*1E1;    % TS
 
 % tuning of Kalman Filter - process uncertainty: 
 % Q = diag(x0Init);
 QNorm = eye(nStates);   % XY: sicher besser auszulegen
 % fine-tuning:
-% QNorm(11,11) = 1E-1;     % increase model confidence in X_ac
+QNorm(13:16,13:16) = 1E-2*eye(4); % Ionen tendentiell vertrauenswürdig
+QNorm(4,4) = 1E-2;     % increase model confidence in S_IN
 % QNorm = Q./(TxNum.^2); % for comparison with non-normalized case
 
 % obtain feeding information:
@@ -245,25 +247,26 @@ yEKFDeNorm = repmat(TyNum',nSamples+1,1).*EKFOutputNorm;
 % plot model output based on EKF estimation and compare with real
 % measurements:
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
+colorPaletteHexMagma = ["#fcfdbf","#fc8961","#b73779","#51127c","#000004"];
 figOutputs = figure;
 
 % gas volume flow: 
 subplot(4,2,1)
 % scatter(tMeas,MESS.yMeas(:,1)/24,'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 scatter(tMeas, MESS.yMeas(:,1)/24,'DisplayName','noisy measurements', ...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
 plot(tMeas,yClean(:,1)/24,'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 plot(t,yEKFDeNorm(:,1)/24,'DisplayName','EKFNorm-Output',...
-    'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
+    'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8);
 % plot(t,EKFOutput(:,1)/24,'DisplayName','EKF-Output',...
 %      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 ylim([0,15])
 ylabel('gas vol flow [l/h]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -273,19 +276,19 @@ set(gca, "YColor", 'k')     % make right y-axis black
 subplot(4,2,2)
 % scatter(tMeas,MESS.yMeas(:,2),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 scatter(tMeas, MESS.yMeas(:,2),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on
 plot(tMeas,yClean(:,2),'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 plot(t,yEKFDeNorm(:,2),'DisplayName','EKFNorm-Output',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);  
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8);  
 % plot(t,EKFOutput(:,2),'DisplayName','EKF-Output',...
 %      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0,1])
 ylabel('p_{ch4} [bar]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -295,19 +298,19 @@ legend('Location','NorthEast');
 subplot(4,2,3)
 % scatter(tMeas,MESS.yMeas(:,3),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 scatter(tMeas, MESS.yMeas(:,3),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
 plot(tMeas,yClean(:,3),'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 plot(t,yEKFDeNorm(:,3),'DisplayName','EKFNorm-Output',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8);
 % plot(t,EKFOutput(:,3),'DisplayName','EKF-Output',...
 %      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
 ylim([0,0.6])
 ylabel('p_{co2} [bar]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -317,19 +320,19 @@ set(gca, "YColor", 'k')     % make right y-axis black
 subplot(4,2,4)
 % scatter(tMeas,MESS.yMeas(:,4),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 scatter(tMeas, MESS.yMeas(:,4),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
 plot(tMeas,yClean(:,4),'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 plot(t,yEKFDeNorm(:,4),'DisplayName','EKFNorm-Output',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8);
 % plot(t,EKFOutput(:,4),'DisplayName','EKF-Output',...
 %      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
 ylim([5,10])
 ylabel('pH [-]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -339,18 +342,18 @@ set(gca, "YColor", 'k')     % make right y-axis black
 subplot(4,2,5)
 % scatter(tMeas,MESS.yMeas(:,5),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 scatter(tMeas, MESS.yMeas(:,5),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
 plot(tMeas,yClean(:,5),'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 plot(t,yEKFDeNorm(:,5),'DisplayName','EKFNorm-Output',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8);
 % plot(t,EKFOutput(:,5),'DisplayName','EKF-Output',...
 %      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)  
 ylabel('inorg. nitrogen [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -360,19 +363,19 @@ set(gca, "YColor", 'k')     % make right y-axis black
 subplot(4,2,6)
 % scatter(tMeas,MESS.yMeas(:,6),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 scatter(tMeas, MESS.yMeas(:,6),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
 plot(tMeas,yClean(:,6),'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 plot(t,yEKFDeNorm(:,6),'DisplayName','EKFNorm-Output',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8);
 % plot(t,EKFOutput(:,6),'DisplayName','EKF-Output',...
 %      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
 ylim([0,0.15])
 ylabel('total solids [-]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -382,19 +385,19 @@ xlabel('time [d]')
 subplot(4,2,7)
 % scatter(tMeas,MESS.yMeas(:,7),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 scatter(tMeas, MESS.yMeas(:,7),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
 plot(tMeas,yClean(:,7),'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 plot(t,yEKFDeNorm(:,7),'DisplayName','EKFNorm-Output',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8);
 % plot(t,EKFOutput(:,7),'DisplayName','EKF-Output',...
 %      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
 ylim([0.6,0.8])
 ylabel('volatile solids [-]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -404,19 +407,19 @@ xlabel('time [d]')
 subplot(4,2,8)
 % scatter(tMeas,MESS.yMeas(:,8),'.', 'DisplayName','noisy measurements', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
 scatter(tMeas, MESS.yMeas(:,8),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
 plot(tMeas,yClean(:,8),'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 plot(t,yEKFDeNorm(:,8),'DisplayName','EKFNorm-Output',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8);
 % plot(t,EKFOutput(:,8),'DisplayName','EKF-Output',...
 %      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
 ylim([0,3])
 ylabel('acetic acid [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -432,15 +435,15 @@ figStates = figure;
 % S_IN:
 subplot(3,2,1)
 plot(tMeas,trueStates(:,4),'DisplayName','true',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,xEKFDeNorm(:,4),'DisplayName','estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('S_{IN} [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -449,15 +452,15 @@ set(gca, "YColor", 'k')     % make right y-axis black
 % S_h2o:
 subplot(3,2,2)
 plot(tMeas,trueStates(:,5),'DisplayName','true',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,xEKFDeNorm(:,5),'DisplayName','estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
 ylim([900,1000])
 ylabel('S_{h2o} [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -466,15 +469,15 @@ legend('Location','NorthEast');
 % X_ch_fast:
 subplot(3,2,3)
 plot(tMeas,trueStates(:,6),'DisplayName','true',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,xEKFDeNorm(:,6),'DisplayName','estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('X_{ch,fast} [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -483,15 +486,15 @@ xlabel('time [d]')
 % X_ch_fast:
 subplot(3,2,4)
 plot(tMeas,trueStates(:,7),'DisplayName','true',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,xEKFDeNorm(:,7),'DisplayName','estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('X_{ch,slow} [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -500,15 +503,15 @@ xlabel('time [d]')
 % X_bac:
 subplot(3,2,5)
 plot(tMeas,trueStates(:,10),'DisplayName','true',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,xEKFDeNorm(:,10),'DisplayName','estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('X_{bac} [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -517,15 +520,15 @@ xlabel('time [d]')
 % X_ac:
 subplot(3,2,6)
 plot(tMeas,trueStates(:,11),'DisplayName','true',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
+     'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(t,xEKFDeNorm(:,11),'DisplayName','estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+     'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('X_{ac} [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
+       'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')

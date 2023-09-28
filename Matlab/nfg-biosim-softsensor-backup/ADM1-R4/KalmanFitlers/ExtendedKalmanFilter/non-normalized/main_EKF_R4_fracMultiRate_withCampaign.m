@@ -250,6 +250,7 @@ RMSSE_mean = mean(RMSSE);
 
 %% Plot results
 % plot model output based on EKF estimates, compare with real measurements:
+yClean = MESS.yClean;       % clean measurements in high resolution
 yCleanOn = MESS.yCleanOn; 
 yCleanStd = MESS.yCleanStd; % clean model outputs of std. measurements
 yCleanCamp = MESS.yCleanCamp; % clean model outputs of std. measurements
@@ -261,7 +262,7 @@ figOutputs = figure;
 % gas volume flow: 
 subplot(3,2,1)
 scatter(tMinor, MEASOn(:,1)/24,'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 plot(tMinor,yCleanOn(:,1)/24,'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
@@ -281,7 +282,7 @@ legend('Location','NorthEast');
 % pch4: 
 subplot(3,2,2)
 scatter(tMinor, MEASOn(:,2),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on
 plot(tMinor,yCleanOn(:,2),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
@@ -301,7 +302,7 @@ axis tight % draw axis only as long as time vectors
 % pco2:
 subplot(3,2,3)
 scatter(tMinor, MEASOn(:,3),'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+        'Marker','.', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
 plot(tMinor,yCleanOn(:,3),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
@@ -320,13 +321,17 @@ axis tight % draw axis only as long as time vectors
 
 % SIN:  
 subplot(3,2,4)
-scatter(tOfflineArrivalShift,MEASOff(:,1),'DisplayName','noisy measurements',...
-        'Marker','o', 'Color', colorPaletteHex(1)); 
-hold on; 
-% hold last measurement value till end of simulation:
-stairs([tOfflineSampleShift; tMinor(end)],[yCleanOff(:,1);yCleanOff(end,1)],...
-     'DisplayName','clean, un-delayed output',...
+plot(tMinor,yClean(:,4),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+hold on; 
+scatter(tCampSampleShift,MEASCamp(:,1),'DisplayName','noisy samples',...
+        'Marker','o', 'MarkerEdgeColor',colorPaletteHex(1), 'LineWidth',1); 
+scatter(tCampArrivalShift,MEASCamp(:,1),'DisplayName','noisy arrival',...
+        'Marker','*', 'MarkerEdgeColor',colorPaletteHex(2), 'LineWidth',1);
+% hold last measurement value until end of simulation:
+% stairs([tOfflineSampleShift; tMinor(end)],[yCleanOff(:,1);yCleanOff(end,1)],...
+%      'DisplayName','clean, un-delayed output',...
+%      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
 plot(tKF,EKFOutput(:,4),'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
 ylabel('inorg. nitrogen [g/L]')
@@ -341,13 +346,13 @@ legend('Location','NorthEast');
 
 % TS:  
 subplot(3,2,5)
-scatter(tOfflineArrivalShift,MEASOff(:,2),'DisplayName','noisy measurements',...
-        'Marker','o', 'Color', colorPaletteHex(1)); 
-hold on; 
-% hold last measurement value till end of simulation:
-stairs([tOfflineSampleShift; tMinor(end)],[yCleanOff(:,2);yCleanOff(end,2)],...
-     'DisplayName','clean, un-delayed output',...
+plot(tMinor,yClean(:,5),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+hold on; 
+scatter(tStdSampleShift,MEASStd(:,1),'DisplayName','noisy samples',...
+        'Marker','o', 'MarkerEdgeColor',colorPaletteHex(1), 'LineWidth',1); 
+scatter(tStdArrivalShift,MEASStd(:,1),'DisplayName','noisy arrival',...
+        'Marker','*', 'MarkerEdgeColor',colorPaletteHex(2), 'LineWidth',1);
 plot(tKF,EKFOutput(:,5),'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
 ylim([0,0.1])
@@ -363,13 +368,13 @@ axis tight % draw axis only as long as time vectors
 
 % VS:  
 subplot(3,2,6)
-scatter(tOfflineArrivalShift,MEASOff(:,3),'DisplayName','noisy measurements',...
-        'Marker','o', 'Color', colorPaletteHex(1)); 
-hold on; 
-% hold last measurement value till end of simulation:
-stairs([tOfflineSampleShift; tMinor(end)],[yCleanOff(:,3);yCleanOff(end,3)],...
-     'DisplayName','clean, un-delayed output',...
+plot(tMinor,yClean(:,6),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
+hold on; 
+scatter(tStdSampleShift,MEASStd(:,2),'DisplayName','noisy samples',...
+        'Marker','o', 'MarkerEdgeColor',colorPaletteHex(1), 'LineWidth',1); 
+scatter(tStdArrivalShift,MEASStd(:,2),'DisplayName','noisy arrival',...
+        'Marker','*', 'MarkerEdgeColor',colorPaletteHex(2), 'LineWidth',1);
 plot(tKF,EKFOutput(:,6),'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8)
 ylim([0,1])
@@ -515,3 +520,19 @@ xlabel('time [d]')
 axis tight % draw axis only as long as time vectors
 
 sgtitle('Comparison of true and EKF-estimates of states')
+
+%% store EKF estimates to inspect them later:
+
+myMR_EKF = struct;
+myMR_EKF.xEKF = STATES; 
+myMR_EKF.yEKF = EKFOutput; 
+myMR_EKF.P = COVARIANCE; 
+
+% create sub-folder (if non-existent yet) and save results there
+currPath = pwd; 
+pathToResults = fullfile(currPath,'generatedOutput');
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+fileName = 'MR-EKF_R4_fracIntensiveSampling_3MeasPerCampaigns.mat'; 
+save(fullfile(pathToResults,fileName), 'myMR_EKF')

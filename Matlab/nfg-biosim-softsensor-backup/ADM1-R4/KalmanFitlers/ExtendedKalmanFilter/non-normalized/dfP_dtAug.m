@@ -46,7 +46,7 @@ function dxPdt = dfP_dtAug(xP,u,xi,params,Q,f,dfdx,nStates,flagAugmented)
     dxdt = f(x,u,xi,th,c,a);
 
     if flagAugmented == 1
-        dxsdt = zeros(nStates,1); % maintain sample state
+        dxsdt = zeros(nStates,1); % maintain sample state -> derivative = 0
         dxAugdt = [dxdt;dxsdt]; 
         dxPdt(1:2*nStates) = dxAugdt; 
     else 

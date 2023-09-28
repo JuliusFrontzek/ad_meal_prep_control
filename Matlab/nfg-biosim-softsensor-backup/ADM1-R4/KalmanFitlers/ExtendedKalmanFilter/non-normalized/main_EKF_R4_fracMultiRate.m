@@ -1,6 +1,7 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 17.07.2023
+% last modified: 24.09.2023
 % Autor: Simon Hellmann
 
 %% DAS Kalman Filter fürs ADM1-R4-frac mit Online/Offline Messwerten
@@ -13,7 +14,7 @@ global counter
 counter = 0; 
 
 % Load Measurement Data:
-load Messung_ADM1_R4_fracMultiRate
+load generatedOutput/Messung_ADM1_R4_fracMultiRate
 
 %% Initialization and Tuning of EKF 
 % initial state values:
@@ -148,7 +149,9 @@ for k = 1:nSamplesMinor
     flagMajor = all(~isnan(yMeas)); % 0: minor instance, 1: major instance
     
     if flagMajor == 1
-        disp('now major instance!')
+        disp(['now major instance!', newline,...
+        'Delay period over.'])
+        flagDelayPeriod = 0;
     end    
 
     %% get feeding information:
@@ -172,10 +175,9 @@ for k = 1:nSamplesMinor
     %% execute EKF
 
 %     [xPlus,PPlus,Kv] = extendedKalmanFilter(xMinus,PMinus,tSpan,feedInfo,yMeas,params,Q,R,f,g,dfdx,dhdx); % standard EKF
-%     [xPlus,PPlus,Kv] = constrainedExtendedKalmanFilter(xMinus,POld,tSpan,feedInfo,yMeas,AC,R); % constrained EKF
     [xPlus,PPlus] = extendedKalmanFilterMultiRate(xMinus,PMinus,feedInfo, ...
                         yMeas,params,Q,R,f,g,dfdx,dhdx, ...
-                        tSpan,nStates,qOn,qOff,flagAugmented,flagMajor); % mulirate EKF
+                        tSpan,nStates,qOn,qOff,flagAugmented,flagDelayPeriod,flagMajor); % mulirate EKF
     
     % save results:
     ESTIMATES(k+1,:) = xPlus(1:nStates)';   % only keep the "real" states, not the sample state in case of augmentation
@@ -188,7 +190,6 @@ for k = 1:nSamplesMinor
     % remove state augmentation once primary measurement (& delay period) is over:
     if ismember(tk,tOfflineArrivalShift)
         disp(['primary measurement over', newline, ...
-              'delay period over', newline,...
               'remove augmentation']); 
         % remove augmentation of state and state err. cov. matrix P:
         xMinusUnAug = xMinus(1:nStates); 
@@ -196,8 +197,7 @@ for k = 1:nSamplesMinor
         % overwrite old (augmented) enteties: 
         xMinus = xMinusUnAug; 
         PMinus = PMinusUnAug; 
-        flagAugmented = 0; 
-        flagDelayPeriod = 0; 
+        flagAugmented = 0;  
     end
 
 end

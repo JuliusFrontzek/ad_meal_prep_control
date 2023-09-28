@@ -1,11 +1,12 @@
 %% Version
 % (R2022b) Update 2
 % Erstelldatum: 01.08.2023
+% last modified: 24.09.2023
 % Autor: Simon Hellmann
 
 function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRate(xOldNorm,POldNorm, ...
     feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
-    TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,flagAugmented,flagMajor)
+    TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,flagAugmented,flagDelayPeriod,flagMajor)
 
 % compute time & measurement update with normalized multirate measurements
 % in normalized (norm.) coordinates
@@ -29,6 +30,7 @@ function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRate(xOldNorm,POld
 % nStates - # states (without sample state augmentation)
 % qOn, qOff - # online and offline signals
 % flagAugmented -   0: non-augmented,   1: augmented
+% flagDelayPeriod - 0: NOT waiting for lab measurement to return. 1: waiting
 % flagMajor -       0: minor instance,  1: major instance
 
 global counter
@@ -88,7 +90,7 @@ end
 if flagAugmented == 1
     xAugMinusNorm = xPMinusNorm(1:2*nStates);
     PAugMinusNorm = reshape(xPMinusNorm(2*nStates+1:end),[2*nStates,2*nStates]);
-    xMinusNorm = xAugMinusNorm(1:nStates); % ignore the sample state for now
+    xMinusNorm = xAugMinusNorm(1:2*nStates); 
     PMinusNorm = PAugMinusNorm; 
 else % non-augmented case:
     xMinusNorm = xPMinusNorm(1:nStates);
@@ -96,16 +98,20 @@ else % non-augmented case:
 end
 
 %% Measurement Update
-hNorm = gNorm(xMinusNorm,params.c,TxNum,TyNum); % predicted normalized model output
-if flagAugmented == 1
-    HAugNorm = zeros(qOn+qOff,2*nStates);     % allocate memory
-    HAugNorm(:,1:nStates) = dhdxNorm(xMinusNorm,params.c,TxNum,TyNum);  % the remaining nStates cols stay 0
+xMinusCoreNorm = xMinusNorm(1:nStates); % definitely without augmentation
+hNorm = gNorm(xMinusCoreNorm,params.c,TxNum,TyNum); % predicted normalized model output
+if flagAugmented == 1    
+    HAugNorm = nan(qOn+qOff,2*nStates);     % allocate memory
+    HAugNorm(:,1:nStates) = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % the remaining nStates cols stay 0
+    % fill augmented columns with zeros since they correspond to sample
+    % state which is fixed, thus currently not time dependent anymore:
+    HAugNorm(:,nStates+1:end) = zeros(qOn+qOff, nStates); 
     HNorm = HAugNorm; 
 else % non-augmented case:
-    HNorm = dhdxNorm(xMinusNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
+    HNorm = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
 end
 
-% during minor instance...
+% Slicing. During minor instance...
 if flagMajor == 0
     % ... reduce H and R to # of measurement signals during minor instance:
     HNorm = HNorm(1:qOn,:); 
@@ -126,17 +132,18 @@ KNorm = PMinusNorm*HNorm'*SNormInv; % Kalman Gain matrix
 KvNorm = KNorm*(yMeasNorm - hNorm);    % effective correction of Kalman Gain on state estimate (n,1); 
 % KvNorm = zeros(nStates,1);  % XY Rania
 
-if flagAugmented == 1
+if flagDelayPeriod == 1
     M = blkdiag(eye(nStates),zeros(nStates)); % indicator matrix
-    xPlusNorm = xAugMinusNorm + M*KvNorm;    % updated normalized state estimation
+    xPlusNorm = xMinusNorm + M*KvNorm;    % updated normalized state estimation
     % Joseph-Algorithm for measurement update of P: 
     leftMat = eye(2*nStates) - M*KNorm*HNorm; 
     rightMat = leftMat'; 
     PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated normalized covariance of estimation error
-else % non-augmented case:
+else % when not waiting for lab measurement to return, update all of x and P, 
+    % regardless whether augmented or not:
     xPlusNorm = xMinusNorm + KvNorm;    % updated state estimation
     % Joseph-Algorithm for measurement update of P: 
-    leftMat = eye(nStates) - KNorm*HNorm; 
+    leftMat = eye(size(xMinusNorm)) - KNorm*HNorm; 
     rightMat = leftMat'; 
     PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated normalized covariance of estimation error
 end

@@ -1,6 +1,7 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 25.07.2023
+% last modified: 27.09.2023
 % Autor: Simon Hellmann
 
 % create the multirate synthetic measurement data for Kalman Filtering. 
@@ -92,27 +93,30 @@ tEnd = 7;   % [d] End of Simulation
 tSS = 300;  % [d] Dauer, bis steady state als erreicht gilt (~ 1/3 Jahr) 
 
 % feeding intervals: 
-intShort = 0.5;     % [d]
-intLong = 2.5;      % [d]
-intMed = 1;        % [d]
+intShort = 0.25;    % [d]
+intLong = 1.5;      % [d]
+intMed = 0.5;       % [d]
 % start with feeding right after steady state and some pause: 
-ints = [intLong,intShort,intLong,intMed]';
+% ints = [intLong,intShort,intLong,intMed]';
 % ... and transform intervals to absolute times:
-cumInts = cumsum(ints);     % cumulated intervals
-tFeedOn = [cumInts(1);cumInts(3)];  % beginning times of feedings
-tFeedOff = [cumInts(2);cumInts(4)]; % end times of feedings
-feedingDurations = [intShort; intMed];  
+% cumInts = cumsum(ints);     % cumulated intervals
+tFeedOnWeek = [1;2.5;4.5;6];  % beginning times of feedings (1 single week)
+tFeedOn = [tFeedOnWeek];% [tFeedOnWeek;tFeedOnWeek + 7]; 
+feedingDurationsWeek = [intMed; intShort; intMed; intShort];% 1 single week
+feedingDurations = repmat(feedingDurationsWeek,1,1);        % keep 1 week
+tFeedOff = tFeedOn + feedingDurations; % end times of feedings
 tEvents = sort([0;tFeedOn;tFeedOff]); 
-dt = 0.5/24;              % sample time [h], converte to [d]
+dt = 20/60/24;              % sample time [min], converte to [d]
 tOnline = (0:dt:tEnd)';     % time grid. The model outputs will be evaluated here later on
-tOverall = unique([tOnline; tEvents]);% Join and sort timestamps
+tMinor = unique([tOnline; tEvents]);% Join and sort timestamps
 
 % construct vector of feeding volume flows at times tFeedOn (we start in
 % steady state but with no feeding first)
 nIntervals = length(tEvents); 
 [~,idxFeedOn] = ismember(tFeedOn,tEvents); 
-feedMax = 60*24;  % max. feed volume flow [l/h] converted to [l/d]
-feedFactors = [70,30]'/100; 
+feedMax = 10*24;  % max. feed volume flow [l/h] converted to [l/d]
+feedFactorsWeek = [70,30,50,40]'/100;       % 1 single week
+feedFactors = repmat(feedFactorsWeek,1,1);  % mulitiples of 1 week
 portions = feedFactors*feedMax; % [l/d]         	
 % steady state feed volume flow [l/d] should be the average of what is fed
 % during dynamic operation:
@@ -193,20 +197,20 @@ x0SSNorm    = x0SS./TxNum;
 
 % simulate transition into steady state in normalized coordinates: 
 odeFunNormSS = @(t,xNorm) fNorm(xNorm,uNorm,xInNorm,thNum,cNum,aNum,TxNum,TuNum); 
-[tVecSSNormSym,xSSNormSym] = ode15s(odeFunNormSS,tSpanSS,x0SSNorm);
-x0InitNorm  = xSSNormSym(end,:);
+[tVecSSNorm,xSSNorm] = ode15s(odeFunNormSS,tSpanSS,x0SSNorm);
+x0InitNorm  = xSSNorm(end,:);
 x0Norm      = x0InitNorm;
 
 % compute normalized system output at steady state: 
-ySSNorm     = gNorm(xSSNormSym(end,:)', cNum, TxNum, TyNum); 
+ySSNorm     = gNorm(xSSNorm(end,:)', cNum, TxNum, TyNum); 
 
 % perform de-normalization to check if normalization works properly: 
-xSSDeNorm   = repmat(TxNum',size(xSSNormSym,1),1).*xSSNormSym;
+xSSDeNorm   = repmat(TxNum',size(xSSNorm,1),1).*xSSNorm;
 ySSDeNorm   = TyNum.*ySSNorm;
 
 %% Solve ODE via iterative solution of constant feeding regimes (on or off)
-xSimNorm = zeros(length(tOverall), nStates);% allocate memory
-tSim = zeros(length(tOverall),1);           % allocate memory
+xSimNorm = zeros(length(tMinor), nStates);% allocate memory
+tSim = zeros(length(tMinor),1);           % allocate memory
 
 % integrate ODEs for each interval (=time when feeding constantly =on or
 % =off):
@@ -234,8 +238,8 @@ for cI = 1:nIntervals
     odeFunNorm = @(t,xNorm) fNorm(xNorm,uCurrNorm,xInCurrNorm,thNum,cNum,aNum,TxNum,TuNum); 
     
     % Construct time vector for ODE (t_ode) by filtering of tOverall:
-    idxTimeInterval = (tOverall >= tCurrent & tOverall <= tNext);
-    t_ode           = tOverall(idxTimeInterval); 
+    idxTimeInterval = (tMinor >= tCurrent & tMinor <= tNext);
+    t_ode           = tMinor(idxTimeInterval); 
     if length(t_ode) == 2   % in this case, the solver would interpret 
         % t_ode as a time span and choose integration time points on his own
         t_ode   = linspace(t_ode(1), t_ode(end), 3);    % request to evaluate at exactly 3 time points
@@ -255,15 +259,15 @@ end
 toc
 
 % Evaluate xSol only in tOnline, discard the rest
-idxGridOn = ismember(tOverall, tOnline); 
+idxGridOn = ismember(tMinor, tOnline); 
 xSolOnNorm = xSimNorm(idxGridOn,:);
 
 % de-normalize online evaluation of states: 
 NOn = size(xSolOnNorm,1);    % number of survived online sampling points
 xSolOn = repmat(TxNum',NOn,1).*xSolOnNorm;
 
-%% compute output variables
-% case 1: only online measurements
+%% case 1: compute all-online output variables
+% Note: all-online measurements (unrealistic)
 q = 6;   
 yCleanNorm = zeros(NOn,q); % allocate memory
 for k = 1:NOn
@@ -272,14 +276,14 @@ end
 % de-normalize outputs:
 yClean = repmat(TyNum',NOn,1).*yCleanNorm;
 
-% case 2: online, and delayed offline and atline measurements
+%% case 2: online, and delayed offline and atline measurements
 dtOff = 1;      % sample time for offline measurements [d]
 % times when samples were taken:
 tOfflineSample = (0.45:dtOff:tEnd)';  % offset offline from online measurements 
 NOff = numel(tOfflineSample); % # offline sample points
 
 % interpolate xSimNorm at offline sample times: 
-xSolOffNorm = interp1(tOverall,xSimNorm,tOfflineSample);
+xSolOffNorm = interp1(tMinor,xSimNorm,tOfflineSample);
 % de-normalize offline evaluation of states: 
 xSolOff = repmat(TxNum',NOff,1).*xSolOffNorm;
  
@@ -295,7 +299,7 @@ end
 % de-normalize:
 yCleanOn = repmat(TyNum(1:qOn)',NOn,1).*yCleanOnNorm;
 
-% ... then at offline sampling times:
+% ... and at offline sampling times:
 for kk = 1:NOff
     fullOutputNorm = gNorm(xSolOffNorm(kk,:)',cNum,TxNum,TyNum)';
     yCleanOffNorm(kk,:) = fullOutputNorm(qOn+1:qOn+qOff); 
@@ -303,10 +307,10 @@ end
 % de-normalize:
 yCleanOff = repmat(TyNum(qOn+1:qOn+qOff)',NOff,1).*yCleanOffNorm;
 
-%% add time delays for arrival times of samplings
+% add time delays for arrival times of samplings
 % construct times when offline and atline measurements return from lab: 
-delayMin = 0.8;     % [d]
-delaySpread = 1/7;  % [d] (manually chosen) 
+delayMin = 0.5;     % [d]
+delaySpread = 2/24; % [min], converted to [d] (manually chosen) 
 rng('default');     % fix seed for random number generation (for replicable results)
 delayOff = delayMin + rand(NOff,1)*delaySpread;
 tOfflineArrival = tOfflineSample + delayOff;
@@ -364,7 +368,7 @@ noiseCovMatOff = diag(sigmasOff.^2);
 %% Plot results (separated into Online/Offline Measurements)
 colorPaletteHex = ["#003049","#d62828","#f77f00","#02C39A","#219ebc"]; 
 % plot and compare the clean results with noisy measurements: 
-% figure()
+figOutputs = figure; 
 
 % online measurements:
 % gas volume flow: 
@@ -473,7 +477,7 @@ ylabel('feed vol flow [l/h]')
 set(gca, "YColor", 'k')
 
 sgtitle('clean and noisy measurements from ADM1-R4-frac')
-
+fontsize(figOutputs, 14,'points'); 
 %% save results in struct MESS: 
 
 MESS.tOnline = tOnline;
@@ -501,4 +505,12 @@ MESS.C = noiseCovMat; % accurate values from sensor data sheets
 MESS.COn = noiseCovMatOn;
 MESS.COff = noiseCovMatOff;
 
-save('Messung_ADM1_R4_frac_norm_MultiRate.mat', 'MESS', 'params','TNum')
+% create sub-folder (if non-existent yet) and save results there
+currPath = pwd; 
+pathToResults = fullfile(currPath,'generatedOutput');
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+fileName = 'Messung_ADM1_R4_frac_norm_MultiRate.mat'; 
+save(fullfile(pathToResults,fileName), 'MESS', 'params', 'TNum')
+
