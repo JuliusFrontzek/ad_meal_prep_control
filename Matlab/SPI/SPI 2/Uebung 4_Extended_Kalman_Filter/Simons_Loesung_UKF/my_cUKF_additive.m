@@ -1,21 +1,26 @@
 %% Version
 % (R2022b) Update 5
-% Erstelldatum: 16.09.2023
+% Erstelldatum: 29.09.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus,Kv] = my_UKF_additive(xOld,POld,u,yMeas,tSpan,p,Q,R)
+function [xPlus,PPlus] = my_cUKF_additive(xOld,POld,u,yMeas,tSpan,p,Q,R)
 
-% compute time and measurement update acc. to Joseph-version of the UKF
-% acc. to Kolas et al. (2009) for additive noise (without clipping)
+% compute time and measurement update of constrained UKF acc. to 
+% Kolas et al. (2009), Tab. 10 but for additive noise (without clipping)
+% Note: 3 differences between add. noise and fully augm. case:
+% 1. augmentation, 
+% 2. computation of PMinus, which includes +Q (add. noise case) or doesnt 
+% (augmented system noise and fully augmented case)
+% 3. computation of outputs of sigma points: only nominal value for add.
+% noise and augmented case, nominal + noise term for fully augmented case.
 
 % global counterSigmaInit
 % global counterSigmaProp
-% global counterSigmaX
+global counterSigmaXcUKF
 % global counterX
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
-% Kv - effective Kalman Gains (same dimension/units as states)
 % xOld - old state estimate
 % POld - old state error covariance matrix
 % tSpan - time interval between old and new measurement (& state estimate)
@@ -97,58 +102,47 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma' + Q; % adapted for additiv
 % Table 4 or Vachhani 2006)!
 
 %% 2.1) Derive Sigma-Measurements and aggregate them:
-Y = nan(q,nSigmaPoints);    % allocate memory
-for mm = 1:nSigmaPoints
-    % hier den richtigen Aufruf der Messgleichung hinzufügen!
-    Y(:,mm) = messgleichung(sigmaXProp(:,mm)); 
-end
-%% 2.2) aggregate outputs of sigma points in overall output:
-yAggregated = sum(Wx.*Y,2);
-
-%% 2.3) compute Kalman Gain
-
-% compute cov. matrix of output Pyy:
-diffYFromSigmaOutputs = Y - yAggregated; 
-Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R;
-
-% compute cross covariance matrix states/measurements:
-Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs'; 
-
-PyyInv = Pyy\eye(q);     % efficient least squares
-K = Pxy*PyyInv; 
-
-%% 2.4) update propagated sigma points individually 
-% use alternative formulation of Kolas 2009, eq. (23):
-sigmaX = sigmaXProp + K*(repmat(yMeas,1,nSigmaPoints) - Y);
-
-% % if updated sigma points violate constraints, apply clipping: 
-% if any(any(sigmaX < 0))
-%     sigmaX(sigmaX < 0) = 0;
-%     counterSigmaX = counterSigmaX + 1;
+% not needed anymore in NLP-formulation of cUKF. Only needed for
+% QP-forulation:
+% Y = nan(q,nSigmaPoints);    % allocate memory
+% for mm = 1:nSigmaPoints
+%     % hier den richtigen Aufruf der Messgleichung hinzufügen!
+%     Y(:,mm) = messgleichung(sigmaXProp(:,mm)); 
 % end
+% %% 2.2) aggregate outputs of sigma points in overall output:
+% yAggregated = sum(Wx.*Y,2);
+
+%% run constrained optimization to determine sigmaX
+% consider inequalities acc. to fmincon documentation: allow only positive 
+% state values (=concentrations):
+A = -eye(nStates); 
+b = zeros(nStates,1);  
+sigmaXOpt = nan(nStates,nSigmaPoints);    % allocate memory
+% optimize all sigma points: 
+for k = 1:nSigmaPoints
+    costFun = @(sigmaX) evaluateCUKFCostFun(sigmaX,sigmaXProp(:,k),yMeas,R,PMinus); 
+    % XY: welchen startwert sinnvollerweise wählen? vorher xMinus
+    sigmaXOpt(:,k) = fmincon(costFun,sigmaXProp(:,k),A,b); 
+end 
+
+% this clipping should no longer be required thanks to optimization:
+% if updated sigma points violate constraints, apply clipping: 
+if any(any(sigmaXOpt < 0))
+    sigmaXOpt(sigmaXOpt < 0) = 0;
+    counterSigmaXcUKF = counterSigmaXcUKF + 1;
+end
 
 %% 2.5) compute posteriors:
-xPlus = sum(Wx.*sigmaX,2); 
+xPlus = sum(Wx.*sigmaXOpt,2); 
 
-% only for comparison: 
-Kv = K*(yMeas - yAggregated);
-xPlusvdM = xMinus + Kv; % standard formulation of vdMerwe
-disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusvdM - xPlus)))])
-
-% mind that Kolas proved the fully augmented case. For additive noise, the
-% measurement update of P-Matrix must be slightly adapted:
-diffxPlusFromSigmaX = sigmaX - xPlus; 
-PPlusReformulatedKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
-PPlusReformulatedKolasAdditive = PPlusReformulatedKolasFullyAugmented + Q + K*R*K'; 
-
-% only for comparison: 
-PPlusTempvdM = PMinus - K*Pyy*K'; 
-PPlusvdM = 1/2*(PPlusTempvdM + PPlusTempvdM');  % regularization
-disp(['max. Abweichung PPlus (add.): ', ...
-      num2str(max(max(abs(PPlusvdM - PPlusReformulatedKolasAdditive))))])
+% mind: although Kolas considers fully augmented case, computation of
+% posteriors remains the same, see also Vachhani, who also considers
+% additive noise case:
+diffxPlusFromSigmaX = sigmaXOpt - xPlus; 
+PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
 
 % make sure PPlus is symmetric:
-PPlus = 1/2*(PPlusReformulatedKolasAdditive + PPlusReformulatedKolasAdditive');   
-disp(['sum of PPlus diagonal (add.): ', num2str(sum(diag(PPlus)))])
+PPlus = 1/2*(PPlusTemp + PPlusTemp');   
+disp(['sum of PPlus diagonal (cUKF.): ', num2str(sum(diag(PPlus)))])
 
 end

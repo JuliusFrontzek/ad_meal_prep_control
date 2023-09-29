@@ -8,10 +8,10 @@ function [xPlus,PPlus] = my_UKF_fullyAugmented(xOld,POld,u,yMeas,tSpan,p,Q,R)
 % compute time and measurement update acc. to Joseph-version of the UKF
 % acc. to Kolas et al. (2009) for non-additive noise (Table 8) (no clipping)
 
-global counterSigmaInit
-global counterSigmaProp
-global counterSigmaX
-global counterX
+global counterSigmaInitFA
+global counterSigmaPropFA
+global counterSigmaXFA
+global counterXFA
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
@@ -20,14 +20,14 @@ global counterX
 % POld - old state error covariance matrix
 % tSpan - time interval between old and new measurement (& state estimate)
 % yMeas - latest measurement vector
-% p_KF - parameter vector for model the UKF is working with
+% p - parameter vector for model the UKF is working with
 % Q - power spectral density matrix of process noise
 % R - covariance matrix of measurement noise
 
 % if xOld contains negative concentrations, apply clipping: 
 if any(xOld<0)
     xOld(xOld < 0) = 0; 
-    counterX = counterX + 1;
+    counterXFA = counterXFA + 1;
 end 
 
 nStates = numel(xOld); 
@@ -82,7 +82,7 @@ sigmaXInit = [xOldAug, repmat(xOldAug,1,nStatesAug) + gamma*sqrtPOld, ...
 % Apply clipping to negative Sigma Points: 
 if any(any(sigmaXInit < 0)) 
     sigmaXInit(sigmaXInit < 0) = 0; 
-    counterSigmaInit = counterSigmaInit + 1;
+    counterSigmaInitFA = counterSigmaInitFA + 1;
 end
 
 %% 1.2) Propagate all Sigma Points through system ODEs
@@ -102,13 +102,14 @@ for k = 1:nSigmaPointsAug
     sigmaXProp(:,k) = sigmaXPropNom + normalNoiseX;
 end 
 
+% sigmaXProp = zeros(size(sigmaXProp)); % Spaß für Terrance
 % % draw noise matrix: 
 % plot(normalNoiseMatX(1,:),normalNoiseMatX(2,:),'+');
 
 % if any propagated sigma points violate constraints, apply clipping: 
 if any(any(sigmaXProp < 0))
     sigmaXProp(sigmaXProp < 0) = 0; 
-    counterSigmaProp = counterSigmaProp + 1;
+    counterSigmaPropFA = counterSigmaPropFA + 1;
 end
 
 %% 1.3) Aggregate Sigma Points to Priors for x and P
@@ -118,7 +119,7 @@ xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 % if any state priors violate constraints, apply clipping:
 if any(any(xMinus < 0))
     xMinus(xMinus < 0) = 0; 
-    counterX = counterX + 1; 
+    counterXFA = counterXFA + 1; 
 end
 
 % aggregate state error cov. matrix P:
@@ -145,6 +146,11 @@ for mm = 1:nSigmaPointsAug
     Y(:,mm) = yNom + normalNoiseY;
 end
 
+% % draw measurement noise matrix: 
+% figure()
+% plot(normalNoiseMatY(1,:),normalNoiseMatY(2,:),'+');
+% close()
+
 %% 2.2) aggregate outputs of sigma points in overall output:
 % yAggregated = sum(Wx.*Y(:,2*nStates+1),2);
 yAggregated = sum(Wx.*Y,2);
@@ -169,7 +175,7 @@ sigmaX = sigmaXProp + K*(repmat(yMeas,1,nSigmaPointsAug) - Y);
 % if updated sigma points violate constraints, apply clipping: 
 if any(any(sigmaX < 0))
     sigmaX(sigmaX < 0) = 0;
-    counterSigmaX = counterSigmaX + 1;
+    counterSigmaXFA = counterSigmaXFA + 1;
 end
 
 %% 2.5) compute posteriors:

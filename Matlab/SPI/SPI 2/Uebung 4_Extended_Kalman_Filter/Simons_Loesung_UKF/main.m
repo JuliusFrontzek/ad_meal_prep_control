@@ -8,11 +8,24 @@ global counterSigmaInit
 global counterSigmaProp
 global counterSigmaX
 global counterX
+% define those separately for fully-augmented (FA) case
+global counterSigmaInitFA
+global counterSigmaPropFA
+global counterSigmaXFA
+global counterXFA
+% define separately for cUKF to check if constraints are respected:
+global counterSigmaXcUKF
 
 counterSigmaInit = 0; 
 counterSigmaProp = 0; 
 counterSigmaX = 0; 
 counterX = 0; 
+% separate for FA case:
+counterSigmaInitFA = 0; 
+counterSigmaPropFA = 0; 
+counterSigmaXFA = 0; 
+counterXFA = 0; 
+counterSigmaXcUKF = 0;
 
 %% 1) Startwerte und Simulationsparameter
 
@@ -31,21 +44,37 @@ x0 = [10,75,5]';     % initial state value
 x_hat = [17 86 5.3]';   % (2b) ff.
 P0 = diag([5,2,0.5]);   % (2d), selbst gewählt. Entsprechend rel. Abweichung des Anfangs-Schätzers \hat x_0 vom Anfangs-Zustand x0
 
-%% 2) Durchführen des Prozesses
 nEval = length(t); 
+
+t(end+1) = t(end) + dt;   
+% alle Schätzwerte müssen bei t=0 erstmal initialisiert werden. Matlab
+% beginnt aber nicht bei 0, sondern bei 1 zu zählen. Daher brauchen wir
+% einen Zeitschritt mehr, um bis zu tEnd simulieren und schätzen zu können.
+
+% Stellgrößenverlauf (Hut-kurve rechteckig):
+u = zeros(1,nEval+1);
+u(round(0.5*(nEval+1)):round(0.6*(nEval+1))) = 0.25;
+
+%% 2) Durchführen des Prozesses
+% allocate memory:
 MESS = zeros(2,nEval);
 STATES = zeros(3,nEval);
-ESTIMATESEKF = zeros(3,nEval);
-COVARIANCEEKF = zeros(3,nEval);
-GAINEKF = zeros(3,nEval);
-ESTIMATESUKF = zeros(3,nEval);
-COVARIANCEUKF = zeros(3,nEval);
-GAINUKF = zeros(3,nEval);
-ESTIMATESUKFAug = zeros(3,nEval);
-COVARIANCEUKFAug = zeros(3,nEval);
-ESTIMATESUKFFullyAug = zeros(3,nEval);
-COVARIANCEUKFFullyAug = zeros(3,nEval);
+% alle Matrizen für x und P werden initialisiert, brauchen also einen
+% Eintrag mehr als die wahren Zustände und die Messwerte:
+ESTIMATESEKF = zeros(3,nEval+1);      % EKF
+COVARIANCEEKF = zeros(3,nEval+1);
+GAINEKF = zeros(3,nEval+1);
+ESTIMATESUKF = zeros(3,nEval+1);      % UKF additive noise
+COVARIANCEUKF = zeros(3,nEval+1);
+GAINUKF = zeros(3,nEval+1);
+ESTIMATEScUKF = zeros(3,nEval+1);     % constrained UKF with additive noise
+COVARIANCEcUKF = zeros(3,nEval+1);
+ESTIMATESUKFAug = zeros(3,nEval+1);   % UKF with augmented system noise
+COVARIANCEUKFAug = zeros(3,nEval+1);
+ESTIMATESUKFFullyAug = zeros(3,nEval+1);  % fully augmented UKF
+COVARIANCEUKFFullyAug = zeros(3,nEval+1);
 
+% initialize all matrices:
 STATES(:,1) = x0;
 MESS(1,1) = x0(1)/x0(3);
 MESS(2,1) = x0(3);
@@ -53,13 +82,25 @@ ESTIMATESEKF(:,1) = x_hat;
 COVARIANCEEKF(:,1) = diag(P0);
 ESTIMATESUKF(:,1) = x_hat;
 COVARIANCEUKF(:,1) = diag(P0);
+ESTIMATEScUKF(:,1) = x_hat;
+COVARIANCEcUKF(:,1) = diag(P0);
 ESTIMATESUKFAug(:,1) = x_hat;
 COVARIANCEUKFAug(:,1) = diag(P0);
 ESTIMATESUKFFullyAug(:,1) = x_hat;
 COVARIANCEUKFFullyAug(:,1) = diag(P0);
 
+xMinusEKF = x_hat;
+PMinusEKF = P0;
+xMinusUKF = x_hat;
+PMinusUKF = P0;
+xMinuscUKF = x_hat;
+PMinuscUKF = P0;
+xMinusUKFAug = x_hat;
+PMinusUKFAug = P0;
+xMinusUKFFullyAug = x_hat;
+PMinusUKFFullyAug = P0;
+
 %% Tuning
-% Initialisierung
 R = diag([1.15^2,0.25^2]);      % für Messrauschen (ist dank gegebener Sensordaten (Varianzen) fest)
 % Q = diag([0.03,0.03,1]);      % für Prozessrauschen
 % Q = zeros(3);                   % (2a)
@@ -68,59 +109,45 @@ Q = diag([0.0527,0.7,   0.25]); % (2d) - Simons beste Lösung bei 5% Ungenauigkei
 Q(1,3) = 0.03;                  % (2d) - gehört noch dazu (weil x1 und x3 am Ende stark in ihrer Unsicherheit korrelieren)
 % make Q symmetric: 
 Q = Q + triu(Q,1)';
-
+% Q(1,1) = 1E-1*Q(1,1);
 % Q = 0.01*diag([10,75,5]);       % (2d) - aus MuLö, funktioniert auch bei 5% Modell-Ungenauigkeit noch sehr gut!
 
-% Parametersatz I
+% Parametersatz I for model underlying the Kalman Filters
 p_KF = [0.1,0.2,0.6];
 
 % Parametersatz II
 % p_KF = [0.11,0.205,0.59];
 
-t(end+1) = t(end)+dt;   % Die Verlängerung um ein Interval braucht man, 
-% damit man für time = tend immer noch einen zugehörigen Eintrag in u hat. 
-% Grund ist auch der Index-Shift in Matlab, da man ja eig. bei 0 anfängt,
-% Matlab aber bei 1 beginnt.
-% Stellgrößenverlauf (Hut-kurve rechteckig):
-nEvalNew = nEval + 1;
-u = zeros(1,nEvalNew);
-u(round(0.5*nEvalNew):round(0.6*nEvalNew)) = 0.25;
 i = 2;
-
-xMinusEKF = x_hat;
-PMinusEKF = P0;
-xMinusUKF = x_hat;
-PMinusUKF = P0;
-xMinusUKFAug = x_hat;
-PMinusUKFAug = P0;
-xMinusUKFFullyAug = x_hat;
-PMinusUKFFullyAug = P0;
 
 rng('default');     % fix seed for random number generation (for replicable results)
 % integriere für jedes Zeitintervall separat:
 for time = t0:dt:tend
     
-    t_span = [time time+dt];
+    tSpan = [time time+dt];
     
     %% Simulation und Messung
     % berechne tatsächliches x und verrauschtes y am Ende des Intervalls...
-    [xReal,yMeas] = bioprocess(t_span,x0,u(i));  
+    [xReal,yMeas] = bioprocess(tSpan,x0,u(i));  
     % ... und speichere diese Werte in STATES und MESS ab:
     STATES(:,i) = xReal;
     MESS(:,i) = yMeas;
     
     %% Aufruf der EKF/UKFs
-    [xPlusEKF,PPlusEKF,KvEKF] = my_extended_kalman_filter(xMinusEKF,PMinusEKF,u(i),yMeas,t_span,p_KF,Q,R);
-    [xPlusUKF,PPlusUKF,KvUKF] = my_UKF_additive(xMinusUKF,PMinusUKF,u(i),yMeas,t_span,p_KF,Q,R);
-    [xPlusUKFAug,PPlusUKFAug] = my_UKF_augmented(xMinusUKFAug,PMinusUKFAug,u(i),yMeas,t_span,p_KF,Q,R);
-    [xPlusUKFFullyAug,PPlusUKFFullyAug] = my_UKF_fullyAugmented(xMinusUKFFullyAug,PMinusUKFFullyAug,u(i),yMeas,t_span,p_KF,Q,R);
-%     [xPlus,PPlus,Kv] = extended_kalman_filter(xMinus,u(i),yMeas,t_span,POld);
+    %     [xPlus,PPlus,Kv] = extended_kalman_filter(xMinus,u(i),yMeas,t_span,POld);
+    [xPlusEKF,PPlusEKF,KvEKF] = my_extended_kalman_filter(xMinusEKF,PMinusEKF,u(i),yMeas,tSpan,p_KF,Q,R);
+    [xPlusUKF,PPlusUKF,KvUKF] = my_UKF_additive(xMinusUKF,PMinusUKF,u(i),yMeas,tSpan,p_KF,Q,R);
+    [xPluscUKF,PPluscUKF] = my_cUKF_additive(xMinuscUKF,PMinuscUKF,u(i),yMeas,tSpan,p_KF,Q,R);
+    [xPlusUKFAug,PPlusUKFAug] = my_UKF_augmented(xMinusUKFAug,PMinusUKFAug,u(i),yMeas,tSpan,p_KF,Q,R);
+    [xPlusUKFFullyAug,PPlusUKFFullyAug] = my_UKF_fullyAugmented(xMinusUKFFullyAug,PMinusUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);
     ESTIMATESEKF(:,i) = xPlusEKF;
     COVARIANCEEKF(:,i) = diag(PPlusEKF);
     GAINEKF(:,i) = KvEKF; 
     ESTIMATESUKF(:,i) = xPlusUKF;
     COVARIANCEUKF(:,i) = diag(PPlusUKF);
     GAINUKF(:,i) = KvUKF; 
+    ESTIMATEScUKF(:,i) = xPluscUKF;
+    COVARIANCEcUKF(:,i) = diag(PPluscUKF);
     ESTIMATESUKFAug(:,i) = xPlusUKFAug;
     COVARIANCEUKFAug(:,i) = diag(PPlusUKFAug);
     ESTIMATESUKFFullyAug(:,i) = xPlusUKFFullyAug;
@@ -133,6 +160,8 @@ for time = t0:dt:tend
     PMinusEKF = PPlusEKF; 
     xMinusUKF = xPlusUKF; 
     PMinusUKF = PPlusUKF;
+    xMinuscUKF = xPluscUKF; 
+    PMinuscUKF = PPluscUKF;
     xMinusUKFAug = xPlusUKFAug; 
     PMinusUKFAug = PPlusUKFAug;
     xMinusUKFFullyAug = xPlusUKFFullyAug; 
@@ -190,7 +219,7 @@ ylabel('Volumen [l]')
 xlim([0,t(end)])
 xlabel('Zeit [h]')
 
-%% compare all 3 different UKF implementations: 
+%% compare EKF and all 4 different UKF implementations: 
 figure()
 % Biomasse
 subplot(311)
@@ -199,12 +228,13 @@ hold on
 plot(t,STATES(1,:)','k')
 plot(t,ESTIMATESEKF(1,:)','r')
 plot(t,ESTIMATESUKF(1,:)',':b','LineWidth',2)
-plot(t,ESTIMATESUKF(1,:)','--g','LineWidth',1.4)
-plot(t,ESTIMATESUKF(1,:)','-.c','LineWidth',0.8)
+plot(t,ESTIMATEScUKF(1,:)',':m','LineWidth',1.2)
+plot(t,ESTIMATESUKFAug(1,:)','--g','LineWidth',1.4)
+plot(t,ESTIMATESUKFFullyAug(1,:)','-.c','LineWidth',0.8)
 ylabel('Biomasse m_X [g]')
 xlim([0,t(end)])
 title('Simulierte und geschätzte Zustände')
-legend('Messung', 'Simulation', 'EKF', 'UKF', 'UKF-aug', 'UKF-fully-aug')
+legend('Messung', 'Simulation', 'EKF', 'UKF', 'cUKF', 'UKF-aug', 'UKF-fully-aug')
 
 % Substrat
 subplot(312)
@@ -212,11 +242,12 @@ plot(t,STATES(2,:)','k')
 hold on
 plot(t,ESTIMATESEKF(2,:)','r')
 plot(t,ESTIMATESUKF(2,:)',':b','LineWidth',2)
+plot(t,ESTIMATEScUKF(2,:)',':m','LineWidth',1.2)
 plot(t,ESTIMATESUKFAug(2,:)','--g','LineWidth',1.4)
 plot(t,ESTIMATESUKFFullyAug(2,:)','-.c','LineWidth',0.8)
 ylabel('Substrat m_S [g]')
 title('Simulierte und geschätzte Zustände')
-legend('Simulation', 'EKF', 'UKF', 'UKF-aug', 'UKF-fully-aug')
+legend('Simulation', 'EKF', 'UKF','cUKF', 'UKF-aug', 'UKF-fully-aug')
 xlim([0,t(end)])
 
 % Volumen
@@ -226,10 +257,11 @@ hold on
 plot(t,MESS(2,:)','ok')
 plot(t,ESTIMATESEKF(3,:)','r')
 plot(t,ESTIMATESUKF(3,:)',':b','LineWidth',2)
+plot(t,ESTIMATEScUKF(3,:)',':m','LineWidth',1.2)
 plot(t,ESTIMATESUKFAug(3,:)','--g','LineWidth',1.4)
 plot(t,ESTIMATESUKFFullyAug(3,:)','-.c','LineWidth',0.8)
 ylabel('Volumen [l]')
-legend('Messung','Simulation', 'EKF', 'UKF', 'UKF-aug', 'UKF-fully-aug')
+legend('Messung','Simulation', 'EKF', 'UKF', 'cUKF', 'UKF-aug', 'UKF-fully-aug')
 xlim([0,t(end)])
 xlabel('Zeit [h]')
 

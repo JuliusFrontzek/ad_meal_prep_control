@@ -20,7 +20,7 @@ global counterX
 % POld - old state error covariance matrix
 % tSpan - time interval between old and new measurement (& state estimate)
 % yMeas - latest measurement vector
-% p_KF - parameter vector for model the UKF is working with
+% p - parameter vector for model the UKF is working with
 % Q - power spectral density matrix of process noise
 % R - covariance matrix of measurement noise
 
@@ -145,7 +145,7 @@ yAggregated = sum(Wx.*Y,2);
 % compute cov. matrix of output Pyy:
 % diffYFromSigmaOutputs = Y(:,1:nSigmaPointsNom) - yAggregated; 
 diffYFromSigmaOutputs = Y - yAggregated; 
-Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R;
+Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R; % Kolas, Tab. 6
 
 % compute cross covariance matrix states/measurements:
 Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs'; 
@@ -176,8 +176,7 @@ disp(['max. Abweichung xPlus (aug.):', num2str(max(abs(xPlusvdM - xPlus)))])
 % diffxPlusFromSigmaX = sigmaX(:,1:nSigmaPointsNom) - xPlus; 
 diffxPlusFromSigmaX = sigmaX - xPlus; 
 PPlusReformulatedKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
-PPlusReformulatedKolasAugmented = PPlusReformulatedKolasFullyAugmented + K*R*K'; % + Q in fully augmented
-% XY: überprüfe, ob die augmentation von PPlus hier korrekt ist!
+PPlusReformulatedKolasAugmented = PPlusReformulatedKolasFullyAugmented + K*R*K'; % + Q in add. noise case
 
 % % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 
