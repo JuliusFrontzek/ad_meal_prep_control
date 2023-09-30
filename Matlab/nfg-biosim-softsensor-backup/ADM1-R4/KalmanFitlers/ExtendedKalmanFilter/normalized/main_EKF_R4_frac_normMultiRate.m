@@ -50,7 +50,7 @@ MEASUnite = nan(nSamplesMinor,qOn+qOff);     % allocate memory
 % insert minor instances in first qOn columns: 
 MEASUnite(:,1:qOn) = MEASOn; 
 % insert minor instances (at right timing) in last qOff cols of MEASUnite:
-[Lia,idxTOfflineArrPre] = ismember(tOfflineArrivalShift,tMinor); % determine correct row positioning of major instances in MEASUnite (right timing)
+[~, idxTOfflineArrPre] = ismember(tOfflineArrivalShift,tMinor); % determine correct row positioning of major instances in MEASUnite (right timing)
 MEASUnite(idxTOfflineArrPre,qOn+1:qOn+qOff) = MEASOff; 
 
 %% Initialization and Tuning of EKF 
@@ -330,6 +330,30 @@ for kk = 1:nOutputs
 end
 
 RMSSE_mean = mean(RMSSE); 
+
+%% compute Nash-Sutcliffe-Efficiency (NSE) of gasVolFlow and TS estimation
+% using ground truth data: 
+
+% gas volume flow (online): 
+yMeas = MEASOn(:,1); 
+yEst = yEKFDeNorm(2:end,1);     % ignore output of initial state estimate at t0
+yTrue = MESS.yCleanOn(:,1); 
+
+NSE_gasVolFlow = computeNSE_groundTruth(yMeas,yEst,yTrue);
+NSE_abs_gasVolFlow = computeNSE_abs_groundTruth(yMeas,yEst,yTrue);
+
+% TS (offline): 
+yEstPre = yEKFDeNorm(2:end,5);  % ignore output of initial state estimate at t0
+yTruePre = MESS.yClean(:,5); 
+yMeasNaN = MEASUnite(:,5); % still contains a lot of NaN values (cause offline measurement)
+yMeasFilled = fillmissing(yMeasNaN,'previous'); % pad all NaN values following a number
+% select only entries after first returning measurement that is not NaN:
+idxFirstNotNaNMeasurement = find(~isnan(yMeasFilled),1); 
+yEst = yEstPre(idxFirstNotNaNMeasurement:end); 
+yTrue = yTruePre(idxFirstNotNaNMeasurement:end); 
+yMeas = yMeasFilled(idxFirstNotNaNMeasurement:end); 
+
+NSE_abs_TS = computeNSE_abs_groundTruth(yMeas,yEst,yTrue);
 
 %% Plot results
 

@@ -7,8 +7,8 @@
 %% DAS Kalman Filter fürs ADM1-R3-frac-norm mit Online/Offline Messwerten
 
 close all
-% clear all
-% clc
+clear all
+clc
 
 global counter
 counter = 0; 
@@ -318,9 +318,33 @@ end
 
 RMSSE_mean = mean(RMSSE); 
 
+%% compute Nash-Sutcliffe-Efficiency (NSE) of pH and acetic acid estimation
+% using ground truth data: 
+
+% pH (online): 
+yMeas = MESS.yMeasOn(:,4); 
+yEst = yEKFDeNorm(2:end,4);     % ignore output of initial state estimate at t0
+yTrue = yCleanOn(:,4); 
+
+NSE_pH = computeNSE_groundTruth(yMeas,yEst,yTrue);
+NSE_abs_pH = computeNSE_abs_groundTruth(yMeas,yEst,yTrue);
+
+% acetic acid (offline): 
+yEstPre = yEKFDeNorm(2:end,8);  % ignore output of initial state estimate at t0
+yTruePre = yClean(:,8); 
+yMeasNaN = MEASUnite(:,8); % still contains a lot of NaN values (cause offline measurement)
+yMeasFilled = fillmissing(yMeasNaN,'previous'); % pad all NaN values following a number
+% select only entries after first returning measurement that is not NaN:
+idxFirstNotNaNMeasurement = find(~isnan(yMeasFilled),1); 
+yEst = yEstPre(idxFirstNotNaNMeasurement:end); 
+yTrue = yTruePre(idxFirstNotNaNMeasurement:end); 
+yMeas = yMeasFilled(idxFirstNotNaNMeasurement:end); 
+
+NSE_abs_AC = computeNSE_abs_groundTruth(yMeas,yEst,yTrue);
+
 %% Plot results
 
-% hier ggf. noch was anpassen! 
+% XY: hier ggf. noch was anpassen! 
 
 % plot model output based on EKF estimates, compare with real measurements:
 feedVolFlow = inputMat(:,2);% [l/d]
