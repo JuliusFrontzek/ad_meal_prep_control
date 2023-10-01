@@ -9,6 +9,8 @@ close all
 clear
 clc
 
+addpath('modelEquations/');
+
 global counterSigmaInit
 global counterSigmaProp
 global counterSigmaX

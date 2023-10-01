@@ -7,6 +7,8 @@
 % Modell: ADM1-R4-frac_noWater (no water, no ash, but 2 carbohydrate fractions)
 % use model in normalized coordinates.
 
+addpath('modelEquations/');
+
 clc
 clear
 close all

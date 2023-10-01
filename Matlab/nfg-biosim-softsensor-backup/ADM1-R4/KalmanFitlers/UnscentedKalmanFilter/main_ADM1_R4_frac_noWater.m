@@ -6,6 +6,8 @@
 % create the MESS-vector (synthetic measurement data) for Kalman Filtering. 
 % Modell: ADM1-R4-frac_noWater (no water, no ash, but 2 carbohydrate fractions)
 
+addpath('modelEquations/');
+
 clc
 clear
 close all

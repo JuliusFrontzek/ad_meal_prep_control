@@ -6,6 +6,8 @@
 % create the MESS-vector (synthetic measurement data) for Kalman Filtering. 
 % Modell: ADM1-R4-frac (mit Asche und 2 CH-Fraktionen)
 
+addpath('modelEquations/');
+
 close all
 clear
 clc
