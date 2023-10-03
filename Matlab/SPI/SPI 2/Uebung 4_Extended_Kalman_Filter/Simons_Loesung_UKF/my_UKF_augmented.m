@@ -38,7 +38,6 @@ xOldAug = [xOld;zeros(nStates,1)];
 POldAug = blkdiag(POld,Q);   % (nStates+q, nStates+q)
 
 nStatesAug = numel(xOldAug); 
-% nSigmaPointsNom = 2*nStates + 1;        % nominal # sigma points (without augmentation)
 nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
 
 %% 1. Time Update (TU)
@@ -59,8 +58,6 @@ Wx0 = lambda/(nStatesAug + lambda);
 Wc0 = lambda/(nStatesAug + lambda) + 1 - alpha^2 + beta; 
 % Wi = 1/(2*(nStates + lambda)); 
 Wi = 1/(2*(nStatesAug + lambda)); 
-% Wx = [Wx0, repmat(Wi,1,nSigmaPointsNom-1)]; % for state aggregation
-% Wc = [Wc0, repmat(Wi,1,nSigmaPointsNom-1)]; % for covariance aggregation
 Wx = [Wx0, repmat(Wi,1,nSigmaPointsAug-1)];
 Wc = [Wc0, repmat(Wi,1,nSigmaPointsAug-1)];
 
@@ -85,7 +82,7 @@ if any(any(sigmaXInit < 0))
 end
 
 %% 1.2) Propagate all Sigma Points through system ODEs
-sigmaXProp = nan(nStates, nSigmaPointsAug); % allocate memory
+sigmaXPropNom = nan(nStates, nSigmaPointsAug); % allocate memory
 
 % integriere Sytemverhalten für alle Sigmapunkte im Interval t_span:
 odeFun = @(t,x) my_bioprocess_ode(t,x,u,p);
@@ -94,11 +91,10 @@ zeroMeanX = zeros(nStates,1);           % zero mean for additive noise
 normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
 for k = 1:nSigmaPointsAug
     [~,XTUSol] = ode45(odeFun,tSpan,sigmaXInit(1:nStates,k));
-    sigmaXPropNom = XTUSol(end,:)'; % nominal propagation without noise
-    
-    % add normally-distributed process noise acc. to Q (zero-mean):
-    sigmaXProp(:,k) = sigmaXPropNom + normalNoiseMatX(:,k);
+    sigmaXPropNom(:,k) = XTUSol(end,:)'; % nominal propagation without noise    
 end 
+% add normally-distributed process noise acc. to Q (zero-mean):
+sigmaXProp = sigmaXPropNom + normalNoiseMatX;
 
 % % draw noise matrix: 
 % plot(normalNoiseMat(1,:),normalNoiseMat(2,:),'+');
@@ -122,7 +118,7 @@ end
 % aggregate state error cov. matrix P:
 % diffXPriorFromSigma = sigmaXProp(:,1:nSigmaPointsNom) - xMinus; 
 diffXPriorFromSigma = sigmaXProp - xMinus; 
-PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for additive noise case acc. to Kolas, Tab. 5
+PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for augmented process noise case acc. to Kolas, Tab. 6
 
 %% 2. Measurement Update (MU)
 
@@ -132,17 +128,14 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for additive no
 %% 2.1) Derive Sigma-Measurements and aggregate them:
 Y = nan(q,nSigmaPointsAug);    % allocate memory
 for mm = 1:nSigmaPointsAug
-    % hier den richtigen Aufruf der Messgleichung hinzufügen!
     Y(:,mm) = messgleichung(sigmaXProp(:,mm)); 
 end
-%% 2.2) aggregate outputs of sigma points in overall output:
-% yAggregated = sum(Wx.*Y(:,1:nSigmaPointsNom),2);
+% 2.2) aggregate outputs of sigma points in overall output:
 yAggregated = sum(Wx.*Y,2);
 
 %% 2.3) compute Kalman Gain
 
 % compute cov. matrix of output Pyy:
-% diffYFromSigmaOutputs = Y(:,1:nSigmaPointsNom) - yAggregated; 
 diffYFromSigmaOutputs = Y - yAggregated; 
 Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R; % Kolas, Tab. 6
 
@@ -163,7 +156,6 @@ if any(any(sigmaX < 0))
 end
 
 %% 2.5) compute posteriors:
-% xPlus = sum(Wx.*sigmaX(:,1:nSigmaPointsNom),2); 
 xPlus = sum(Wx.*sigmaX,2); 
 
 % only for comparison: 
@@ -172,12 +164,11 @@ xPlusvdM = xMinus + Kv; % standard formulation of vdMerwe
 disp(['max. Abweichung xPlus (aug.):', num2str(max(abs(xPlusvdM - xPlus)))])
 
 % Kolas (2009), Table 8:
-% diffxPlusFromSigmaX = sigmaX(:,1:nSigmaPointsNom) - xPlus; 
 diffxPlusFromSigmaX = sigmaX - xPlus; 
 PPlusReformulatedKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
 PPlusReformulatedKolasAugmented = PPlusReformulatedKolasFullyAugmented + K*R*K'; % + Q in add. noise case
 
-% % only for comparison: 
+% only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 
 PPlusvdM = 1/2*(PPlusTempvdM + PPlusTempvdM');  % regularization
 disp(['max. Abweichung PPlus (aug.): ', ...

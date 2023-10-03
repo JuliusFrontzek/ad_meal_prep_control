@@ -72,7 +72,7 @@ sigmaXInit = [xOldAug,  repmat(xOldAug,1,nStatesAug) + gamma*sqrtPOldAug, ...
 % end
 
 %% 1.2) Propagate all Sigma Points through system ODEs
-sigmaXProp = nan(nStates, nSigmaPointsAug); % allocate memory
+sigmaXPropNom = nan(nStates, nSigmaPointsAug); % allocate memory
 
 % integriere Sytemverhalten für alle Sigmapunkte im Interval t_span:
 odeFun = @(t,x) my_bioprocess_ode(t,x,u,p);
@@ -81,11 +81,10 @@ zeroMeanX = zeros(nStates,1);           % zero mean for additive noise
 normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
 for k = 1:nSigmaPointsAug
     [~,XTUSol] = ode45(odeFun,tSpan,sigmaXInit(1:nStates,k));
-    sigmaXPropNom = XTUSol(end,:)'; % nominal propagation without noise
-    
-    % add normally-distributed process noise acc. to Q (zero-mean):
-    sigmaXProp(:,k) = sigmaXPropNom + normalNoiseMatX(:,k);
+    sigmaXPropNom(:,k) = XTUSol(end,:)'; % nominal propagation without noise
 end 
+% add normally-distributed process noise acc. to Q (zero-mean):
+sigmaXProp = sigmaXPropNom + normalNoiseMatX;
 
 % sigmaXProp = zeros(size(sigmaXProp)); % Spaß für Terrance
 % % draw noise matrix: 
@@ -108,7 +107,7 @@ xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 
 % aggregate state error cov. matrix P:
 diffXPriorFromSigma = sigmaXProp - xMinus; 
-PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % augmented case acc. to Kolas, Tab. 8
+PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % augmented case acc. to Kolas, Tab. 6
 
 %% 2. Measurement Update (MU)
 
