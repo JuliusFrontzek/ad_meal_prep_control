@@ -11,8 +11,8 @@ function [xPlus,PPlus] = my_cUKF_additive(xOld,POld,u,yMeas,tSpan,p,Q,R)
 % 1. augmentation, 
 % 2. computation of PMinus, which includes +Q (add. noise case) or doesnt 
 % (augmented system noise and fully augmented case)
-% 3. computation of outputs of sigma points: only nominal value for add.
-% noise and augmented case, nominal + noise term for fully augmented case.
+% 3. computation of posterior of P: add + K*R*K' + Q compared with fully
+% augmented case!
 
 % global counterSigmaInit
 % global counterSigmaProp
@@ -151,6 +151,7 @@ Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs';
 
 PyyInv = Pyy\eye(q);     % efficient least squares
 K = Pxy*PyyInv; 
+
 PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX' + K*R*K' + Q; % adapt Kolas (2009) just like for the unconstrained case
 % PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';   % strictly acc. to Vachhani (which I think is wrong)
 

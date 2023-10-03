@@ -7,7 +7,10 @@ function [xPlus,PPlus] = my_cUKF_augmented(xOld,POld,u,yMeas,tSpan,p,Q,R)
 
 % compute time and measurement update of constrained UKF acc. to 
 % Kolas et al. (2009), Tab. 10, but with only augmented system noise 
-% (without clipping)
+% Note: 2 differences between add. noise and fully augm. case:
+% 1. augmentation, 
+% 2. computation of posterior of P: add + K*R*K' compared with fully
+% augmented case!
 
 % global counterSigmaInit
 % global counterSigmaProp
@@ -163,6 +166,7 @@ Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs';
 
 PyyInv = Pyy\eye(q);     % efficient least squares
 K = Pxy*PyyInv; 
+
 PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX' + K*R*K'; % adapt Kolas (2009) just like for the unconstrained case
 % PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; % plain computation for fully augmented case in Kolas (2009)
 
