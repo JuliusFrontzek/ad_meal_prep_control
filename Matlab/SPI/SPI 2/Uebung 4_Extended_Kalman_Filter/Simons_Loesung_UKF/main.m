@@ -1,6 +1,6 @@
 %% SPI - II - Übung 4 - DAS Kalman Filter
 
-% close all
+close all
 clear all
 clc
 

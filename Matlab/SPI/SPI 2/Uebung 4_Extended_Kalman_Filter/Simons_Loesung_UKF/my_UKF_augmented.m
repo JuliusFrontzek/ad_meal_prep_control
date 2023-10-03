@@ -86,19 +86,18 @@ end
 
 %% 1.2) Propagate all Sigma Points through system ODEs
 sigmaXProp = nan(nStates, nSigmaPointsAug); % allocate memory
-normalNoiseMat = nan(size(sigmaXProp));     % allocate memory
 
 % integriere Sytemverhalten für alle Sigmapunkte im Interval t_span:
 odeFun = @(t,x) my_bioprocess_ode(t,x,u,p);
+% create zero-mean normally distributed system noise for each sigma point:
+zeroMeanX = zeros(nStates,1);           % zero mean for additive noise
+normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
 for k = 1:nSigmaPointsAug
     [~,XTUSol] = ode45(odeFun,tSpan,sigmaXInit(1:nStates,k));
-    sigmaXPropNom = XTUSol(end,:)';
+    sigmaXPropNom = XTUSol(end,:)'; % nominal propagation without noise
     
     % add normally-distributed process noise acc. to Q (zero-mean):
-    zeroMean = zeros(nStates,1);
-    normalNoise = mvnrnd(zeroMean,Q,1)';
-    normalNoiseMat(:,k) = normalNoise;
-    sigmaXProp(:,k) = sigmaXPropNom + normalNoise;
+    sigmaXProp(:,k) = sigmaXPropNom + normalNoiseMatX(:,k);
 end 
 
 % % draw noise matrix: 
