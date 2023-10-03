@@ -1,18 +1,13 @@
 %% Version
 % (R2022b) Update 5
-% Erstelldatum: 29.09.2023
+% Erstelldatum: 03.10.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = my_cUKF_additive(xOld,POld,u,yMeas,tSpan,p,Q,R)
+function [xPlus,PPlus] = my_cUKF_augmented(xOld,POld,u,yMeas,tSpan,p,Q,R)
 
 % compute time and measurement update of constrained UKF acc. to 
-% Kolas et al. (2009), Tab. 10 but for additive noise (without clipping)
-% Note: 3 differences between add. noise and fully augm. case:
-% 1. augmentation, 
-% 2. computation of PMinus, which includes +Q (add. noise case) or doesnt 
-% (augmented system noise and fully augmented case)
-% 3. computation of outputs of sigma points: only nominal value for add.
-% noise and augmented case, nominal + noise term for fully augmented case.
+% Kolas et al. (2009), Tab. 10, but with only augmented system noise 
+% (without clipping)
 
 % global counterSigmaInit
 % global counterSigmaProp
@@ -37,7 +32,13 @@ global counterSigmaXcUKF
 
 nStates = numel(xOld); 
 q = 2; 
-nSigmaPoints = 2*nStates + 1;
+
+% augment x and P: 
+xOldAug = [xOld;zeros(nStates,1)]; 
+POldAug = blkdiag(POld,Q);   % (2*nStates, 2*nStates)
+
+nStatesAug = numel(xOldAug); 
+nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
 
 %% 1. Time Update (TU)
 
@@ -45,21 +46,21 @@ nSigmaPoints = 2*nStates + 1;
 alpha = 1;  % Kolas 2009, (18)
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
 kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
-lambda = alpha^2*(nStates + kappa) - nStates; 
-gamma = sqrt(nStates + lambda); % scaling parameter
+lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 
+gamma = sqrt(nStatesAug + lambda); % scaling parameter
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
-Wx0 = lambda/(nStates + lambda); 
-Wc0 = lambda/(nStates + lambda) + 1 - alpha^2 + beta; 
-Wi = 1/(2*(nStates + lambda)); 
-Wx = [Wx0, repmat(Wi,1,nSigmaPoints-1)]; % for state aggregation
-Wc = [Wc0, repmat(Wi,1,nSigmaPoints-1)]; % for covariance aggregation
+Wx0 = lambda/(nStatesAug + lambda); 
+Wc0 = lambda/(nStatesAug + lambda) + 1 - alpha^2 + beta; 
+Wi = 1/(2*(nStatesAug + lambda)); 
+Wx = [Wx0, repmat(Wi,1,nSigmaPointsAug-1)]; % for state aggregation
+Wc = [Wc0, repmat(Wi,1,nSigmaPointsAug-1)]; % for covariance aggregation
 
 %% 1.1) Choose Sigma Points
-sqrtPOld = schol(POld);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
+sqrtPOldAug = schol(POldAug);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
 
-sigmaXInit = [xOld, repmat(xOld,1,nStates) + gamma*sqrtPOld, ...
-                    repmat(xOld,1,nStates) - gamma*sqrtPOld]; 
+sigmaXInit = [xOldAug,  repmat(xOldAug,1,nStatesAug) + gamma*sqrtPOldAug, ...
+                        repmat(xOldAug,1,nStatesAug) - gamma*sqrtPOldAug]; 
 
 % % Apply clipping to negative Sigma Points: 
 % if any(any(sigmaXInit < 0)) 
@@ -68,14 +69,25 @@ sigmaXInit = [xOld, repmat(xOld,1,nStates) + gamma*sqrtPOld, ...
 % end
 
 %% 1.2) Propagate all Sigma Points through system ODEs
-sigmaXProp = nan(nStates, nSigmaPoints); % allocate memory
+sigmaXProp = nan(nStates, nSigmaPointsAug); % allocate memory
+normalNoiseMatX = nan(size(sigmaXProp));    % allocate memory
 
 % integriere Sytemverhalten für alle Sigmapunkte im Interval t_span:
 odeFun = @(t,x) my_bioprocess_ode(t,x,u,p);
-for k = 1:nSigmaPoints
-    [~,XTUSol] = ode45(odeFun,tSpan,sigmaXInit(:,k));
-    sigmaXProp(:,k) = XTUSol(end,:)';
+for k = 1:nSigmaPointsAug
+    [~,XTUSol] = ode45(odeFun,tSpan,sigmaXInit(1:nStates,k));
+    sigmaXPropNom = XTUSol(end,:)'; % nominal propagation without noise
+
+    % add normally-distributed process noise acc. to Q (zero-mean):
+    zeroMeanX = zeros(nStates,1);
+    normalNoiseX = mvnrnd(zeroMeanX,Q,1)';
+    normalNoiseMatX(:,k) = normalNoiseX;
+    sigmaXProp(:,k) = sigmaXPropNom + normalNoiseX;
 end 
+
+% sigmaXProp = zeros(size(sigmaXProp)); % Spaß für Terrance
+% % draw noise matrix: 
+% plot(normalNoiseMatX(1,:),normalNoiseMatX(2,:),'+');
 
 % % if any propagated sigma points violate constraints, apply clipping: 
 % if any(any(sigmaXProp < 0))
@@ -94,7 +106,7 @@ xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 
 % aggregate state error cov. matrix P:
 diffXPriorFromSigma = sigmaXProp - xMinus; 
-PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma' + Q; % adapted for additive noise case acc. to Kolas, Tab. 5
+PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % augmented case acc. to Kolas, Tab. 8
 
 %% 2. Measurement Update (MU)
 
@@ -103,8 +115,8 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma' + Q; % adapted for additiv
 
 %% 2.1) Derive Sigma-Measurements and aggregate them:
 
-Y = nan(q,nSigmaPoints);    % allocate memory
-for mm = 1:nSigmaPoints
+Y = nan(q,nSigmaPointsAug);    % allocate memory
+for mm = 1:nSigmaPointsAug
     % hier den richtigen Aufruf der Messgleichung hinzufügen!
     Y(:,mm) = messgleichung(sigmaXProp(:,mm)); 
 end
@@ -117,9 +129,9 @@ yAggregated = sum(Wx.*Y,2);
 % state values (=concentrations):
 A = -eye(nStates); 
 b = zeros(nStates,1);  
-sigmaXOpt = nan(nStates,nSigmaPoints);    % allocate memory
+sigmaXOpt = nan(nStates,nSigmaPointsAug);    % allocate memory
 % optimize all updated sigma points: 
-for k = 1:nSigmaPoints
+for k = 1:nSigmaPointsAug
     costFun = @(sigmaX) evaluateCUKFCostFun(sigmaX,sigmaXProp(:,k),yMeas,R,PMinus); 
     % choose the old sigmaXProp as initial value for optimization:
     sigmaXOpt(:,k) = fmincon(costFun,sigmaXProp(:,k),A,b); 
@@ -151,8 +163,8 @@ Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs';
 
 PyyInv = Pyy\eye(q);     % efficient least squares
 K = Pxy*PyyInv; 
-PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX' + K*R*K' + Q; % adapt Kolas (2009) just like for the unconstrained case
-% PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';   % strictly acc. to Vachhani (which I think is wrong)
+PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX' + K*R*K'; % adapt Kolas (2009) just like for the unconstrained case
+% PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; % plain computation for fully augmented case in Kolas (2009)
 
 % make sure PPlus is symmetric:
 PPlus = 1/2*(PPlusTemp + PPlusTemp');   

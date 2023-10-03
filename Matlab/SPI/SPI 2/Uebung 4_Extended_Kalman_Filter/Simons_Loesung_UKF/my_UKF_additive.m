@@ -50,6 +50,14 @@ Wi = 1/(2*(nStates + lambda));
 Wx = [Wx0, repmat(Wi,1,nSigmaPoints-1)]; % for state aggregation
 Wc = [Wc0, repmat(Wi,1,nSigmaPoints-1)]; % for covariance aggregation
 
+% ensure weights are plausble:
+if (sum(Wx) < 0.9) | (sum(Wx) > 1.1)
+    disp('Wx ist nicht 1 in Summe!')
+end
+% if (sum(Wc) < 0.9) | (sum(Wc) > 1.1)
+%     disp('Wc ist nicht 1 in Summe!')
+% end
+
 %% 1.1) Choose Sigma Points
 sqrtPOld = schol(POld);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
 

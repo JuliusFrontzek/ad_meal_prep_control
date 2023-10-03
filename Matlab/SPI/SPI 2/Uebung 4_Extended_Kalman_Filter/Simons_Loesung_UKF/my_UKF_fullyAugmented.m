@@ -69,15 +69,15 @@ Wc = [Wc0, repmat(Wi,1,nSigmaPointsAug-1)];
 if (sum(Wx) < 0.9) | (sum(Wx) > 1.1)
     disp('Wx ist nicht 1 in Summe!')
 end
-if (sum(Wc) < 0.9) | (sum(Wc) > 1.1)
-    disp('Wc ist nicht 1 in Summe!')
-end
+% if (sum(Wc) < 0.9) | (sum(Wc) > 1.1)
+%     disp('Wc ist nicht 1 in Summe!')
+% end
 
 %% 1.1) Choose Sigma Points
-sqrtPOld = schol(POldAug);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
+sqrtPOldAug = schol(POldAug);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
 
-sigmaXInit = [xOldAug, repmat(xOldAug,1,nStatesAug) + gamma*sqrtPOld, ...
-                       repmat(xOldAug,1,nStatesAug) - gamma*sqrtPOld]; 
+sigmaXInit = [xOldAug, repmat(xOldAug,1,nStatesAug) + gamma*sqrtPOldAug, ...
+                       repmat(xOldAug,1,nStatesAug) - gamma*sqrtPOldAug]; 
 
 % Apply clipping to negative Sigma Points: 
 if any(any(sigmaXInit < 0)) 
