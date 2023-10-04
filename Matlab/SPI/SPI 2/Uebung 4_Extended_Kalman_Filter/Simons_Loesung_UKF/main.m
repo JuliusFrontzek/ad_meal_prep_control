@@ -41,7 +41,7 @@ x0 = [10,75,5]';     % initial state value
 % P0 = 1e-3*eye(3);   % für den Fall perfekt abgeschätzter Startwerte (2a)
 
 % Falsche Anfangsbedingung
-x_hat = 3*[17 86 5.3]';   % (2b) ff.
+x_hat = 0.5*[17 86 5.3]';   % (2b) ff.
 x_hat_CKF = 1.0*x_hat;
 P0 = diag([5,2,0.5]);   % (2d), selbst gewählt. Entsprechend rel. Abweichung des Anfangs-Schätzers \hat x_0 vom Anfangs-Zustand x0
 
@@ -128,30 +128,29 @@ Q(1,3) = 0.03;                  % (2d) - gehört noch dazu (weil x1 und x3 am End
 % make Q symmetric: 
 Q = Q + triu(Q,1)';
 
-% CKF
-R_CKF = diag([1.15^2,0.25^2]);
-Q_CKF = diag([0.0527,0.7,   0.25]);
-Q_CKF(1,3) = 0.03;
-% make Q_CKF symmetric: 
-Q_CKF = Q_CKF + triu(Q_CKF,1)';
-% Q(1,1) = 1E-1*Q(1,1);
-% Q = 0.01*diag([10,75,5]);       % (2d) - aus MuLö, funktioniert auch bei 5% Modell-Ungenauigkeit noch sehr gut!
-
 % Parametersatz I for model underlying the Kalman Filters
 p_KF = [0.1,0.2,0.6];
 
 % Parametersatz II
 p_KF = [0.11,0.205,0.59];
 
-p_CKF = [0.11,0.205,0.59]; %[0.18,0.405,0.309];
+%% CKF Tuning
+% tuning matrices for CKF:
+R_CKF = R;
+Q_CKF = Q;
+
+% model parameters for CKF
+p_CKF = [0.11,0.205,0.59]; %[0.18,0.405,0.309]; % model parameters for CKF
 
 % Set up Cubature Kalman Filter
-ckf = trackingCKF(@StateTransitionFcn,@messgleichung,x0, 'HasAdditiveProcessNoise', true, 'HasAdditiveMeasurementNoise', true, 'MeasurementNoise', R_CKF, 'ProcessNoise', Q_CKF);
+ckf = trackingCKF(@StateTransitionFcn,@messgleichung,x0, ...
+    'HasAdditiveProcessNoise', true, 'HasAdditiveMeasurementNoise',true, ...
+    'MeasurementNoise', R_CKF, 'ProcessNoise', Q_CKF);
 
+%% call Kalman Filters iteratively for fixed time grid
 i = 2;
 
 rng('default');     % fix seed for random number generation (for replicable results)
-% integriere für jedes Zeitintervall separat:
 for time = t0:dt:tend
     
     tSpan = [time time+dt];
@@ -167,11 +166,11 @@ for time = t0:dt:tend
     %     [xPlus,PPlus,Kv] = extended_kalman_filter(xMinus,u(i),yMeas,t_span,POld);
     [xPlusEKF,PPlusEKF,KvEKF] = my_extended_kalman_filter(xMinusEKF,PMinusEKF,u(i),yMeas,tSpan,p_KF,Q,R);
     [xPlusUKFAdd,PPlusUKFAdd,KvUKFAdd] = my_UKF_additive(xMinusUKFAdd,PMinusUKFAdd,u(i),yMeas,tSpan,p_KF,Q,R);
-    [xPluscUKFAdd,PPluscUKFAdd] = my_cUKF_additive(xMinuscUKFAdd,PMinuscUKFAdd,u(i),yMeas,tSpan,p_KF,Q,R);
+%     [xPluscUKFAdd,PPluscUKFAdd] = my_cUKF_additive(xMinuscUKFAdd,PMinuscUKFAdd,u(i),yMeas,tSpan,p_KF,Q,R);
     [xPlusUKFAug,PPlusUKFAug] = my_UKF_augmented(xMinusUKFAug,PMinusUKFAug,u(i),yMeas,tSpan,p_KF,Q,R);
-    [xPluscUKFAug,PPluscUKFAug] = my_cUKF_augmented(xMinuscUKFAug,PMinuscUKFAug,u(i),yMeas,tSpan,p_KF,Q,R);
+%     [xPluscUKFAug,PPluscUKFAug] = my_cUKF_augmented(xMinuscUKFAug,PMinuscUKFAug,u(i),yMeas,tSpan,p_KF,Q,R);
     [xPlusUKFFullyAug,PPlusUKFFullyAug] = my_UKF_fullyAugmented(xMinusUKFFullyAug,PMinusUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);
-    [xPluscUKFFullyAug,PPluscUKFFullyAug] = my_cUKF_fullyAugmented(xMinuscUKFFullyAug,PMinuscUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);
+%     [xPluscUKFFullyAug,PPluscUKFFullyAug] = my_cUKF_fullyAugmented(xMinuscUKFFullyAug,PMinuscUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);
     [xPredCKF,PPredCKF] = predict(ckf, u(i), tSpan, p_CKF);
     [xCorrCKF,pCorrCKF] = correct(ckf,yMeas);
     ESTIMATESEKF(:,i) = xPlusEKF;
@@ -180,16 +179,16 @@ for time = t0:dt:tend
     ESTIMATESUKFAdd(:,i) = xPlusUKFAdd;
     COVARIANCEUKFAdd(:,i) = diag(PPlusUKFAdd);
     GAINUKFAdd(:,i) = KvUKFAdd; 
-    ESTIMATEScUKFAdd(:,i) = xPluscUKFAdd;
-    COVARIANCEcUKFAdd(:,i) = diag(PPluscUKFAdd);
+%     ESTIMATEScUKFAdd(:,i) = xPluscUKFAdd;
+%     COVARIANCEcUKFAdd(:,i) = diag(PPluscUKFAdd);
     ESTIMATESUKFAug(:,i) = xPlusUKFAug;
     COVARIANCEUKFAug(:,i) = diag(PPlusUKFAug);
-    ESTIMATEScUKFAug(:,i) = xPluscUKFAug;
-    COVARIANCEcUKFAug(:,i) = diag(PPluscUKFAug);
+%     ESTIMATEScUKFAug(:,i) = xPluscUKFAug;
+%     COVARIANCEcUKFAug(:,i) = diag(PPluscUKFAug);
     ESTIMATESUKFFullyAug(:,i) = xPlusUKFFullyAug;
     COVARIANCEUKFFullyAug(:,i) = diag(PPlusUKFFullyAug);
-    ESTIMATEScUKFFullyAug(:,i) = xPluscUKFFullyAug;
-    COVARIANCEcUKFFullyAug(:,i) = diag(PPluscUKFFullyAug);
+%     ESTIMATEScUKFFullyAug(:,i) = xPluscUKFFullyAug;
+%     COVARIANCEcUKFFullyAug(:,i) = diag(PPluscUKFFullyAug);
     ESTIMATESCKF(:,i) = xPredCKF;
     COVARIANCECKF(:,i) = diag(pCorrCKF);
 
@@ -200,16 +199,16 @@ for time = t0:dt:tend
     PMinusEKF = PPlusEKF; 
     xMinusUKFAdd = xPlusUKFAdd; 
     PMinusUKFAdd = PPlusUKFAdd;
-    xMinuscUKFAdd = xPluscUKFAdd; 
-    PMinuscUKFAdd = PPluscUKFAdd;
+%     xMinuscUKFAdd = xPluscUKFAdd; 
+%     PMinuscUKFAdd = PPluscUKFAdd;
     xMinusUKFAug = xPlusUKFAug; 
     PMinusUKFAug = PPlusUKFAug;
-    xMinuscUKFAug = xPluscUKFAug; 
-    PMinuscUKFAug = PPluscUKFAug;
+%     xMinuscUKFAug = xPluscUKFAug; 
+%     PMinuscUKFAug = PPluscUKFAug;
     xMinusUKFFullyAug = xPlusUKFFullyAug; 
     PMinusUKFFullyAug = PPlusUKFFullyAug;
-    xMinuscUKFFullyAug = xPluscUKFFullyAug; 
-    PMinuscUKFFullyAug = PPluscUKFFullyAug;
+%     xMinuscUKFFullyAug = xPluscUKFFullyAug; 
+%     PMinuscUKFFullyAug = PPluscUKFFullyAug;
     xMinusCKF = xCorrCKF; 
     PMinusCKF = pCorrCKF;
 end
@@ -279,22 +278,23 @@ plot(t,STATES(1,:)','k')
 plot(t,ESTIMATESEKF(1,:)', 'Color','red')
 plot(t,ESTIMATESUKFAdd(1,:)', 'Color',viridisColorPaletteHex(1), ...
     'LineStyle', ':', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFAdd(1,:)', 'Color',viridisColorPaletteHex(2), ...
-    'LineStyle', ':', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFAdd(1,:)', 'Color',viridisColorPaletteHex(2), ...
+%     'LineStyle', ':', 'LineWidth',1.6)
 plot(t,ESTIMATESUKFAug(1,:)', 'Color',viridisColorPaletteHex(3), ...
     'LineStyle', '-.', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFAug(1,:)', 'Color',viridisColorPaletteHex(4), ...
-    'LineStyle', '-.', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFAug(1,:)', 'Color',viridisColorPaletteHex(4), ...
+%     'LineStyle', '-.', 'LineWidth',1.6)
 plot(t,ESTIMATESUKFFullyAug(1,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFFullyAug(1,:)', 'Color',viridisColorPaletteHex(5), ...
-    'LineStyle', '--', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFFullyAug(1,:)', 'Color',viridisColorPaletteHex(5), ...
+%     'LineStyle', '--', 'LineWidth',1.6)
 plot(t,ESTIMATESCKF(1,:)', 'Color',viridisColorPaletteHex(6), ...
     'LineStyle', '--', 'LineWidth',1.6)
 ylabel('Biomasse m_X [g]')
 xlim([0,t(end)])
 title('Simulierte und geschätzte Zustände')
-legend('Messung', 'Simulation', 'EKF', 'UKF-add', 'cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
+% legend('Messung', 'Simulation', 'EKF', 'UKF-add', 'cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
+legend('Messung','Simulation', 'EKF', 'UKF-add', 'UKF-aug', 'UKF-fully-aug', 'CKF')
 
 % Substrat
 subplot(312)
@@ -303,21 +303,22 @@ hold on
 plot(t,ESTIMATESEKF(2,:)', 'Color','red')
 plot(t,ESTIMATESUKFAdd(2,:)', 'Color',viridisColorPaletteHex(1), ...
     'LineStyle', ':', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFAdd(2,:)', 'Color',viridisColorPaletteHex(2), ...
-    'LineStyle', ':', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFAdd(2,:)', 'Color',viridisColorPaletteHex(2), ...
+%     'LineStyle', ':', 'LineWidth',1.6)
 plot(t,ESTIMATESUKFAug(2,:)', 'Color',viridisColorPaletteHex(3), ...
     'LineStyle', '-.', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFAug(2,:)', 'Color',viridisColorPaletteHex(4), ...
-    'LineStyle', '-.', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFAug(2,:)', 'Color',viridisColorPaletteHex(4), ...
+%     'LineStyle', '-.', 'LineWidth',1.6)
 plot(t,ESTIMATESUKFFullyAug(2,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFFullyAug(2,:)', 'Color',viridisColorPaletteHex(5), ...
-    'LineStyle', '--', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFFullyAug(2,:)', 'Color',viridisColorPaletteHex(5), ...
+%     'LineStyle', '--', 'LineWidth',1.6)
 plot(t,ESTIMATESCKF(2,:)', 'Color',viridisColorPaletteHex(6), ...
     'LineStyle', '--', 'LineWidth',1.6)
 ylabel('Substrat m_S [g]')
 title('Simulierte und geschätzte Zustände')
-legend('Simulation', 'EKF', 'UKF-add','cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
+% legend('Simulation', 'EKF', 'UKF-add','cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
+legend('Simulation', 'EKF', 'UKF-add','UKF-aug', 'UKF-fully-aug', 'CKF')
 xlim([0,t(end)])
 
 % Volumen
@@ -328,20 +329,21 @@ plot(t,MESS(2,:)','ok')
 plot(t,ESTIMATESEKF(3,:)', 'Color','red')
 plot(t,ESTIMATESUKFAdd(3,:)', 'Color',viridisColorPaletteHex(1), ...
     'LineStyle', ':', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFAdd(3,:)', 'Color',viridisColorPaletteHex(2), ...
-    'LineStyle', ':', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFAdd(3,:)', 'Color',viridisColorPaletteHex(2), ...
+%     'LineStyle', ':', 'LineWidth',1.6)
 plot(t,ESTIMATESUKFAug(3,:)', 'Color',viridisColorPaletteHex(3), ...
     'LineStyle', '-.', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFAug(3,:)', 'Color',viridisColorPaletteHex(4), ...
-    'LineStyle', '-.', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFAug(3,:)', 'Color',viridisColorPaletteHex(4), ...
+%     'LineStyle', '-.', 'LineWidth',1.6)
 plot(t,ESTIMATESUKFFullyAug(3,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',0.8)
-plot(t,ESTIMATEScUKFFullyAug(3,:)', 'Color',viridisColorPaletteHex(5), ...
-    'LineStyle', '--', 'LineWidth',1.6)
+% plot(t,ESTIMATEScUKFFullyAug(3,:)', 'Color',viridisColorPaletteHex(5), ...
+%     'LineStyle', '--', 'LineWidth',1.6)
 plot(t,ESTIMATESCKF(3,:)', 'Color',viridisColorPaletteHex(6), ...
     'LineStyle', '--', 'LineWidth',1.6)
 ylabel('Volumen [l]')
-legend('Messung','Simulation', 'EKF', 'UKF-add', 'cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
+% legend('Messung','Simulation', 'EKF', 'UKF-add', 'cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
+legend('Messung','Simulation', 'EKF', 'UKF-add', 'UKF-aug', 'UKF-fully-aug', 'CKF')
 xlim([0,t(end)])
 xlabel('Zeit [h]')
 
