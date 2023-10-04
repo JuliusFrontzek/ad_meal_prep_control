@@ -122,11 +122,11 @@ function [mu,S,C,X,Y,w] = cut_transform(M,P,g,g_param,tr_param,conL,conU,clipY)
       end
   elseif mat
     [WM,W,c] = ut_mweights(size(M,1),alpha,beta,kappa);
-    X = ut_sigmas(M,P,c);
+    X = ut_sigmas(M,P,c);                               % sigma points
     w = {WM,W,c};
   else
     [WM,WC,c] = ut_weights(size(M,1),alpha,beta,kappa);
-    X = ut_sigmas(M,P,c);
+    X = ut_sigmas(M,P,c);                               % sigma points
     w = {WM,WC,c};
   end
   
@@ -175,19 +175,19 @@ function [mu,S,C,X,Y,w] = cut_transform(M,P,g,g_param,tr_param,conL,conU,clipY)
   
   
   if mat
-    mu = Y*WM;
-    S  = Y*W*Y.'; S = 0.5*(S+S.');
-    C  = X*W*Y.';
+    mu = Y*WM;                                                  % aggr. Y
+    S  = Y*W*Y.'; S = 0.5*(S+S.');                              % Pyy - R
+    C  = X*W*Y.';                                               % Pxy
   else
-    mu = zeros(size(Y,1),1);
-    S  = zeros(size(Y,1),size(Y,1));
-    C  = zeros(size(M,1),size(Y,1));
+    mu = zeros(size(Y,1),1);                                    % aggr. Y
+    S  = zeros(size(Y,1),size(Y,1));                            % Pyy - R
+    C  = zeros(size(M,1),size(Y,1));                            % Pxy
     for i=1:size(X,2)
       mu = mu + WM(i) * Y(:,i);
     end
-    for i=1:size(X,2)
-      S = S + WC(i) * (Y(:,i) - mu) * (Y(:,i) - mu)';
-      C = C + WC(i) * (X(1:size(M,1),i) - M) * (Y(:,i) - mu)';
+    for i=1:size(X,2)                                           % aggr. Y
+      S = S + WC(i) * (Y(:,i) - mu) * (Y(:,i) - mu)';           % Pyy - R
+      C = C + WC(i) * (X(1:size(M,1),i) - M) * (Y(:,i) - mu)';  % Pxy
     end
   end
 

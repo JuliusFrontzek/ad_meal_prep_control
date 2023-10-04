@@ -132,7 +132,6 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for additive no
 
 %% 2.1) Derive Sigma-Measurements and aggregate them:
 YNom = nan(q,nSigmaPointsAug);                % allocate memory
-
 % create zero-mean normally distributed measurement noise for each sigma point:
 zeroMeanY = zeros(q,1);
 normalNoiseMatY = mvnrnd(zeroMeanY,R,nSigmaPointsAug)';
@@ -161,8 +160,9 @@ Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs';
 % compute cross covariance matrix states/measurements:
 Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs'; 
 
-PyyInv = Pyy\eye(q);     % efficient least squares
-K = Pxy*PyyInv; 
+% PyyInv = Pyy\eye(q);     % efficient least squares
+% K = Pxy*PyyInv; 
+K = Pxy/Pyy; 
 
 %% 2.4) update propagated sigma points individually 
 % use alternative formulation of Kolas 2009, eq. (23):
@@ -187,6 +187,7 @@ disp(['max. Abweichung xPlus (full. aug.):', num2str(max(abs(xPlusvdM - xPlus)))
 % diffxPlusFromSigmaX = sigmaX(:,1:2*nStates+1) - xPlus; 
 diffxPlusFromSigmaX = sigmaX - xPlus; 
 PPlusReformulatedKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
+% PPlusGentschTemp = Wc.*sigmaX*sigmaX'; % false implementation in ABC-Code cukf_update1.m:  P = (Xs*W*Xs.');
 
 % % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 

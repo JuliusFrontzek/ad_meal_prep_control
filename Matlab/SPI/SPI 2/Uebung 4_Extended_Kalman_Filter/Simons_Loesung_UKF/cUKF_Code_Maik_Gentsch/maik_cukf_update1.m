@@ -104,7 +104,7 @@ function [M,P,K,MU,S,LH] = cukf_update1(M,P,Y,h,R,h_param,alpha,beta,kappa,mat,c
   conU  = conU(:);
   [MU,S,C,Xs,Ys,w] = cut_transform(M,P,h,h_param,tr_param,conL,conU);
   
-  S = S + R;
+  S = S + R;                                    % Pyy
   K = C / S;
 %   M = M + K * (Y - MU);
 %   P = P - K * S * K';
@@ -112,8 +112,8 @@ function [M,P,K,MU,S,LH] = cukf_update1(M,P,Y,h,R,h_param,alpha,beta,kappa,mat,c
     % Reformulated correction step ----------------------------------------
     % [Kolas, Foss, Schei 2009: Constrained nonlinear state estimation
     % based on the UKF approach]
-    for i = 1:size(Xs,2)
-        Xs(:,i) = Xs(:,i) + K* (Y - Ys(:,i));
+    for i = 1:size(Xs,2)                        % Xs = (old/updated) sigma points
+        Xs(:,i) = Xs(:,i) + K* (Y - Ys(:,i));   % Ys = sigma outputs
     end
     if ~isempty( conL )
         Xs   = max( Xs,conL );
@@ -132,16 +132,6 @@ function [M,P,K,MU,S,LH] = cukf_update1(M,P,Y,h,R,h_param,alpha,beta,kappa,mat,c
 %     end
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-
-  
   if nargout > 5
     LH = gauss_pdf(Y,MU,S);
   end

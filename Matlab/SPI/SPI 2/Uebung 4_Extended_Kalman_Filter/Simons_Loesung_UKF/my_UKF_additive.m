@@ -122,8 +122,9 @@ Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R;
 % compute cross covariance matrix states/measurements:
 Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs'; 
 
-PyyInv = Pyy\eye(q);     % efficient least squares
-K = Pxy*PyyInv; 
+% PyyInv = Pyy\eye(q);     % efficient least squares
+% K = Pxy*PyyInv; 
+K = Pxy/Pyy; 
 
 %% 2.4) update propagated sigma points individually 
 % use alternative formulation of Kolas 2009, eq. (23):
@@ -147,6 +148,7 @@ disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusvdM - xPlus)))])
 % measurement update of P-Matrix must be slightly adapted:
 diffxPlusFromSigmaX = sigmaX - xPlus; 
 PPlusReformulatedKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
+% PPlusGentschTemp = Wc.*sigmaX*sigmaX'; % false implementation in ABC-Code cukf_update1.m:  P = (Xs*W*Xs.');
 PPlusReformulatedKolasAdditive = PPlusReformulatedKolasFullyAugmented + Q + K*R*K'; 
 
 % only for comparison: 
