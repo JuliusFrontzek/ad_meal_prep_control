@@ -42,6 +42,7 @@ x0 = [10,75,5]';     % initial state value
 
 % Falsche Anfangsbedingung
 x_hat = 3*[17 86 5.3]';   % (2b) ff.
+x_hat_CKF = 1.0*x_hat;
 P0 = diag([5,2,0.5]);   % (2d), selbst gewählt. Entsprechend rel. Abweichung des Anfangs-Schätzers \hat x_0 vom Anfangs-Zustand x0
 
 nEval = length(t); 
@@ -54,7 +55,6 @@ t(end+1) = t(end) + dt;
 % Stellgrößenverlauf (Hut-kurve rechteckig):
 u = zeros(1,nEval+1);
 u(round(0.5*(nEval+1)):round(0.6*(nEval+1))) = 0.25;
-
 %% 2) Durchführen des Prozesses
 % allocate memory:
 MESS = zeros(2,nEval);
@@ -77,6 +77,8 @@ ESTIMATESUKFFullyAug = zeros(3,nEval+1);% fully augmented UKF
 COVARIANCEUKFFullyAug = zeros(3,nEval+1);
 ESTIMATEScUKFFullyAug = zeros(3,nEval+1);% constrained fully augmented UKF
 COVARIANCEcUKFFullyAug = zeros(3,nEval+1);
+ESTIMATESCKF = zeros(3,nEval+1);    % Cubature Kalman Filter
+COVARIANCECKF = zeros(3,nEval+1);
 
 % initialize all matrices:
 STATES(:,1) = x0;
@@ -96,6 +98,8 @@ ESTIMATESUKFFullyAug(:,1) = x_hat;
 COVARIANCEUKFFullyAug(:,1) = diag(P0);
 ESTIMATEScUKFFullyAug(:,1) = x_hat;
 COVARIANCEcUKFFullyAug(:,1) = diag(P0);
+ESTIMATESCKF(:,1) = x_hat_CKF;
+COVARIANCECKF(:,1) = diag(P0);
 
 xMinusEKF = x_hat;
 PMinusEKF = P0;
@@ -111,6 +115,8 @@ xMinusUKFFullyAug = x_hat;
 PMinusUKFFullyAug = P0;
 xMinuscUKFFullyAug = x_hat;
 PMinuscUKFFullyAug = P0;
+xMinusCKF = x_hat_CKF;
+PMinusCKF = P0;
 
 %% Tuning
 R = diag([1.15^2,0.25^2]);      % für Messrauschen (ist dank gegebener Sensordaten (Varianzen) fest)
@@ -121,6 +127,13 @@ Q = diag([0.0527,0.7,   0.25]); % (2d) - Simons beste Lösung bei 5% Ungenauigkei
 Q(1,3) = 0.03;                  % (2d) - gehört noch dazu (weil x1 und x3 am Ende stark in ihrer Unsicherheit korrelieren)
 % make Q symmetric: 
 Q = Q + triu(Q,1)';
+
+% CKF
+R_CKF = diag([1.15^2,0.25^2]);
+Q_CKF = diag([0.0527,0.7,   0.25]);
+Q_CKF(1,3) = 0.03;
+% make Q_CKF symmetric: 
+Q_CKF = Q_CKF + triu(Q_CKF,1)';
 % Q(1,1) = 1E-1*Q(1,1);
 % Q = 0.01*diag([10,75,5]);       % (2d) - aus MuLö, funktioniert auch bei 5% Modell-Ungenauigkeit noch sehr gut!
 
@@ -129,6 +142,11 @@ p_KF = [0.1,0.2,0.6];
 
 % Parametersatz II
 p_KF = [0.11,0.205,0.59];
+
+p_CKF = [0.11,0.205,0.59]; %[0.18,0.405,0.309];
+
+% Set up Cubature Kalman Filter
+ckf = trackingCKF(@StateTransitionFcn,@messgleichung,x0, 'HasAdditiveProcessNoise', true, 'HasAdditiveMeasurementNoise', true, 'MeasurementNoise', R_CKF, 'ProcessNoise', Q_CKF);
 
 i = 2;
 
@@ -154,6 +172,8 @@ for time = t0:dt:tend
     [xPluscUKFAug,PPluscUKFAug] = my_cUKF_augmented(xMinuscUKFAug,PMinuscUKFAug,u(i),yMeas,tSpan,p_KF,Q,R);
     [xPlusUKFFullyAug,PPlusUKFFullyAug] = my_UKF_fullyAugmented(xMinusUKFFullyAug,PMinusUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);
     [xPluscUKFFullyAug,PPluscUKFFullyAug] = my_cUKF_fullyAugmented(xMinuscUKFFullyAug,PMinuscUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);
+    [xPredCKF,PPredCKF] = predict(ckf, u(i), tSpan, p_CKF);
+    [xCorrCKF,pCorrCKF] = correct(ckf,yMeas);
     ESTIMATESEKF(:,i) = xPlusEKF;
     COVARIANCEEKF(:,i) = diag(PPlusEKF);
     GAINEKF(:,i) = KvEKF; 
@@ -170,6 +190,8 @@ for time = t0:dt:tend
     COVARIANCEUKFFullyAug(:,i) = diag(PPlusUKFFullyAug);
     ESTIMATEScUKFFullyAug(:,i) = xPluscUKFFullyAug;
     COVARIANCEcUKFFullyAug(:,i) = diag(PPluscUKFFullyAug);
+    ESTIMATESCKF(:,i) = xPredCKF;
+    COVARIANCECKF(:,i) = diag(pCorrCKF);
 
     % Update für nächste Iteration:
     i = i+1;  
@@ -188,6 +210,8 @@ for time = t0:dt:tend
     PMinusUKFFullyAug = PPlusUKFFullyAug;
     xMinuscUKFFullyAug = xPluscUKFFullyAug; 
     PMinuscUKFFullyAug = PPluscUKFFullyAug;
+    xMinusCKF = xCorrCKF; 
+    PMinusCKF = pCorrCKF;
 end
 
 %% 3) Plots der Ergebnisse
@@ -265,10 +289,12 @@ plot(t,ESTIMATESUKFFullyAug(1,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',0.8)
 plot(t,ESTIMATEScUKFFullyAug(1,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',1.6)
+plot(t,ESTIMATESCKF(1,:)', 'Color',viridisColorPaletteHex(6), ...
+    'LineStyle', '--', 'LineWidth',1.6)
 ylabel('Biomasse m_X [g]')
 xlim([0,t(end)])
 title('Simulierte und geschätzte Zustände')
-legend('Messung', 'Simulation', 'EKF', 'UKF-add', 'cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug')
+legend('Messung', 'Simulation', 'EKF', 'UKF-add', 'cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
 
 % Substrat
 subplot(312)
@@ -287,9 +313,11 @@ plot(t,ESTIMATESUKFFullyAug(2,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',0.8)
 plot(t,ESTIMATEScUKFFullyAug(2,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',1.6)
+plot(t,ESTIMATESCKF(2,:)', 'Color',viridisColorPaletteHex(6), ...
+    'LineStyle', '--', 'LineWidth',1.6)
 ylabel('Substrat m_S [g]')
 title('Simulierte und geschätzte Zustände')
-legend('Simulation', 'EKF', 'UKF-add','cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug')
+legend('Simulation', 'EKF', 'UKF-add','cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
 xlim([0,t(end)])
 
 % Volumen
@@ -310,8 +338,10 @@ plot(t,ESTIMATESUKFFullyAug(3,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',0.8)
 plot(t,ESTIMATEScUKFFullyAug(3,:)', 'Color',viridisColorPaletteHex(5), ...
     'LineStyle', '--', 'LineWidth',1.6)
+plot(t,ESTIMATESCKF(3,:)', 'Color',viridisColorPaletteHex(6), ...
+    'LineStyle', '--', 'LineWidth',1.6)
 ylabel('Volumen [l]')
-legend('Messung','Simulation', 'EKF', 'UKF-add', 'cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug')
+legend('Messung','Simulation', 'EKF', 'UKF-add', 'cUKF-add', 'UKF-aug', 'cUKF-aug', 'UKF-fully-aug', 'cUKF-fully-aug', 'CKF')
 xlim([0,t(end)])
 xlabel('Zeit [h]')
 

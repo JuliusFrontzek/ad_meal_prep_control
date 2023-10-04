@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import substrate_uncertainties
 from uncertainties import ufloat
 from copy import deepcopy
-from typing import Union
 
 
 @dataclass
@@ -203,33 +202,6 @@ GRASS_SILAGE = Substrate(
     state="solid",
 )
 
-CROP_STRAW = Substrate(
-    nominal_values=np.array([240.0, 34.6393249615227]),
-    variation_coefficients=np.array(
-        [5.22776012611444, 12.8464621768132, 17.4321599553856, 5, 2.14901476466728]
-    ),
-    xi=[
-        0.116910000000000,
-        0,
-        0,
-        0.185686366820576,
-        653.606750384773,
-        174.363204087472,
-        0,
-        10.9013441888264,
-        6.27023373775149,
-        0.318426575098357,
-        0.0167592934262293,
-        11.2073810906402,
-        -0.00897714096612082,
-        0.116697645093754,
-        0,
-        0.00776926483182942,
-        0,
-        0,
-    ],
-    state="solid",
-)
 
 CATTLE_MANURE = Substrate(
     nominal_values=np.array([230.0, 8.44120640954394]),

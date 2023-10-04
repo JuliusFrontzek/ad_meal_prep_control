@@ -1,6 +1,5 @@
 import pygame
 from dataclasses import dataclass
-import copy
 import numpy as np
 
 
