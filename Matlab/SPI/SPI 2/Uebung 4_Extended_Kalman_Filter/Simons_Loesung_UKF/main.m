@@ -141,11 +141,12 @@ Q_CKF = Q;
 
 % model parameters for CKF
 p_CKF = [0.11,0.205,0.59]; %[0.18,0.405,0.309]; % model parameters for CKF
+testParamValue = 0;     % nur um zu sehen, ob man der Messgleichung auf zusätzliche Werte übergeben kann
 
 % Set up Cubature Kalman Filter
-ckf = trackingCKF(@StateTransitionFcn,@messgleichung,x0, ...
-    'HasAdditiveProcessNoise', true, 'HasAdditiveMeasurementNoise',true, ...
-    'MeasurementNoise', R_CKF, 'ProcessNoise', Q_CKF);
+ckf = trackingCKF(@StateTransitionFcn,@MeasurementFcn,x_hat_CKF, ...
+    'HasAdditiveProcessNoise',true, 'HasAdditiveMeasurementNoise',true, ...
+    'MeasurementNoise',R_CKF, 'ProcessNoise',Q_CKF);
 
 %% call Kalman Filters iteratively for fixed time grid
 i = 2;
@@ -171,8 +172,12 @@ for time = t0:dt:tend
 %     [xPluscUKFAug,PPluscUKFAug] = my_cUKF_augmented(xMinuscUKFAug,PMinuscUKFAug,u(i),yMeas,tSpan,p_KF,Q,R);
     [xPlusUKFFullyAug,PPlusUKFFullyAug] = my_UKF_fullyAugmented(xMinusUKFFullyAug,PMinusUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);
 %     [xPluscUKFFullyAug,PPluscUKFFullyAug] = my_cUKF_fullyAugmented(xMinuscUKFFullyAug,PMinuscUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);
-    [xPredCKF,PPredCKF] = predict(ckf, u(i), tSpan, p_CKF);
-    [xCorrCKF,pCorrCKF] = correct(ckf,yMeas);
+
+% packe das beides muss in separate Funktion, genau wie für ekf und ukf auch:
+%     [xPredCKF,PPredCKF] = predict(ckf, u(i), tSpan, p_CKF);
+%     [xCorrCKF,pCorrCKF] = correct(ckf,yMeas);
+    [xPlusCKF,PPlusCKF] = my_CKF(ckf,u(i),yMeas,tSpan,p_CKF,testParamValue);
+
     ESTIMATESEKF(:,i) = xPlusEKF;
     COVARIANCEEKF(:,i) = diag(PPlusEKF);
     GAINEKF(:,i) = KvEKF; 
@@ -189,8 +194,8 @@ for time = t0:dt:tend
     COVARIANCEUKFFullyAug(:,i) = diag(PPlusUKFFullyAug);
 %     ESTIMATEScUKFFullyAug(:,i) = xPluscUKFFullyAug;
 %     COVARIANCEcUKFFullyAug(:,i) = diag(PPluscUKFFullyAug);
-    ESTIMATESCKF(:,i) = xPredCKF;
-    COVARIANCECKF(:,i) = diag(pCorrCKF);
+    ESTIMATESCKF(:,i) = xPlusCKF;
+    COVARIANCECKF(:,i) = diag(PPlusCKF);
 
     % Update für nächste Iteration:
     i = i+1;  
@@ -209,8 +214,8 @@ for time = t0:dt:tend
     PMinusUKFFullyAug = PPlusUKFFullyAug;
 %     xMinuscUKFFullyAug = xPluscUKFFullyAug; 
 %     PMinuscUKFFullyAug = PPluscUKFFullyAug;
-    xMinusCKF = xCorrCKF; 
-    PMinusCKF = pCorrCKF;
+    xMinusCKF = xPlusCKF; 
+    PMinusCKF = PPlusCKF;
 end
 
 %% 3) Plots der Ergebnisse
