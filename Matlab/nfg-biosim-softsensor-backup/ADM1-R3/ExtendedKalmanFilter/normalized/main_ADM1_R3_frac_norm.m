@@ -24,8 +24,8 @@ parameters = parameters.ADM1_R3.Variables; % modelParameters
 
 % extract system parameter values:
 scaleFactor = 1630;         % upscale everything from lab to FBGA scale
-Vl = s(1)*1E-3*scaleFactor; % gas volume % unit change [l] -> [m³]
-Vg = s(2)*1E-3*scaleFactor; % gas volume % unit change [l] -> [m³]
+Vl = s(1)*scaleFactor*1E-3; % gas volume % unit change [l] -> [m³]
+Vg = s(2)*scaleFactor*1E-3; % gas volume % unit change [l] -> [m³]
 % p0 = s(3);  % atmospheric pressure [bar] XY: Achtung: Typo im GitHub
 p0 = 1.0133; 
 
@@ -141,7 +141,7 @@ XInCh = xInPre(6);      % total carbohydrates in
 xIn(6) = XInCh; 
 xIn(7) = 0; 
 % overwrite values in positions for S_an and S_cat with those for S_ion and X_ash:
-xAshIn = 14; % selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
+xAshIn = 17; % selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
 xIn(12) = xAshIn;  
 xIn(13) = SionIN; 
 
