@@ -1,29 +1,20 @@
 %% Version
 % (R2022b) Update 5
-% Erstelldatum: 31.08.2023
+% Erstelldatum: 03.10.2023
 % Autor: Simon Hellmann
 
-function [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xOldNorm,POldNorm, ...
+function [xPlusNorm,PPlusNorm] = constrUnscKalmanFilterKolasAdditiveNorm(xOldNorm,POldNorm, ...
                                     tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm, ...
                                     fNorm,gNorm,TxNum,TyNum,TuNum)
 
-% compute time and measurement update acc. to Joseph-version of the UKF
-% acc. to Kolas et al. (2009) with clipping wherever possible (normalized)
-
-global counterSigmaInitNorm
-global counterSigmaPropNorm
-global counterSigmaXNorm
-global counterXNorm
-
-% counterSigmaInit = 0;
-% counterSigmaProp = 0;
-% counterSigmaX = 0; 
-% counterX = 0; 
-% counterSigmaInitNorm = 0;
-% counterSigmaPropNorm = 0;
-% counterSigmaXNorm = 0; 
-% counterXNorm = 0;
-% counterWater = 0; 
+% compute time and measurement update of constrained UKF acc. to  Kolas et al. 
+% (2009), Tab. 10 but for additive noise (normalized).
+% Note: 3 differences between add. noise and fully augm. case:
+% 1. augmentation, 
+% 2. computation of PMinus, which includes +Q (add. noise case) or doesnt 
+% (augmented system noise and fully augmented case)
+% 3. computation of posterior of P: add + K*R*K' + Q compared with fully
+% augmented case!
 
 % xPlusNorm - new normalized state estimate
 % PPlusNorm - new normalized state error covariance matrix
@@ -41,6 +32,12 @@ global counterXNorm
 % TxNum - normalization matrix of states
 % TyNum - normalization matrix of outputs
 % TuNum - normalization matrix of inputs
+
+global counterSigmaInitNorm
+global counterSigmaPropNorm
+global counterSigmaXNorm
+global counterXNorm
+global counterSigmaXcUKF
 
 % extract constant parameters out of struct: 
 th = params.th; 
@@ -61,10 +58,10 @@ nSigmaPoints = 2*nStates + 1;
 
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
-% beta = 0; 
-beta = 2;   % for Gaussian prior (Diss vdM, S.56)
+% beta = 0;
+beta = 2;   % for Gaussian prior (Diss vdM, S.56) 
 % kappa = 3 - nStates;  % acc. to Julier & Uhlmann
-kappa = 0.5;  % leichte Abweichung zu Kolas (er nimmt 0)
+kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
 % gamma = 0.2;  % XY just to check
@@ -146,23 +143,56 @@ end
 
 % aggregate state error cov. matrix P:
 diffXPriorFromSigmaNorm = sigmaXPropNorm - xMinusNorm; 
-PMinusNorm = Wc.*diffXPriorFromSigmaNorm*diffXPriorFromSigmaNorm' + QNorm; 
+PMinusNorm = Wc.*diffXPriorFromSigmaNorm*diffXPriorFromSigmaNorm' + QNorm; % adapted for additive noise case acc. to Kolas, Tab. 5
 
-%------------------Measurement Update (MU)---------------------------------
+%% ------------------Measurement Update (MU)------------------------------
 
 % omit to choose new sigma points for measurement update (acc. to Kolas,
 % Table 4 or Vachhani 2006)!
 
-%% Derive Sigma-Measurements and aggregate them:
+%% Derive Sigma-Measurements and aggregate them
 YNorm = nan(q,nSigmaPoints);    % allocate memory
 for mm = 1:nSigmaPoints
     YNorm(:,mm) = gNorm(sigmaXPropNorm(:,mm),c,TxNum,TyNum); 
 end
+
 % aggregate outputs of sigma points in overall output:
 yAggregatedNorm = sum(Wx.*YNorm,2);
 
-%% 4. compute Kalman Gain
+%% run constrained optimization to determine sigmaX
+% consider inequalities acc. to fmincon documentation: allow only positive 
+% state values (=concentrations):
+% XY Achtung: bisher noch keine Wasser-Konzentrationen > 1000 abgefangen, die
+% für TS- und oTS-Berechnung Probleme machen
+A = -eye(nStates); 
+b = zeros(nStates,1);  
+sigmaXOptNorm = nan(nStates,nSigmaPoints);    % allocate memory
+yMeasNorm = yMeas'./TyNum;   % normalized measurements
+% optimize all updated (normalized) sigma points: 
+for k = 1:nSigmaPoints
+    ukfCostFunNorm = @(sigmaXNorm) evaluateCUKFCostFunNorm(sigmaXNorm,sigmaXPropNorm(:,k), ...
+            yMeasNorm,RNorm,PMinusNorm,gNorm,c,TxNum,TyNum); 
+    % choose the old sigmaXPropNorm as initial value for optimization:
+    sigmaXOptNorm(:,k) = fmincon(ukfCostFunNorm,sigmaXPropNorm(:,k),A,b); 
+end 
 
+% this clipping should no longer be required thanks to optimization:
+% if updated sigma points violate constraints, apply clipping: 
+if any(any(sigmaXOptNorm < 0))
+    sigmaXOptNorm(sigmaXOptNorm < 0) = 0;
+    counterSigmaXcUKF = counterSigmaXcUKF + 1;
+end
+
+%% compute posteriors:
+xPlusNorm = sum(Wx.*sigmaXOptNorm,2); 
+
+% mind: Kolas considers fully augmented case, so computation of
+% posteriors must be adapted. I believe Vachhani (who also considers
+% additive noise case) is wrong!
+diffxPlusFromSigmaXNorm = sigmaXOptNorm - xPlusNorm; 
+
+% I think just as for the unconstrained case, we need to adapt computation
+% of the posterior of P by incorporating K, Q and R, so calculate K (normalized):
 % compute cov. matrix of output Pyy:
 diffYFromSigmaOutputsNorm = YNorm - yAggregatedNorm; 
 PyyNorm = Wc.*diffYFromSigmaOutputsNorm*diffYFromSigmaOutputsNorm' + RNorm;
@@ -170,41 +200,15 @@ PyyNorm = Wc.*diffYFromSigmaOutputsNorm*diffYFromSigmaOutputsNorm' + RNorm;
 % compute cross covariance matrix states/measurements:
 PxyNorm = Wc.*diffXPriorFromSigmaNorm*diffYFromSigmaOutputsNorm'; 
 
-% PyyNormInv = PyyNorm\eye(q);     % efficient least squares
-% KNorm = PxyNorm*PyyNormInv; 
-KNorm = PxyNorm/PyyNorm; 
+PyyNormInv = PyyNorm\eye(q);     % efficient least squares
+KNorm = PxyNorm*PyyNormInv; 
 
-%% update propagated sigma points individually 
-% use the alternative formulation of Kolas 2009, eq. (23):
-yMeasNorm = yMeas'./TyNum;   % normalized measurements
-sigmaXNorm = sigmaXPropNorm + KNorm*(repmat(yMeasNorm,1,nSigmaPoints) - YNorm);
+PPlusFullyAugmentedCaseNorm = Wc.*diffxPlusFromSigmaXNorm*diffxPlusFromSigmaXNorm'; 
+% adapt Kolas (2009) just like for the unconstrained case:
+PPlusTempNorm = PPlusFullyAugmentedCaseNorm + KNorm*RNorm*KNorm' + QNorm; % different formula for additive noise case (normalized)!
 
-% if updated sigma points violate constraints, apply clipping: 
-if any(any(sigmaXNorm < 0))
-    sigmaXNorm(sigmaXNorm < 0) = 0;
-    counterSigmaXNorm = counterSigmaXNorm + 1; 
-end
-
-%% compute posteriors:
-xPlusNorm = sum(Wx.*sigmaXNorm,2); 
-
-% only for comparison: 
-KvNorm = KNorm*(yMeasNorm - yAggregatedNorm);
-xPlusNormvdM = xMinusNorm + KvNorm; % standard formulation of vdMerwe, normalized
-disp(['max. Abweichung xPlus (add. norm.):', num2str(max(abs(xPlusNormvdM - xPlusNorm)))])
-
-% mind that Kolas proved the fully augmented case. For additive noise, the
-% measurement update of P-Matrix must be slightly adapted:
-diffxPlusFromSigmaXNorm = sigmaXNorm - xPlusNorm; 
-PPlusFullyAugmentedNorm = Wc.*diffxPlusFromSigmaXNorm*diffxPlusFromSigmaXNorm'; 
-PPlusTempNorm = PPlusFullyAugmentedNorm + QNorm + KNorm*RNorm*KNorm'; % different formula for additive noise case (normalized)!
-
-% only for comparison: 
-PPlusTempNormvdM = PMinusNorm - KNorm*PyyNorm*KNorm'; 
-disp(['max. Abweichung PPlus (add. norm.): ', ...
-      num2str(max(max(abs(PPlusTempNormvdM - PPlusTempNorm))))])
-
-PPlusNorm = 1/2*(PPlusTempNorm + PPlusTempNorm');   % make sure PPlus is symmetric!
-disp(['sum of PPlus diagonal (add. norm.): ', num2str(sum(diag(PPlusNorm)))])
+% make sure PPlus is symmetric:
+PPlusNorm = 1/2*(PPlusTempNorm + PPlusTempNorm');
+disp(['sum of PPlusNorm diagonal (cUKF-add.): ', num2str(sum(diag(PPlusNorm)))])
 
 end

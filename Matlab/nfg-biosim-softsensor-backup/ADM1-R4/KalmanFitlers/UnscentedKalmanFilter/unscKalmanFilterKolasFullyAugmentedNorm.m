@@ -1,29 +1,20 @@
 %% Version
 % (R2022b) Update 5
-% Erstelldatum: 31.08.2023
+% Erstelldatum: 04.10.2023
 % Autor: Simon Hellmann
 
-function [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xOldNorm,POldNorm, ...
+function [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasFullyAugmentedNorm(xOldNorm,POldNorm, ...
                                     tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm, ...
                                     fNorm,gNorm,TxNum,TyNum,TuNum)
 
 % compute time and measurement update acc. to Joseph-version of the UKF
-% acc. to Kolas et al. (2009) with clipping wherever possible (normalized)
+% acc. to Kolas et al. (2009) with clipping wherever possible (normalized),
+% but for augmented process noise (Tab. 6)
 
 global counterSigmaInitNorm
 global counterSigmaPropNorm
 global counterSigmaXNorm
 global counterXNorm
-
-% counterSigmaInit = 0;
-% counterSigmaProp = 0;
-% counterSigmaX = 0; 
-% counterX = 0; 
-% counterSigmaInitNorm = 0;
-% counterSigmaPropNorm = 0;
-% counterSigmaXNorm = 0; 
-% counterXNorm = 0;
-% counterWater = 0; 
 
 % xPlusNorm - new normalized state estimate
 % PPlusNorm - new normalized state error covariance matrix
@@ -55,7 +46,13 @@ end
 
 nStates = numel(xOldNorm); 
 q = numel(yMeas); 
-nSigmaPoints = 2*nStates + 1;
+
+% augment x and P: 
+xOldAugNorm = [xOldNorm;zeros(nStates,1);zeros(q,1)]; 
+POldAugNorm = blkdiag(POldNorm,QNorm,RNorm);  % (2*nStates+q, 2*nStates+q)
+
+nStatesAug = numel(xOldAugNorm); 
+nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
 
 %% Time Update (TU)
 
@@ -63,24 +60,24 @@ nSigmaPoints = 2*nStates + 1;
 alpha = 1;  % Kolas 2009, (18)
 % beta = 0; 
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
-% kappa = 3 - nStates;  % acc. to Julier & Uhlmann
-kappa = 0.5;  % leichte Abweichung zu Kolas (er nimmt 0)
-lambda = alpha^2*(nStates + kappa) - nStates; 
-gamma = sqrt(nStates + lambda); % scaling parameter
+% kappa = 3 - nStatesAug;  % acc. to Julier & Uhlmann
+kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
+lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 
+gamma = sqrt(nStatesAug + lambda); % scaling parameter
 % gamma = 0.2;  % XY just to check
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
-Wx0 = lambda/(nStates + lambda); 
-Wc0 = lambda/(nStates + lambda) + 1 - alpha^2 + beta; 
-Wi = 1/(2*(nStates + lambda)); 
-Wx = [Wx0, repmat(Wi,1,nSigmaPoints-1)]; % for state aggregation
-Wc = [Wc0, repmat(Wi,1,nSigmaPoints-1)]; % for covariance aggregation
+Wx0 = lambda/(nStatesAug + lambda); 
+Wc0 = lambda/(nStatesAug + lambda) + 1 - alpha^2 + beta; 
+Wi = 1/(2*(nStatesAug + lambda)); 
+Wx = [Wx0, repmat(Wi,1,nSigmaPointsAug-1)]; % for state aggregation
+Wc = [Wc0, repmat(Wi,1,nSigmaPointsAug-1)]; % for covariance aggregation
 
 %% Choose Sigma Points
-sqrtPOldNorm = schol(POldNorm);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
+sqrtPOldAugNorm = schol(POldAugNorm);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
 
-sigmaXInitNorm = [xOldNorm, repmat(xOldNorm,1,nStates) + gamma*sqrtPOldNorm, ...
-                            repmat(xOldNorm,1,nStates) - gamma*sqrtPOldNorm]; 
+sigmaXInitNorm = [xOldAugNorm,  repmat(xOldAugNorm,1,nStatesAug) + gamma*sqrtPOldAugNorm, ...
+                                repmat(xOldAugNorm,1,nStatesAug) - gamma*sqrtPOldAugNorm]; 
 
 % Apply clipping to negative Sigma Points: 
 if any(any(sigmaXInitNorm < 0))
@@ -89,7 +86,8 @@ if any(any(sigmaXInitNorm < 0))
 end
 
 %% Propagate Sigma Points
-sigmaXPropNorm = nan(nStates, nSigmaPoints); % allocate memory
+sigmaXPropNormNom = nan(nStates, nSigmaPointsAug); % allocate memory
+zeroMeanXNorm = zeros(nStates,1); % zero mean for additive noise
 
 tEvents = feedInfoNorm(:,1);    % feeding time points (on/off)
 idxRelEvents = tEvents >= tSpan(1) & tEvents <= tSpan(2);
@@ -102,31 +100,39 @@ if isempty(tRelEvents)
     xInCurrNorm = feedInfoNorm(3:end)';  % current inlet concentrations
     tEval = tSpan;
     odeFunNorm = @(t,XNorm) fNorm(XNorm,feedVolFlowNorm,xInCurrNorm,th,c,a,TxNum,TuNum); 
-    for k = 1:nSigmaPoints
-        [~,XTUSolNorm] = ode15s(odeFunNorm,tEval,sigmaXInitNorm(:,k));
-        sigmaXPropNorm(:,k) = XTUSolNorm(end,:)';
+    % create zero-mean normally distributed process noise for each sigma point:
+    normalNoiseMatX = mvnrnd(zeroMeanXNorm,QNorm,nSigmaPointsAug)';
+    for k = 1:nSigmaPointsAug
+        [~,XTUSolNorm] = ode15s(odeFunNorm,tEval,sigmaXInitNorm(1:nStates,k));
+        sigmaXPropNormNom(:,k) = XTUSolNorm(end,:)';     % nominal value (without noise)
     end 
+    % add normally-distributed process noise acc. to Q (zero-mean):
+    sigmaXPropNorm = sigmaXPropNormNom + normalNoiseMatX;
+
 % Fall b: veränderliche Fütterung während Messintervalls:
 else 
     % erstelle 'feines' Zeitraster aus Fütterungs- und Messzeiten:
     tOverall = unique(sort([tSpan, tRelEvents]));
-    nIntervals = length(tOverall) - 1; 
-    XAtBeginOfIntNorm = sigmaXInitNorm;    % Startwerte für erstes Intervall (wird nicht mehr überschrieben)
-    XAtEndOfIntNorm = nan(size(sigmaXInitNorm)); % allocate memory
+    nIntervals = length(tOverall) - 1;     
+    XAtBeginOfIntNorm = sigmaXInitNorm(1:nStates,:);   % Startwerte für erstes Intervall (wird nicht mehr überschrieben)
+    XAtEndOfIntNormNom = nan(size(XAtBeginOfIntNorm)); % allocate memory
     % integriere Intervall-weise, sodass während der Intervalle konstante
     % Fütterungen herrschen:
     for m = 1:nIntervals
         feedVolFlowNorm = feedInfoNorm(m,2);
         xInCurrNorm = feedInfoNorm(m,3:end)';   % current inlet concentrations
         tEval = [tOverall(m), tOverall(m+1)];
-        odeFunNorm = @(t,XNorm) fNorm(XNorm,feedVolFlowNorm,xInCurrNorm,th,c,a,TxNum,TuNum); 
-        for kk = 1:nSigmaPoints
+        odeFunNorm = @(t,XNorm) fNorm(XNorm,feedVolFlowNorm,xInCurrNorm,th,c,a,TxNum,TuNum);
+        % create zero-mean normally distributed process noise for each sigma point:
+        normalNoiseMatX = mvnrnd(zeroMeanXNorm,QNorm,nSigmaPointsAug)';
+        for kk = 1:nSigmaPointsAug
             [~,XTUSolNorm] = ode15s(odeFunNorm,tEval,XAtBeginOfIntNorm(:,kk));
-            XAtEndOfIntNorm(:,kk) = XTUSolNorm(end,:)';
+            XAtEndOfIntNormNom(:,kk) = XTUSolNorm(end,:)';  % nominal value (without system noise)
         end
-        XAtBeginOfIntNorm = XAtEndOfIntNorm; % overwrite for next interval
+        XAtBeginOfIntNorm = XAtEndOfIntNormNom; % overwrite for next interval
     end
-    sigmaXPropNorm = XAtEndOfIntNorm;
+    % add gaussian, zero-mean process noise: 
+    sigmaXPropNorm = XAtEndOfIntNormNom + normalNoiseMatX;    
 end
 
 % if any propagated sigma points violate constraints, apply clipping: 
@@ -146,7 +152,7 @@ end
 
 % aggregate state error cov. matrix P:
 diffXPriorFromSigmaNorm = sigmaXPropNorm - xMinusNorm; 
-PMinusNorm = Wc.*diffXPriorFromSigmaNorm*diffXPriorFromSigmaNorm' + QNorm; 
+PMinusNorm = Wc.*diffXPriorFromSigmaNorm*diffXPriorFromSigmaNorm'; 
 
 %------------------Measurement Update (MU)---------------------------------
 
@@ -154,30 +160,34 @@ PMinusNorm = Wc.*diffXPriorFromSigmaNorm*diffXPriorFromSigmaNorm' + QNorm;
 % Table 4 or Vachhani 2006)!
 
 %% Derive Sigma-Measurements and aggregate them:
-YNorm = nan(q,nSigmaPoints);    % allocate memory
-for mm = 1:nSigmaPoints
-    YNorm(:,mm) = gNorm(sigmaXPropNorm(:,mm),c,TxNum,TyNum); 
+YNom = nan(q,nSigmaPointsAug);    % allocate memory
+zeroMeanYNorm = zeros(q,1);        % zero mean for additive noise
+% create zero-mean gaussian measurement noise for each sigma point:
+normalNoiseMatY = mvnrnd(zeroMeanYNorm,RNorm,nSigmaPointsAug)';
+for mm = 1:nSigmaPointsAug
+    YNom(:,mm) = gNorm(sigmaXPropNorm(:,mm),c,TxNum,TyNum); 
 end
+% add gaussian, zero-mean process noise: 
+YNorm = YNom + normalNoiseMatY; 
 % aggregate outputs of sigma points in overall output:
 yAggregatedNorm = sum(Wx.*YNorm,2);
 
 %% 4. compute Kalman Gain
 
 % compute cov. matrix of output Pyy:
-diffYFromSigmaOutputsNorm = YNorm - yAggregatedNorm; 
-PyyNorm = Wc.*diffYFromSigmaOutputsNorm*diffYFromSigmaOutputsNorm' + RNorm;
+diffYFromSigmaOutputsNorm = YNom - yAggregatedNorm; 
+PyyNorm = Wc.*diffYFromSigmaOutputsNorm*diffYFromSigmaOutputsNorm'; % Kolas, Tab. 7/8
 
 % compute cross covariance matrix states/measurements:
 PxyNorm = Wc.*diffXPriorFromSigmaNorm*diffYFromSigmaOutputsNorm'; 
 
-% PyyNormInv = PyyNorm\eye(q);     % efficient least squares
-% KNorm = PxyNorm*PyyNormInv; 
-KNorm = PxyNorm/PyyNorm; 
+PyyNormInv = PyyNorm\eye(q);     % efficient least squares
+KNorm = PxyNorm*PyyNormInv; 
 
 %% update propagated sigma points individually 
 % use the alternative formulation of Kolas 2009, eq. (23):
 yMeasNorm = yMeas'./TyNum;   % normalized measurements
-sigmaXNorm = sigmaXPropNorm + KNorm*(repmat(yMeasNorm,1,nSigmaPoints) - YNorm);
+sigmaXNorm = sigmaXPropNorm + KNorm*(repmat(yMeasNorm,1,nSigmaPointsAug) - YNom);
 
 % if updated sigma points violate constraints, apply clipping: 
 if any(any(sigmaXNorm < 0))
@@ -191,20 +201,20 @@ xPlusNorm = sum(Wx.*sigmaXNorm,2);
 % only for comparison: 
 KvNorm = KNorm*(yMeasNorm - yAggregatedNorm);
 xPlusNormvdM = xMinusNorm + KvNorm; % standard formulation of vdMerwe, normalized
-disp(['max. Abweichung xPlus (add. norm.):', num2str(max(abs(xPlusNormvdM - xPlusNorm)))])
+disp(['max. Abweichung xPlus (fully add.):', num2str(max(abs(xPlusNormvdM - xPlusNorm)))])
 
 % mind that Kolas proved the fully augmented case. For additive noise, the
 % measurement update of P-Matrix must be slightly adapted:
 diffxPlusFromSigmaXNorm = sigmaXNorm - xPlusNorm; 
-PPlusFullyAugmentedNorm = Wc.*diffxPlusFromSigmaXNorm*diffxPlusFromSigmaXNorm'; 
-PPlusTempNorm = PPlusFullyAugmentedNorm + QNorm + KNorm*RNorm*KNorm'; % different formula for additive noise case (normalized)!
+PPlusKolasFullyAugmentedCaseNorm = Wc.*diffxPlusFromSigmaXNorm*diffxPlusFromSigmaXNorm'; 
+PPlusTempNorm = PPlusKolasFullyAugmentedCaseNorm + KNorm*RNorm*KNorm'; % adapt formula for augmented process noise case (normalized)!
 
 % only for comparison: 
 PPlusTempNormvdM = PMinusNorm - KNorm*PyyNorm*KNorm'; 
-disp(['max. Abweichung PPlus (add. norm.): ', ...
+disp(['max. Abweichung PPlus (fully add.): ', ...
       num2str(max(max(abs(PPlusTempNormvdM - PPlusTempNorm))))])
 
 PPlusNorm = 1/2*(PPlusTempNorm + PPlusTempNorm');   % make sure PPlus is symmetric!
-disp(['sum of PPlus diagonal (add. norm.): ', num2str(sum(diag(PPlusNorm)))])
+disp(['sum of PPlus diagonal (fully aug.): ', num2str(sum(diag(PPlusNorm)))])
 
 end

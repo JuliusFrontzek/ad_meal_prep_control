@@ -3,9 +3,9 @@
 % Erstelldatum: 19.09.2023
 % Autor: Simon Hellmann
 
-function f = BMR4_AB_frac_noWaterAsh_norm_ode_sym(xNorm, uNorm, xiNorm, th, c, a, Tx, Tu)
+function f = BMR4_AB_frac_noWater_norm_ode_sym(xNorm, uNorm, xiNorm, th, c, a, Tx, Tu)
 % delivers a symbolic expression (f) of the normalized right-hand side of the 
-% homogeneous ODE system of the BMR4+AB-frac-noWaterAsh (no water, no ash, 2
+% homogeneous ODE system of the BMR4+AB-frac-noWater (no water, no ash, 2
 % CH fractions) with constant values for u and xin 
 
 % dynamic equations

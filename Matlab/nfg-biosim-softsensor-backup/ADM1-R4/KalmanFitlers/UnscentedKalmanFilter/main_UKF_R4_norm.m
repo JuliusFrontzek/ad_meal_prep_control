@@ -1,9 +1,12 @@
 %% Version
 % (R2022b) Update 5
-% Erstelldatum: 30.8.2023
+% Erstelldatum: 04.10.2023
 % Autor: Simon Hellmann
 
-%% DAS Unscented Kalman Filter fürs ADM1-R4-frac
+%% DAS Unscented Kalman Filter fürs ADM1-R4
+
+addpath('generatedOutput/');
+addpath('modelEquations/');
 
 close all
 clear
@@ -30,7 +33,7 @@ counterXNorm = 0;
 counterSigmaXcUKF = 0;
 
 % Load Measurement Data:
-load Messung_ADM1_R4_frac_norm
+load Messung_ADM1_R4_norm
 
 % get numeric values of normalization matrices: 
 TxNum = TNum.Tx; % states
@@ -100,7 +103,7 @@ RNorm(5,5) = 1E2*RNorm(5,5);   % TS very noisy
 RNorm(6,6) = 1E-2*RNorm(6,6);  % VS not so noisy
 
 % fine-tuning of Kalman Filter - process uncertainty: 
-Q = diag([0.016, 0.555, 0.563, 958.4, 1.263, 2.816, 2.654, 0.972, 2.894, 10, 0.374, 0.948]);
+Q = diag([0.016, 0.555, 0.563, 958.4, 1.263, 2.654, 0.972, 2.894, 10, 0.374, 0.948]);
 % QNorm = Q./(TxNum.^2); % for comparison with non-normalized case
 QNorm = eye(nStates);   % XY: sicher besser auszulegen
 
@@ -132,23 +135,23 @@ cS = sym('c', size(params.c));      % time-invariant parameters (known & constan
 aS = sym('a', size(params.a));      % petersen matrix with stoichiometric constants
 
 % obtain symbolic objects of model equations:
-dynamics = BMR4_AB_frac_ode_sym(xS, uS, xiS, thS, cS, aS); 
-outputs = BMR4_AB_frac_mgl_sym(xS,cS);
+dynamics = BMR4_AB_ode_sym(xS, uS, xiS, thS, cS, aS); 
+outputs = BMR4_AB_mgl_sym(xS,cS);
 
 % derive function handles of ODEs and output equation: 
 f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
 g = matlabFunction(outputs, 'Vars', {xS, cS}); 
 
 %% derive all function handles in normalized coordinates from symbolilc expressions:
-xNormS = sym('xNorm', [12 1]);  % normalized states as col. vector
+xNormS = sym('xNorm', size(x0));  % normalized states as col. vector
 syms uNorm real;                % normalized input
-xiNormS = sym('xi', [12,1]);    % normalized inlet concentrations 
-TxS = sym('Tx', [12,1]);        % normalization matrix for states
-TyS = sym('Ty', [6,1]);         % normalization matrix for outputs
+xiNormS = sym('xi', size(x0));    % normalized inlet concentrations 
+TxS = sym('Tx', size(x0));        % normalization matrix for states
+TyS = sym('Ty', size(params.th));         % normalization matrix for outputs
 syms Tu real                    % normalization variable for input
 
-dynamicsNorm = BMR4_AB_frac_norm_ode_sym(xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu); 
-outputsNorm = BMR4_AB_frac_norm_mgl_sym(xNormS, cS, TxS, TyS); 
+dynamicsNorm = BMR4_AB_norm_ode_sym(xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu); 
+outputsNorm = BMR4_AB_norm_mgl_sym(xNormS, cS, TxS, TyS); 
 
 % convert to numeric function handles:
 fNorm = matlabFunction(dynamicsNorm, 'Vars', {xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu}); 
@@ -189,18 +192,29 @@ for k = 1:nSamples
     end
     
     %% execute UKF
-
-    [xPlus,PPlus] = unscKalmanFilterKolasAdditive(xMinus,PMinus,...
-                    tSpan,feedInfo,yMeas,params,Q,R,f,g);
-    [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xMinusNorm,PMinusNorm,...
-                    tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
-                    fNorm,gNorm,TxNum,TyNum,TuNum); 
-%     [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAugmentedNorm(xMinusNorm,PMinusNorm,...
+    
+    % UKF-add:
+%     [xPlus,PPlus] = unscKalmanFilterKolasAdditive(xMinus,PMinus,...
+%                     tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    
+    % UKF-add-norm:
+%     [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xMinusNorm,PMinusNorm,...
 %                     tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
 %                     fNorm,gNorm,TxNum,TyNum,TuNum); 
+    
+    % UKF-aug:
+    [xPlus,PPlus] = unscKalmanFilterKolasAugmented(xMinus,PMinus,...
+                    tSpan,feedInfo,yMeas,params,Q,R,f,g);
+
+    % UKF-aug-norm:
+    [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAugmentedNorm(xMinusNorm,PMinusNorm,...
+                    tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
+                    fNorm,gNorm,TxNum,TyNum,TuNum); 
+
 %     [xPlusNorm,PPlusNorm] = constrUnscKalmanFilterKolasAdditiveNorm(xMinusNorm,PMinusNorm, ...
 %                     tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm, ...
 %                     fNorm,gNorm,TxNum,TyNum,TuNum);
+
 %     [xPlusNorm,PPlusNorm] = constrUnscKalmanFilterKolasAugmentedNorm(xMinusNorm,PMinusNorm, ...
 %                     tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm, ...
 %                     fNorm,gNorm,TxNum,TyNum,TuNum); 
@@ -290,8 +304,8 @@ plot(tMeas,yClean(:,1)/24,'DisplayName','clean model output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
 plot(t,yUKFDeNorm(:,1)/24,'DisplayName','estimate deNorm',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);  
-% plot(t,UKFOutput(:,1)/24,'DisplayName','EKF-Output',...
-%      'LineStyle',':', 'Color', colorPaletteHex(5), 'LineWidth',1); 
+plot(t,UKFOutput(:,1)/24,'DisplayName','estimate abs',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1.2); 
 ylim([0,15])
 ylabel('gas vol flow [l/h]')
 yyaxis right
@@ -312,8 +326,8 @@ plot(tMeas,yClean(:,2),'DisplayName','clean model output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
 plot(t,yUKFDeNorm(:,2),'DisplayName','estimate deNorm',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);  
-% plot(t,UKFOutput(:,2),'DisplayName','EKF-Output',...
-%      'LineStyle',':', 'Color', colorPaletteHex(5), 'LineWidth',1); 
+plot(t,UKFOutput(:,2),'DisplayName','estimate abs',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1.2); 
 ylim([0.4,0.85])
 ylabel('p_{ch4} [bar]')
 yyaxis right
@@ -334,8 +348,8 @@ plot(tMeas,yClean(:,3),'DisplayName','clean model output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
 plot(t,yUKFDeNorm(:,3),'DisplayName','estimate deNorm',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
-% plot(t,UKFOutput(:,3),'DisplayName','EKF-Output',...
-%      'LineStyle',':', 'Color', colorPaletteHex(5), 'LineWidth',1)
+plot(t,UKFOutput(:,3),'DisplayName','estimate abs',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1.2); 
 ylim([0.2,0.6])
 ylabel('p_{co2} [bar]')
 yyaxis right
@@ -356,8 +370,8 @@ plot(tMeas,yClean(:,4),'DisplayName','clean model output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
 plot(t,yUKFDeNorm(:,4),'DisplayName','estimate deNorm',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
-% plot(t,UKFOutput(:,4),'DisplayName','EKF-Output',...
-%      'LineStyle',':', 'Color', colorPaletteHex(5), 'LineWidth',1)  
+plot(t,UKFOutput(:,4),'DisplayName','estimate abs',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1.2); 
 ylabel('inorg. nitrogen [g/l]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
@@ -377,8 +391,8 @@ plot(tMeas,yClean(:,5),'DisplayName','clean model output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
 plot(t,yUKFDeNorm(:,5),'DisplayName','estimate deNorm',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
-% plot(t,UKFOutput(:,5),'DisplayName','EKF-Output',...
-%      'LineStyle',':', 'Color', colorPaletteHex(5), 'LineWidth',1)
+plot(t,UKFOutput(:,5),'DisplayName','estimate abs',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1.2); 
 ylim([0,0.1])
 ylabel('total solids [-]')
 yyaxis right
@@ -399,8 +413,8 @@ plot(tMeas,yClean(:,6),'DisplayName','clean model output',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
 plot(t,yUKFDeNorm(:,6),'DisplayName','estimate deNorm',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
-% plot(t,UKFOutput(:,6),'DisplayName','EKF-Output',...
-%      'LineStyle',':', 'Color', colorPaletteHex(5), 'LineWidth',1)
+plot(t,UKFOutput(:,6),'DisplayName','estimate abs',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1.2); 
 ylim([0,1])
 ylabel('volatile solids [-]')
 yyaxis right
@@ -429,7 +443,7 @@ plot(t,ESTIMATES(:,9)+sigmaBac,'--b','DisplayName','+1 \sigma boundary')
 plot(t,ESTIMATES(:,9)-sigmaBac,':b','DisplayName','-1 \sigma boundary')
 hold off
 ylabel('biomass X_{bac} [g/L]')
-title('Estimated and true biomass concentration')
+title('Estimated and true biomass from abs. coordinates')
 legend()
 
 % in normalized coordinates:
@@ -450,7 +464,7 @@ plot(t,xUKFDeNorm(:,9)+sigmaBacDeNorm,'--b','DisplayName','+1 \sigma boundary')
 plot(t,xUKFDeNorm(:,9)-sigmaBacDeNorm,':b','DisplayName','-1 \sigma boundary')
 hold off
 ylabel('biomass X_{bac} [g/L]')
-title('Estimated and true biomass concentration')
+title('Estimated and true biomass from norm. coordinates')
 legend()
 
 %% Plot trajectories of relevant states: 
@@ -535,51 +549,3 @@ xlabel('time [d]')
 % legend('Location','NorthEast'); 
 
 sgtitle('Comparison of true and UKF-estimates of states')
-
-%% plot results of both UKF and EKF: 
-load('EKF_R4_frac_norm.mat'); 
-yEKFdeNorm = EKF.yEKFdeNorm; 
-
-fig1 = figure();
-% gas volume flow: 
-subplot(2,1,1)
-scatter(tMeas,MESS.yMeas(:,1)/24,'.', 'DisplayName','measurement', ...
-    'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
-hold on; 
-plot(tMeas,yClean(:,1)/24,'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
-plot(t,yEKFdeNorm(:,1)/24,'DisplayName','EKF estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(5), 'LineWidth',1);  
-plot(t,yUKFDeNorm(:,1)/24,'DisplayName','UKF estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',1);  
-ylim([0,15])
-ylabel('gas vol flow [l/h]')
-yyaxis right
-stairs([tEvents;tMeas(end)], [feedVolFlow;feedVolFlow(end)]./24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
-set(gca, "YColor", 'k')     % make right y-axis black 
-legend()
-
-% TS: 
-subplot(2,1,2)
-scatter(tMeas,MESS.yMeas(:,5),'.', 'DisplayName','measurements', ...
-    'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1);
-hold on; 
-plot(tMeas,yClean(:,5),'DisplayName','clean model output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5)
-plot(t,yEKFdeNorm(:,5),'DisplayName','EKF estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(5), 'LineWidth',1);  
-plot(t,yUKFDeNorm(:,5),'DisplayName','UKF estimate',...
-     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',1);
-ylim([0,0.1])
-ylabel('total solids [-]')
-yyaxis right
-stairs([tEvents;tMeas(end)], [feedVolFlow;feedVolFlow(end)]./24, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
-set(gca, "YColor", 'k')     % make right y-axis black 
-xlabel('time [d]')
-legend()
-fontsize(fig1, 14,'points')
-

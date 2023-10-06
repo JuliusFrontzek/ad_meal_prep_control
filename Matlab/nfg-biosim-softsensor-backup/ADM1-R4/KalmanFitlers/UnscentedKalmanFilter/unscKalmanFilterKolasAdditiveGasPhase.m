@@ -1,12 +1,14 @@
 %% Version
 % (R2022b) Update 5
-% Erstelldatum: 30.08.2023
+% Erstelldatum: 06.10.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = unscKalmanFilterKolasAdditive(xOld,POld,...
+function [xPlus,PPlus] = unscKalmanFilterKolasAdditiveGasPhase(xOld,POld,...
                                 tSpan,feedInfo,yMeas,params,Q,R,f,g)
 % compute time and measurement update acc. to Joseph-version of the UKF
 % acc. to Kolas et al. (2009) with clipping wherever possible
+% only use pCH4 and gasVolFlow for gas phase estimation (no pCO2 anymore)
+yMeas = yMeas([1,2,4:end]); 
 
 global counterSigmaInit
 global counterSigmaProp
@@ -145,7 +147,8 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma' + Q;
 %% Derive Sigma-Measurements and aggregate them:
 Y = nan(q,nSigmaPoints);    % allocate memory
 for mm = 1:nSigmaPoints
-    Y(:,mm) = g(sigmaXProp(:,mm),c); 
+    fullOutput = g(sigmaXProp(:,mm),c);
+    Y(:,mm) = fullOutput([1,2,4:end]); % exclude pCO2
 end
 % aggregate outputs of sigma points in overall output:
 yAggregated = sum(Wx.*Y,2);
@@ -154,6 +157,7 @@ yAggregated = sum(Wx.*Y,2);
 
 % compute cov. matrix of output Pyy:
 diffYFromSigmaOutputs = Y - yAggregated; 
+R = R([1,2,4:end],[1,2,4:end]); % exclude pCO2
 Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R;
 
 % compute cross covariance matrix states/measurements:

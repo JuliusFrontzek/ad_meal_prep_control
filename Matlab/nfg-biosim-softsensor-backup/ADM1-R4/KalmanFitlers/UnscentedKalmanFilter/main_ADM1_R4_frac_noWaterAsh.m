@@ -5,9 +5,8 @@
 
 % create the MESS-vector (synthetic measurement data) for Kalman Filtering. 
 % Modell: ADM1-R4-frac_noWater (no water, no ash, but 2 carbohydrate fractions)
-% use model in normalized coordinates.
 
-addpath('modelEquations/');
+addpath('modelEquations/')
 
 clc
 clear
@@ -145,8 +144,8 @@ thS = sym('th', [6,1]);  % 6 time-variant parameters (theta)
 cS = sym('c', [21,1]);   % 21 known & constant time-invariant parameters 
 aS = sym('a', [10,7]);% petersen matrix with stoichiometric constants
 
-dynamics = BMR4_AB_frac_noWater_ode_sym(xS, uS, xiS, thS, cS, aS); % symbolic object
-outputs = BMR4_AB_frac_noWater_mgl_sym(xS,cS); 
+dynamics = BMR4_AB_frac_noWaterAsh_ode_sym(xS, uS, xiS, thS, cS, aS); % symbolic object
+outputs = BMR4_AB_frac_noWaterAsh_mgl_sym(xS,cS); 
 
 % transform into numeric function handle. Note that the independet
 % variables are explicitely defined. Their order must be followed when 
@@ -162,52 +161,8 @@ odeFunSS = @(t,x) f(x,feedVolFlowSS,xIn,thNum,cNum,aNum);
 x0Init = xSS(end,:)';   % start actual simulation in steady state
 x0 = x0Init; 
 
-%% derive normalized system equations
-xNormS      = sym('xNorm', [10 1]);  % normalized states as col. vector
-syms uNorm real;                     % normalized input
-xiNormS     = sym('xi', [10,1]);     % normalized inlet concentrations 
-TxS         = sym('Tx', [10,1]);     % normalization matrix for states
-TyS         = sym('Ty', [ 6,1]);     % normalization matrix for outputs
-syms Tu real                         % normalization variable for input
-
-dynamicsNorm = BMR4_AB_frac_noWater_norm_ode_sym(xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu); 
-outputsNorm = BMR4_AB_frac_noWater_norm_mgl_sym(xNormS, cS, TxS, TyS); 
-
-% turn into numeric function handles: 
-fNorm       = matlabFunction(dynamicsNorm, 'Vars', {xNormS, uNorm, xiNormS, thS, cS, aS, TxS, Tu}); 
-gNorm       = matlabFunction(outputsNorm,  'Vars', {xNormS, cS, TxS, TyS}); 
-
-% define numeric values for normalization with steady state: 
-TxNum       = x0;    % ensure no numeric rounoff errors lead to neg. concentrations!
-y0          = g(x0,cNum);    % steady state output
-TyNum       = y0; 
-TuNum       = feedVolFlowSS; 
-% summarize in stuct to save them: 
-TNum        = struct; 
-TNum.Tx     = TxNum; 
-TNum.Ty     = TyNum; 
-TNum.Tu     = TuNum;
-
-% normalization of simulation inputs:
-uNorm       = feedVolFlowSS./TuNum; 
-x0SSNorm    = x0SS./TxNum; 
-xInNorm     = xIn./TxNum; 
-
-% simulate transition into steady state in normalized coordinates: 
-odeFunNormSS = @(t,xNorm) fNorm(xNorm,uNorm,xInNorm,thNum,cNum,aNum,TxNum,TuNum); 
-[tVecSSNormSym,xSSNormSym] = ode15s(odeFunNormSS,tSpanSS,x0SSNorm);
-x0InitNorm  = xSSNormSym(end,:);
-x0Norm      = x0InitNorm; 
-
-% compute normalized system output at steady state: 
-ySSNorm     = gNorm(xSSNormSym(end,:)', cNum, TxNum, TyNum); 
-
-% perform de-normalization to check if normalization works properly: 
-xSSDeNorm   = repmat(TxNum',size(xSSNormSym,1),1).*xSSNormSym;
-ySSDeNorm   = TyNum.*ySSNorm;
-
 %% Solve ODE via iterative solution of constant feeding regimes (on or off)
-xSimNorm = zeros(length(tOverall), nStates);% allocate memory
+xSim = zeros(length(tOverall), nStates);% allocate memory
 tSim = zeros(length(tOverall),1);       % allocate memory
 
 % integrate ODEs for each interval (=time when feeding constantly =on or
@@ -227,12 +182,7 @@ for cI = 1:nIntervals
     % split into current values of feedVolFlow and xIn: 
     feedVolFlowCurr = inputVector(1); 
     xInCurr = inputVector(2:end)'; 
-
-    % apply normalization:
-    uCurrNorm   = feedVolFlowCurr./TuNum; % inputs
-    xInCurrNorm = xInCurr./TxNum;       % normalization of inlet concentrations just like state normalization
-
-    odeFunNorm = @(t,xNorm) fNorm(xNorm,uCurrNorm,xInCurrNorm,thNum,cNum,aNum,TxNum,TuNum); 
+    odeFun = @(t,x) f(x,feedVolFlowCurr,xInCurr,thNum,cNum,aNum); 
     
     % Construct time vector for ODE (t_ode) by filtering of tOverall:
     idxTimeInterval = (tOverall >= tCurrent & tOverall <= tNext);
@@ -240,36 +190,32 @@ for cI = 1:nIntervals
     if length(t_ode) == 2   % in this case, the solver would interpret 
         % t_ode as a time span and choose integration time points on his own
         t_ode   = linspace(t_ode(1), t_ode(end), 3);    % request to evaluate at exactly 3 time points
-        [tVec, solVec] = ode15s(odeFunNorm, t_ode, x0Norm);
+        [tVec, solVec] = ode15s(odeFun, t_ode, x0);
         % of the 3 time points evaluated, only save 2 (first and last):
-        xSimNorm(idxTimeInterval,:) = solVec([1 end], :);  
+        xSim(idxTimeInterval,:) = solVec([1 end], :);  
         tSim(idxTimeInterval) = tVec([1 end]);
     else    % t_ode has more than two time instants, which are the times 
         % when the integration is evaluated:
-        [tVec, solVec] = ode15s(odeFunNorm, t_ode, x0Norm); % Returns >= 3 values
-        xSimNorm(idxTimeInterval,:) = solVec;
+        [tVec, solVec] = ode15s(odeFun, t_ode, x0); % Returns >= 3 values
+        xSim(idxTimeInterval,:) = solVec;
         tSim(idxTimeInterval) = tVec;
     end
     
-    x0Norm = solVec(end, :);    % update initial value for next interval
+    x0 = solVec(end, :);    % update initial value for next interval
 end
 toc
 
 % Evaluate xSol only in tGrid, discard the rest
 idxGrid = ismember(tOverall, tGrid); 
-xSolNorm = xSimNorm(idxGrid,:);
+xSol = xSim(idxGrid,:);
 
 %% compute output variables
-N = size(xSolNorm,1);    % number of survived sampling points
+N = size(xSol,1);    % number of survived sampling points
 q = 4;   
-yCleanNorm = zeros(N,q); % allocate memory
+yClean = zeros(N,q); % allocate memory
 for k = 1:N
-    yCleanNorm(k,:) = gNorm(xSolNorm(k,:)',cNum, TxNum, TyNum)'; % Simons Implementierung (arXiv)
+    yClean(k,:) = g(xSol(k,:)',cNum)'; % Simons Implementierung (arXiv)
 end
-
-%% de-normalize states and outputs
-xSol = repmat(TxNum',N,1).*xSolNorm;
-yClean = repmat(TyNum',N,1).*yCleanNorm;
 
 %% add noise to measurements acc to sensor data sheets
  
@@ -403,14 +349,18 @@ sgtitle('clean and noisy measurements from ADM1-R4-frac-noWater')
 %% save results in struct MESS: 
 MESS.t = tGrid; 
 MESS.x0 = x0Init; 
-MESS.x = xSol;
-MESS.xNorm = xSolNorm;      % normalized state trajectories
-MESS.x0Norm = x0InitNorm;   % normalized initial state
-% MESS.xSim = [tSim,xSimNorm]; 
+MESS.x = xSol; 
+MESS.xSim = [tSim,xSim]; 
 MESS.inputMat = [tEvents, feedVolFlow, xInMat];    % u in [L/d]
-MESS.yClean = yClean;
-MESS.yCleanNorm = yCleanNorm;  
+MESS.yClean = yClean;  
 MESS.yMeas = yMeas; 
-MESS.R = noiseCovMat; % accurate values from sensor data sheets
+MESS.C = noiseCovMat; % accurate values from sensor data sheets
 
-save('Messung_ADM1_R4_frac_noWater_norm.mat', 'MESS', 'params', 'TNum')
+% create sub-folder (if non-existent yet) and save results there
+currPath = pwd; 
+pathToResults = fullfile(currPath,'generatedOutput');
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+fileName = 'Messung_ADM1_R4_frac_noWaterAsh.mat'; 
+save(fullfile(pathToResults,fileName), 'MESS', 'params')
