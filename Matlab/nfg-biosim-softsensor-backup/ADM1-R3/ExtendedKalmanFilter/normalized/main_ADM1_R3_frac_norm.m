@@ -23,8 +23,8 @@ systemInput = input.ADM1_R3.Variables;
 parameters = parameters.ADM1_R3.Variables; % modelParameters
 
 % extract system parameter values: 
-Vl = s(1);  % gas volume
-Vg = s(2);  % liquid volume
+Vl = s(1)*1E-3;  % gas volume % unit change [l] -> [m³]
+Vg = s(2)*1E-3;  % gas volume % unit change [l] -> [m³]
 % p0 = s(3);  % atmospheric pressure [bar] XY: Achtung: Typo im GitHub
 p0 = 1.0133; 
 
@@ -120,7 +120,7 @@ aNum = [0.6555, 0.081837, 0.2245,  0.016932, 0.057375, -1,      0,      0,      
         0,      0,       -1,       0,        0,         0,      0,      0,      0,      0,      0, 0, 0, 0, 0, 0, 0,    c32;]';
 
 %% inlet concentrations:
-feedVolFlowSS = resultsSoeren.input(2); 
+feedVolFlowSS = resultsSoeren.input(2)*1E-3;  % unit change [l/d] -> [m³/d]
 xInPre = resultsSoeren.input(3:end)';  % obtain old, preliminary value
 % beachte: in Sörens GitHub sind die Start- und Eingangswerte der Ionen 
 % fehlerhafterweise verkehrtrum definiert. Er würde gerne die Reihenfolge
@@ -201,7 +201,7 @@ tOverall = unique([tGrid; tEvents]);% Join and sort timestamps
 % steady state but with no feeding first)
 nIntervals = length(tEvents); 
 [~,idxFeedOn] = ismember(tFeedOn,tEvents); 
-feedMax = 10*24;  % max. feed volume flow [l/h] converted to [l/d]
+feedMax = 10*24*1E-3;  % max. feed volume flow. unit change [l/h] -> [m³/d]
 feedFactors = [70,30]'/100; 
 portions = feedFactors*feedMax; % [l/d]         	
 % steady state feed volume flow [l/d] should be the average of what is fed
