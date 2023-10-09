@@ -1,6 +1,6 @@
 %% SPI - II - Übung 4 - DAS Kalman Filter
 
-close all
+% close all
 clear all
 clc
 
@@ -157,17 +157,17 @@ testParamValue = 0;     % nur um zu sehen, ob man der Messgleichung auf zusätzli
 
 %% UKF acc. to Matlab Toolbox
 
-ukf = unscentedKalmanFilter(@StateTransitionFcn,@MeasurementFcn,x_hat_CKF, ...
+ukf = unscentedKalmanFilter(@StateTransitionFcn,@MeasurementFcn,xMinusUKFAdd, ...
     'HasAdditiveProcessNoise',true, 'HasAdditiveMeasurementNoise',true, ...
     'MeasurementNoise',R, 'ProcessNoise',Q);
 
 %% SR-UKF van der Merwe (2001)
 
 % funktioniert:
-S0 = chol(P0,'lower'); 
+S0 = chol(P0,'upper'); 
 SMinusSRUKFAdd = S0;
-SQ = chol(Q,'upper'); 
-SR = chol(R,'upper'); 
+SQ = chol(Q,'lower'); 
+SR = chol(R,'lower'); 
 
 % % Probe:
 % S0 = chol(P0,'upper'); 

@@ -59,7 +59,6 @@ end
 % end
 
 %% 1.1) Choose Sigma Points
-% sqrtPOld = chol(SOld);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
 
 sigmaXInit = [xOld, repmat(xOld,1,nStates) + gamma*SOld, ...
                     repmat(xOld,1,nStates) - gamma*SOld]; 
@@ -97,23 +96,16 @@ xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 
 % perform cholupdate of PMinus (20 and 21 from vdMerwe 2001):
 % SQ = chol(Q); 
-[~,SMinusTemp] = qr(([sqrt(Wi)*(sigmaXProp(:,2:end) - xMinus), SQ'])','econ');  
+[~,SMinusTemp] = qr([sqrt(Wi)*(sigmaXProp(:,2:end) - xMinus), SQ]','econ');  
 SMinus = cholupdate(SMinusTemp, sqrt(Wc0)*(sigmaXProp(:,1) - xMinus)); % upper triangular matrix
 
-% % aggregate state error cov. matrix P:
-% diffXPriorFromSigma = sigmaXProp - xMinus; 
-% PMinusMat = (Wc.*diffXPriorFromSigma)*diffXPriorFromSigma' + Q; % adapted for additive noise case acc. to Kolas, Tab. 5
-% 
-% % compute the aggregation through a recursive sum: 
-% PMinusTemp = zeros(nStates); % initialization
-% for k = 1:nSigmaPoints
-%     PMinusTemp = PMinusTemp + Wc(k)*((sigmaXProp(:,k) - xMinus)*(sigmaXProp(:,k) - xMinus)');
-% end
-% PMinus = PMinusTemp + Q; % identical result as before!
-
 %% 2. Measurement Update (MU)
+% optional: draw new sigma point acc. to a priori estimate xMinus and thus 
+% overwrite sigmaXProp: 
+% sigmaXProp = [xMinus, repmat(xMinus,1,nStates) + gamma*SMinus, ...
+%                       repmat(xMinus,1,nStates) - gamma*SMinus]; 
 
-% omit to choose new sigma points for measurement update (acc. to Kolas,
+% or omit to choose new sigma points for measurement update (acc. to Kolas,
 % Table 4 or Vachhani 2006)!
 
 %% 2.1) Derive Sigma-Measurements and aggregate them:
@@ -127,7 +119,7 @@ yAggregated = sum(Wx.*Y,2);
 
 % perform cholupdate of PMinus (20 and 21 from vdMerwe 2001):
 % SR = chol(R); 
-[~,SyTemp] = qr(([sqrt(Wi)*(Y(:,2:end) - yAggregated), SR'])','econ');  
+[~,SyTemp] = qr([sqrt(Wi)*(Y(:,2:end) - yAggregated), SR]','econ');  
 Sy = cholupdate(SyTemp, sqrt(Wc0)*(Y(:,1) - yAggregated)); % upper triangular matrix
 
 % compute cross covariance matrix states/measurements:
@@ -153,15 +145,14 @@ K = Pxy/Sy/Sy';     % Kalman gain acc. to Arrese (2016): S is always the
 % triangular factors as well, so transposition is necessary.
 
 xPlus = xMinus + K*(yMeas - yAggregated); 
-U = K*Sy; 
+U = K*Sy'; 
 
 nColsU = size(U,2); % # columns of U
 % conduct (29) of vdMerwe (2001):
-SPlustemp = SMinus; % initialization
+SPlusTemp = SMinus; % initialization
 for k = 1:nColsU
-    SPlusTemp = cholupdate(SPlustemp, U(:,k), '-'); 
+    SPlusTemp = cholupdate(SPlusTemp, U(:,k), '-'); 
 end
 SPlus = SPlusTemp; 
-
 
 end
