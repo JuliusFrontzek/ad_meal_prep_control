@@ -37,9 +37,9 @@ nSigmaPoints = 2*nStates + 1;
 %% 1. Time Update (TU)
 
 % define scaling parameters and weights: 
-alpha = 1;  % Kolas 2009, (18)
+alpha = 1E-3;  % std. value of matlab: 1E-3; vorher 1, Kolas 2009, (18)
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
-kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
+kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
 
@@ -59,7 +59,7 @@ end
 % end
 
 %% 1.1) Choose Sigma Points
-sqrtPOld = schol(POld);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
+sqrtPOld = chol(POld);  % cholesky factorization acc. to EKF/UKF toolbox from Finland 
 
 sigmaXInit = [xOld, repmat(xOld,1,nStates) + gamma*sqrtPOld, ...
                     repmat(xOld,1,nStates) - gamma*sqrtPOld]; 
@@ -97,7 +97,14 @@ xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 
 % aggregate state error cov. matrix P:
 diffXPriorFromSigma = sigmaXProp - xMinus; 
-PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma' + Q; % adapted for additive noise case acc. to Kolas, Tab. 5
+PMinusMat = Wc.*diffXPriorFromSigma*diffXPriorFromSigma' + Q; % adapted for additive noise case acc. to Kolas, Tab. 5
+
+% compute the aggregation through a recursive sum: 
+PMinusTemp = zeros(nStates); % initialization
+for k = 1:nSigmaPoints
+    PMinusTemp = PMinusTemp + Wc(k)*((sigmaXProp(:,k) - xMinus)*(sigmaXProp(:,k) - xMinus)');
+end
+PMinus = PMinusTemp + Q; % identical result as before!
 
 %% 2. Measurement Update (MU)
 
@@ -117,10 +124,30 @@ yAggregated = sum(Wx.*Y,2);
 
 % compute cov. matrix of output Pyy:
 diffYFromSigmaOutputs = Y - yAggregated; 
-Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R;
+PyyMat = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R;
+
+% compute the aggregation through a recursive sum: 
+PyyTemp = zeros(q); % initialization
+for k = 1:nSigmaPoints
+    PyyTemp = PyyTemp + Wc(k)*((Y(:,k) - yAggregated)*(Y(:,k) - yAggregated)');
+end
+Pyy = PyyTemp + R; 
 
 % compute cross covariance matrix states/measurements:
-Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs'; 
+PxyMat = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs'; 
+
+% compute the aggregation through a recursive sum: 
+PxyTemp = zeros(nStates,q); % initialization
+for k = 1:nSigmaPoints
+    PxyTemp = PxyTemp + Wc(k)*((sigmaXProp(:,k) - xMinus)*(Y(:,k) - yAggregated)');
+end
+Pxy = PxyTemp; 
+
+% % XY: stick to Matlabs comment to start summation at 1: 
+% newDiffYFromSigmaOutputs = diffYFromSigmaOutputs(:,2:end); 
+% newDiffXPriorFromSigma = diffXPriorFromSigma(:,2:end); 
+% newWc = Wc(2:end); 
+% Pxy = (newWc.*newDiffXPriorFromSigma)*newDiffYFromSigmaOutputs'; 
 
 % PyyInv = Pyy\eye(q);     % efficient least squares
 % K = Pxy*PyyInv; 
@@ -147,18 +174,26 @@ disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusvdM - xPlus)))])
 % mind that Kolas proved the fully augmented case. For additive noise, the
 % measurement update of P-Matrix must be slightly adapted:
 diffxPlusFromSigmaX = sigmaX - xPlus; 
-PPlusReformulatedKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
+PPlusReformulatedKolasFullyAugmented = (Wc.*diffxPlusFromSigmaX)*diffxPlusFromSigmaX'; 
 % PPlusGentschTemp = Wc.*sigmaX*sigmaX'; % false implementation in ABC-Code cukf_update1.m:  P = (Xs*W*Xs.');
 PPlusReformulatedKolasAdditive = PPlusReformulatedKolasFullyAugmented + Q + K*R*K'; 
 
+% compute the aggregation through a recursive sum: 
+PPlusTemp = zeros(nStates); % initialization
+for k = 1:nSigmaPoints
+    PPlusTemp = PPlusTemp + Wc(k)*((sigmaX(:,k) - xPlus)*(sigmaX(:,k) - xPlus)');
+end
+PPlusTemp = PPlusTemp + Q + K*R*K'; 
+PPlus = 0.5*(PPlusTemp + PPlusTemp'); 
+
 % only for comparison: 
-PPlusTempvdM = PMinus - K*Pyy*K'; 
+PPlusTempvdM = PMinusMat - K*PyyMat*K'; 
 PPlusvdM = 1/2*(PPlusTempvdM + PPlusTempvdM');  % regularization
 disp(['max. Abweichung PPlus (add.): ', ...
-      num2str(max(max(abs(PPlusvdM - PPlusReformulatedKolasAdditive))))])
+      num2str(max(max(abs(PPlusvdM - PPlus))))])
 
 % make sure PPlus is symmetric:
-PPlus = 1/2*(PPlusReformulatedKolasAdditive + PPlusReformulatedKolasAdditive');   
+PPlusMat = 1/2*(PPlusReformulatedKolasAdditive + PPlusReformulatedKolasAdditive');   
 disp(['sum of PPlus diagonal (add.): ', num2str(sum(diag(PPlus)))])
 
 end
