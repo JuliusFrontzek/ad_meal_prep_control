@@ -95,7 +95,6 @@ xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 % end
 
 % perform cholupdate of PMinus (20 and 21 from vdMerwe 2001):
-% SQ = chol(Q); 
 [~,SMinusTemp] = qr([sqrt(Wi)*(sigmaXProp(:,2:end) - xMinus), SQ]','econ');  
 SMinus = cholupdate(SMinusTemp, sqrt(Wc0)*(sigmaXProp(:,1) - xMinus)); % upper triangular matrix
 
@@ -117,8 +116,7 @@ end
 %% 2.2) aggregate outputs of sigma points in overall output:
 yAggregated = sum(Wx.*Y,2);
 
-% perform cholupdate of PMinus (20 and 21 from vdMerwe 2001):
-% SR = chol(R); 
+% perform cholupdate of PMinus (20 and 21 from vdMerwe 2001): 
 [~,SyTemp] = qr([sqrt(Wi)*(Y(:,2:end) - yAggregated), SR]','econ');  
 Sy = cholupdate(SyTemp, sqrt(Wc0)*(Y(:,1) - yAggregated)); % upper triangular matrix
 
@@ -145,7 +143,7 @@ K = Pxy/Sy/Sy';     % Kalman gain acc. to Arrese (2016): S is always the
 % triangular factors as well, so transposition is necessary.
 
 xPlus = xMinus + K*(yMeas - yAggregated); 
-U = K*Sy'; 
+U = K*Sy';  % transposition because of same reason as for K
 
 nColsU = size(U,2); % # columns of U
 % conduct (29) of vdMerwe (2001):

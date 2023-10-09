@@ -112,7 +112,7 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % fully augmented case ac
 
 %% 2.1) Derive Sigma-Measurements and aggregate them:
 % not needed anymore in NLP-formulation of cUKF. Only needed for
-% QP-forulation:
+% QP-formulation:
 % Y = nan(q,nSigmaPointsAug);    % allocate memory
 % for mm = 1:nSigmaPointsAug
 %     % hier den richtigen Aufruf der Messgleichung hinzufügen!
@@ -131,28 +131,25 @@ sigmaXOpt = nan(nStates,nSigmaPointsAug);    % allocate memory
 % optimize all updated sigma points: 
 for k = 1:nSigmaPointsAug
     costFun = @(sigmaX) evaluateCUKFCostFun(sigmaX,sigmaXProp(:,k),yMeas,R,PMinus); 
+    % XY: for Terrance: insert Sensitivities here:
     % choose the old sigmaXProp as initial value for optimization:
     sigmaXOpt(:,k) = fmincon(costFun,sigmaXProp(:,k),A,b); 
 end 
 
-% this clipping should no longer be required thanks to optimization:
-% if updated sigma points violate constraints, apply clipping: 
-if any(any(sigmaXOpt < 0))
-    sigmaXOpt(sigmaXOpt < 0) = 0;
-    counterSigmaXcUKF = counterSigmaXcUKF + 1;
-end
+% % this clipping should no longer be required thanks to optimization:
+% % if updated sigma points violate constraints, apply clipping: 
+% if any(any(sigmaXOpt < 0))
+%     sigmaXOpt(sigmaXOpt < 0) = 0;
+%     counterSigmaXcUKF = counterSigmaXcUKF + 1;
+% end
 
 %% 2.5) compute posteriors:
 xPlus = sum(Wx.*sigmaXOpt,2); 
 
-% mind: although Kolas considers fully augmented case, computation of
-% posteriors remains the same, see also Vachhani, who also considers
-% additive noise case:
 diffxPlusFromSigmaX = sigmaXOpt - xPlus; 
 PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';
 
-% make sure PPlus is symmetric:
-PPlus = 1/2*(PPlusTemp + PPlusTemp');   
+PPlus = 1/2*(PPlusTemp + PPlusTemp');   % ensure symmetry 
 disp(['sum of PPlus diagonal (cUKF.): ', num2str(sum(diag(PPlus)))])
 
 end

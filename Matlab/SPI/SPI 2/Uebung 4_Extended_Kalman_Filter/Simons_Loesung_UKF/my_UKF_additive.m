@@ -143,12 +143,6 @@ for k = 1:nSigmaPoints
 end
 Pxy = PxyTemp; 
 
-% % XY: stick to Matlabs comment to start summation at 1: 
-% newDiffYFromSigmaOutputs = diffYFromSigmaOutputs(:,2:end); 
-% newDiffXPriorFromSigma = diffXPriorFromSigma(:,2:end); 
-% newWc = Wc(2:end); 
-% Pxy = (newWc.*newDiffXPriorFromSigma)*newDiffYFromSigmaOutputs'; 
-
 % PyyInv = Pyy\eye(q);     % efficient least squares
 % K = Pxy*PyyInv; 
 K = Pxy/Pyy; 

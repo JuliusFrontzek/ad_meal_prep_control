@@ -42,8 +42,9 @@ x0 = [10,75,5]';     % initial state value
 
 % Falsche Anfangsbedingung
 x_hat = [17 86 5.3]';   % (2b) ff.
-x_hat_CKF = 1.0*x_hat;
-P0 = diag([5,2,0.5]);   % (2d), selbst gewählt. Entsprechend rel. Abweichung des Anfangs-Schätzers \hat x_0 vom Anfangs-Zustand x0
+% P0 = diag([5,2,0.5]);   % (2d), selbst gewählt. Entsprechend rel. Abweichung des Anfangs-Schätzers \hat x_0 vom Anfangs-Zustand x0
+P0 = diag((x_hat - x0).^2);    % Schneider und Georgakis 
+
 
 nEval = length(t); 
 
@@ -104,7 +105,7 @@ ESTIMATESUKFFullyAug(:,1) = x_hat;
 COVARIANCEUKFFullyAug(:,1) = diag(P0);
 ESTIMATEScUKFFullyAug(:,1) = x_hat;
 COVARIANCEcUKFFullyAug(:,1) = diag(P0);
-% ESTIMATESCKF(:,1) = x_hat_CKF;
+% ESTIMATESCKF(:,1) = x_hat;
 % COVARIANCECKF(:,1) = diag(P0);
 
 xMinusEKF = x_hat;
@@ -122,7 +123,7 @@ xMinusUKFFullyAug = x_hat;
 PMinusUKFFullyAug = P0;
 xMinuscUKFFullyAug = x_hat;
 PMinuscUKFFullyAug = P0;
-xMinusCKF = x_hat_CKF;
+xMinusCKF = x_hat;
 PMinusCKF = P0;
 
 %% Tuning
@@ -149,9 +150,7 @@ ukf = unscentedKalmanFilter(@StateTransitionFcn,@MeasurementFcn,xMinusUKFAdd, ..
 
 %% SR-UKF van der Merwe (2001)
 
-% funktioniert:
-S0 = chol(P0,'upper'); 
-SMinusSRUKFAdd = S0;
+SMinusSRUKFAdd = chol(P0,'upper');
 SQ = chol(Q,'lower'); 
 SR = chol(R,'lower'); 
 
@@ -165,7 +164,7 @@ p_CKF = [0.11,0.205,0.59]; %[0.18,0.405,0.309]; % model parameters for CKF
 testParamValue = 0;     % nur um zu sehen, ob man der Messgleichung auf zusätzliche Werte übergeben kann
 
 % Set up Cubature Kalman Filter
-% ckf = trackingCKF(@StateTransitionFcn,@MeasurementFcn,x_hat_CKF, ...
+% ckf = trackingCKF(@StateTransitionFcn,@MeasurementFcn,xMinusCKF, ...
 %     'HasAdditiveProcessNoise',true, 'HasAdditiveMeasurementNoise',true, ...
 %     'MeasurementNoise',R_CKF, 'ProcessNoise',Q_CKF);
 

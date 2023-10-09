@@ -134,6 +134,7 @@ sigmaXOpt = nan(nStates,nSigmaPointsAug);    % allocate memory
 % optimize all updated sigma points: 
 for k = 1:nSigmaPointsAug
     costFun = @(sigmaX) evaluateCUKFCostFun(sigmaX,sigmaXProp(:,k),yMeas,R,PMinus); 
+    % XY: for Terrance: insert Sensitivities here:
     % choose the old sigmaXProp as initial value for optimization:
     sigmaXOpt(:,k) = fmincon(costFun,sigmaXProp(:,k),A,b); 
 end 
@@ -168,8 +169,7 @@ K = Pxy*PyyInv;
 PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX' + K*R*K'; % adapt Kolas (2009) just like for the unconstrained case
 % PPlusTemp = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; % plain computation for fully augmented case in Kolas (2009)
 
-% make sure PPlus is symmetric:
-PPlus = 1/2*(PPlusTemp + PPlusTemp');   
+PPlus = 1/2*(PPlusTemp + PPlusTemp');  % ensure symmetry 
 disp(['sum of PPlus diagonal (cUKF.): ', num2str(sum(diag(PPlus)))])
 
 end
