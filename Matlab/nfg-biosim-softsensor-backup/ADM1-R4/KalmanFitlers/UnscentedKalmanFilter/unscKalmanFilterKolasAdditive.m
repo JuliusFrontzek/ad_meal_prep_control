@@ -183,7 +183,7 @@ disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusvdM - xPlus)))])
 
 diffxPlusFromSigmaX = sigmaX - xPlus; 
 PPlusKolasFullyAugmentedCase = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
-PPlusTemp = PPlusKolasFullyAugmentedCase + Q + K*R*K'; % different formula for additive noise case!
+PPlusTemp = PPlusKolasFullyAugmentedCase + Q + K*R*K'; % actually different formula for additive noise case!
 
 % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 

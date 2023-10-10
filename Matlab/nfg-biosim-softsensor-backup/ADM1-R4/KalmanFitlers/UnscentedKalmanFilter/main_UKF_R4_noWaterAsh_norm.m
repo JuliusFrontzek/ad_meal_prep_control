@@ -75,7 +75,7 @@ COVARIANCENorm = zeros(nStates,nStates,nSamples + 1);
 
 % Initialize Kalman Filter:
 ESTIMATES(1,:) = xHat;
-P0 = eye(nStates); % XY: sicher besseres Tuning möglich
+P0 = diag((xHat-x0).^2);    % Schneider und Georgakis 
 COVARIANCE(:,:,1) = P0; 
 PMinus = P0;      % to overwrite
 % same for normalized coordinates: 
@@ -203,9 +203,9 @@ for k = 1:nSamples
     
 % ---- UKFs in norm. coordinates: -----------------------------------------
     % UKF-add-norm:
-%     [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xMinusNorm,PMinusNorm,...
-%                         tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
-%                         fNorm,gNorm,TxNum,TyNum,TuNum); 
+    [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xMinusNorm,PMinusNorm,...
+                        tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
+                        fNorm,gNorm,TxNum,TyNum,TuNum); 
     
      % UKF-aug-norm:
 %     [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAugmentedNorm(xMinusNorm,PMinusNorm,...
@@ -233,15 +233,15 @@ for k = 1:nSamples
     COVARIANCE(:,:,k+1) = PPlus; 
 %     GAIN(k,:) = Kv;     % Kalman Gain * Innovation
     % same for normalized coordinates:
-%     ESTIMATESNorm(k+1,:) = xPlusNorm'; 
-%     COVARIANCENorm(:,:,k+1) = PPlusNorm; 
+    ESTIMATESNorm(k+1,:) = xPlusNorm'; 
+    COVARIANCENorm(:,:,k+1) = PPlusNorm; 
     
     % Update for next iteration:  
     xMinus = xPlus;     % estimated state from Kalman Filter
     PMinus = PPlus;     % state error covariance matrix
     % same for normalized coordinates:
-%     xMinusNorm = xPlusNorm; 
-%     PMinusNorm = PPlusNorm; 
+    xMinusNorm = xPlusNorm; 
+    PMinusNorm = PPlusNorm; 
 
 end
 toc

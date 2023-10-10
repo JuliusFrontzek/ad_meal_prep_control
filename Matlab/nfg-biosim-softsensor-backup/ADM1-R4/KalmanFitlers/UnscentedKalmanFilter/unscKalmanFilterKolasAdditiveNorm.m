@@ -15,16 +15,6 @@ global counterSigmaPropNorm
 global counterSigmaXNorm
 global counterXNorm
 
-% counterSigmaInit = 0;
-% counterSigmaProp = 0;
-% counterSigmaX = 0; 
-% counterX = 0; 
-% counterSigmaInitNorm = 0;
-% counterSigmaPropNorm = 0;
-% counterSigmaXNorm = 0; 
-% counterXNorm = 0;
-% counterWater = 0; 
-
 % xPlusNorm - new normalized state estimate
 % PPlusNorm - new normalized state error covariance matrix
 % xOldNorm - old normalized state estimate
@@ -47,11 +37,11 @@ th = params.th;
 c = params.c; 
 a = params.a;
 
-% If xOldNorm contains negative concentrations, apply clipping: 
-if any(xOldNorm<0)
-    xOldNorm(xOldNorm < 0) = 0; 
-    counterXNorm = counterXNorm + 1;
-end 
+% % If xOldNorm contains negative concentrations, apply clipping: 
+% if any(xOldNorm<0)
+%     xOldNorm(xOldNorm < 0) = 0; 
+%     counterXNorm = counterXNorm + 1;
+% end 
 
 nStates = numel(xOldNorm); 
 q = numel(yMeas); 
@@ -64,7 +54,7 @@ alpha = 1;  % Kolas 2009, (18)
 % beta = 0; 
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
 % kappa = 3 - nStates;  % acc. to Julier & Uhlmann
-kappa = 0.5;  % leichte Abweichung zu Kolas (er nimmt 0)
+kappa = 0.0;  % Kolas nimmt 0
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
 % gamma = 0.2;  % XY just to check
@@ -82,11 +72,11 @@ sqrtPOldNorm = schol(POldNorm);  % cholesky factorization acc. to EKF/UKF toolbo
 sigmaXInitNorm = [xOldNorm, repmat(xOldNorm,1,nStates) + gamma*sqrtPOldNorm, ...
                             repmat(xOldNorm,1,nStates) - gamma*sqrtPOldNorm]; 
 
-% Apply clipping to negative Sigma Points: 
-if any(any(sigmaXInitNorm < 0))
-    sigmaXInitNorm(sigmaXInitNorm < 0) = 0; 
-    counterSigmaInitNorm = counterSigmaInitNorm + 1;
-end
+% % Apply clipping to negative Sigma Points: 
+% if any(any(sigmaXInitNorm < 0))
+%     sigmaXInitNorm(sigmaXInitNorm < 0) = 0; 
+%     counterSigmaInitNorm = counterSigmaInitNorm + 1;
+% end
 
 %% Propagate Sigma Points
 sigmaXPropNorm = nan(nStates, nSigmaPoints); % allocate memory
@@ -129,20 +119,20 @@ else
     sigmaXPropNorm = XAtEndOfIntNorm;
 end
 
-% if any propagated sigma points violate constraints, apply clipping: 
-if any(any(sigmaXPropNorm < 0))
-    sigmaXPropNorm(sigmaXPropNorm < 0) = 0; 
-    counterSigmaPropNorm = counterSigmaPropNorm + 1;
-end
+% % if any propagated sigma points violate constraints, apply clipping: 
+% if any(any(sigmaXPropNorm < 0))
+%     sigmaXPropNorm(sigmaXPropNorm < 0) = 0; 
+%     counterSigmaPropNorm = counterSigmaPropNorm + 1;
+% end
 
 %% Aggregate Sigma Points to Priors for x and P
 xMinusNorm = sum(Wx.*sigmaXPropNorm,2);  % state prior
 
-% if any state priors violate constraints, apply clipping: 
-if any(any(xMinusNorm < 0))
-    xMinusNorm(xMinusNorm < 0) = 0; 
-    counterXNorm = counterXNorm + 1;
-end
+% % if any state priors violate constraints, apply clipping: 
+% if any(any(xMinusNorm < 0))
+%     xMinusNorm(xMinusNorm < 0) = 0; 
+%     counterXNorm = counterXNorm + 1;
+% end
 
 % aggregate state error cov. matrix P:
 diffXPriorFromSigmaNorm = sigmaXPropNorm - xMinusNorm; 
@@ -179,11 +169,11 @@ KNorm = PxyNorm/PyyNorm;
 yMeasNorm = yMeas'./TyNum;   % normalized measurements
 sigmaXNorm = sigmaXPropNorm + KNorm*(repmat(yMeasNorm,1,nSigmaPoints) - YNorm);
 
-% if updated sigma points violate constraints, apply clipping: 
-if any(any(sigmaXNorm < 0))
-    sigmaXNorm(sigmaXNorm < 0) = 0;
-    counterSigmaXNorm = counterSigmaXNorm + 1; 
-end
+% % if updated sigma points violate constraints, apply clipping: 
+% if any(any(sigmaXNorm < 0))
+%     sigmaXNorm(sigmaXNorm < 0) = 0;
+%     counterSigmaXNorm = counterSigmaXNorm + 1; 
+% end
 
 %% compute posteriors:
 xPlusNorm = sum(Wx.*sigmaXNorm,2); 
@@ -198,6 +188,7 @@ disp(['max. Abweichung xPlus (add. norm.):', num2str(max(abs(xPlusNormvdM - xPlu
 diffxPlusFromSigmaXNorm = sigmaXNorm - xPlusNorm; 
 PPlusFullyAugmentedNorm = Wc.*diffxPlusFromSigmaXNorm*diffxPlusFromSigmaXNorm'; 
 PPlusTempNorm = PPlusFullyAugmentedNorm + QNorm + KNorm*RNorm*KNorm'; % different formula for additive noise case (normalized)!
+PPlusVachhaniTempNorm = PPlusFullyAugmentedNorm; % PPlus acc. to Vachhani for add. noise (normalized)
 
 % only for comparison: 
 PPlusTempNormvdM = PMinusNorm - KNorm*PyyNorm*KNorm'; 
