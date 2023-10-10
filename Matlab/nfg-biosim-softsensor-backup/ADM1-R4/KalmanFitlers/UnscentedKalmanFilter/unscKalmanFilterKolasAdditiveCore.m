@@ -189,7 +189,7 @@ PPlusVachhaniTemp = PPlusKolasFullyAugmented;
 % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 
 disp(['max. Abweichung PPlus (add.): ', ...
-      num2str(max(max(abs(PPlusTempvdM - PPlusKolasFullyAugmented))))])
+      num2str(max(max(abs(PPlusTempvdM - PPlusTemp))))])
 
 PPlus = 1/2*(PPlusTemp + PPlusTemp');   % make sure PPlus is symmetric!
 disp(['sum of PPlus diagonal (add.): ', num2str(sum(diag(PPlus)))])

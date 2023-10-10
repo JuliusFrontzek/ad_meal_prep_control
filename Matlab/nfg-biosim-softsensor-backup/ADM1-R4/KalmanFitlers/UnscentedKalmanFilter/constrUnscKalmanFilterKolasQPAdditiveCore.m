@@ -162,12 +162,13 @@ yAggregated = sum(Wx.*Y,2);
 A = -eye(nStates); 
 b = zeros(nStates,1);  
 sigmaXOpt = nan(nStates,nSigmaPoints);    % allocate memory
+options = optimoptions('quadprog','Display','none'); % suppress command window output 
 % optimize all updated sigma points: 
 for k = 1:nSigmaPoints
     % compute matrices H and f for QP-solver quadprog:
     [HMat,fTranspose] = computeQPCostFunMatrices(sigmaXProp(:,k),yMeas,R,PMinus); 
     x0QP = sigmaXProp(:,k); % initial vector for optimization
-    sigmaXOpt(:,k) = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP); 
+    sigmaXOpt(:,k) = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
 end 
 
 % this clipping should no longer be required thanks to optimization:
