@@ -57,7 +57,7 @@ beta = 2;   % for Gaussian prior (Diss vdM, S.56)
 kappa = 0.0;  % Kolas nimmt 0
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
-% gamma = 0.2;  % XY just to check
+gamma = 0.5;  % XY just to check
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
 Wx0 = lambda/(nStates + lambda); 

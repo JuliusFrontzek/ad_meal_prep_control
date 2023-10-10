@@ -81,6 +81,7 @@ PMinus = P0;      % to overwrite
 % same for normalized coordinates: 
 ESTIMATESNorm(1,:) = xHatNorm;
 P0Norm = eye(nStates);
+P0Norm = P0./(TxNum.^2); 
 COVARIANCENorm(:,:,1) = P0Norm; 
 PMinusNorm = P0Norm;  % to overwrite
 
@@ -88,7 +89,7 @@ buffer = 1.5;   % conservative safety margin of 50% for measurement noise covari
 R = buffer * MESS.R;
 % R(1,1) = 1E-2*R(1,1); 
 % fine-tuning of Kalman Filter - measurement uncertainty: 
-R(4,4) = 5E1*R(4,4);    % SIN
+% R(4,4) = 5E1*R(4,4);    % SIN
 RNorm = R./(TyNum.^2); 
 % fine-tuning: 
 % RNorm(4,4) = 3E1*RNorm(4,4);   % S_IN very noisy
@@ -96,8 +97,8 @@ RNorm = R./(TyNum.^2);
 % fine-tuning of Kalman Filter - process uncertainty: 
 Q = diag([0.016, 0.555, 0.563, 1.263, 2.654, 0.972, 2.894, 0.374, 0.948]);
 % Q = eye(nStates); 
+QNorm = eye(nStates);   % XY: sicher besser auszulegen
 QNorm = Q./(TxNum.^2); % for comparison with non-normalized case
-% QNorm = 1E-3*eye(nStates);   % XY: sicher besser auszulegen
 % QNorm = zeros(nStates); % default in ABC-Code
 
 % % include parametric plant-model mismatch: 

@@ -33,11 +33,11 @@ th = params.th;
 c = params.c; 
 a = params.a;
 
-% if xOld contains negative concentrations, apply clipping: 
-if any(xOld<0)
-    xOld(xOld < 0) = 0; 
-    counterX = counterX + 1;
-end 
+% % if xOld contains negative concentrations, apply clipping: 
+% if any(xOld<0)
+%     xOld(xOld < 0) = 0; 
+%     counterX = counterX + 1;
+% end 
 
 nStates = numel(xOld); 
 q = numel(yMeas); 
@@ -54,7 +54,7 @@ kappa = 0.05;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 % lambda = 1;     % Vachhani
 gamma = sqrt(nStates + lambda); % scaling parameter
-% gamma = 0.5;  % XY just to check: that delivers good estimations!
+gamma = 0.5;  % XY just to check: that delivers good estimations!
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
 Wx0 = lambda/(nStates + lambda); 
@@ -70,11 +70,11 @@ sqrtPOld = schol(POld);  % cholesky factorization acc. to EKF/UKF toolbox from F
 sigmaXInit = [xOld, repmat(xOld,1,nStates) + gamma*sqrtPOld, ...
                     repmat(xOld,1,nStates) - gamma*sqrtPOld]; 
 
-% Apply clipping to negative Sigma Points: 
-if any(any(sigmaXInit < 0))
-    sigmaXInit(sigmaXInit < 0) = 0; 
-    counterSigmaInit = counterSigmaInit + 1;
-end
+% % Apply clipping to negative Sigma Points: 
+% if any(any(sigmaXInit < 0))
+%     sigmaXInit(sigmaXInit < 0) = 0; 
+%     counterSigmaInit = counterSigmaInit + 1;
+% end
 
 %% Propagate Sigma Points
 sigmaXProp = nan(nStates, nSigmaPoints); % allocate memory
@@ -117,21 +117,20 @@ else
     sigmaXProp = XAtEndOfInt;
 end
 
-% if any propagated sigma points violate constraints, apply clipping: 
-if any(any(sigmaXProp < 0))
-    sigmaXProp(sigmaXProp < 0) = 0; 
-    counterSigmaProp = counterSigmaProp + 1;
-end
+% % if any propagated sigma points violate constraints, apply clipping: 
+% if any(any(sigmaXProp < 0))
+%     sigmaXProp(sigmaXProp < 0) = 0; 
+%     counterSigmaProp = counterSigmaProp + 1;
+% end
 
 %% Aggregate Sigma Points to Priors for x and P
 xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 
-% if any state priors violate constraints, apply clipping:
-
-if any(any(xMinus < 0))
-    xMinus(xMinus < 0) = 0; 
-    counterX = counterX + 1; 
-end
+% % if any state priors violate constraints, apply clipping:
+% if any(any(xMinus < 0))
+%     xMinus(xMinus < 0) = 0; 
+%     counterX = counterX + 1; 
+% end
 
 % aggregate state error cov. matrix P:
 diffXPriorFromSigma = sigmaXProp - xMinus; 
@@ -167,11 +166,11 @@ K = Pxy/Pyy;
 % use alternative formulation of Kolas 2009, eq. (23):
 sigmaX = sigmaXProp + K*(repmat(yMeas',1,nSigmaPoints) - Y);
 
-% if updated sigma points violate constraints, apply clipping: 
-if any(any(sigmaX < 0))
-    sigmaX(sigmaX < 0) = 0;
-    counterSigmaX = counterSigmaX + 1;
-end
+% % if updated sigma points violate constraints, apply clipping: 
+% if any(any(sigmaX < 0))
+%     sigmaX(sigmaX < 0) = 0;
+%     counterSigmaX = counterSigmaX + 1;
+% end
 
 %% compute posteriors:
 xPlus = sum(Wx.*sigmaX,2); 
