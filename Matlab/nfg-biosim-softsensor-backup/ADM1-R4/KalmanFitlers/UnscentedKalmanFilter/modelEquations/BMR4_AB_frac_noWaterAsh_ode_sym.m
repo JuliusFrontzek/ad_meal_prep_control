@@ -1,4 +1,4 @@
-function f = BMR4_AB_frac_noWater_ode_sym(x, u, xi, th, c, a)
+function f = BMR4_AB_frac_noWaterAsh_ode_sym(x, u, xi, th, c, a)
 % delivers a symbolic expression (f) of the right-hand side of the 
 % homogeneous ODE system of the BMR4+AB-frac_noWater (no water, no ash, but
 % 2 CH fractions) with constant values for u and xin 
