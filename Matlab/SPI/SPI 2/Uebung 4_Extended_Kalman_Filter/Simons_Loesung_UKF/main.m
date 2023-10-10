@@ -1,6 +1,6 @@
 %% SPI - II - Übung 4 - DAS Kalman Filter
 
-% close all
+close all
 clear all
 clc
 
@@ -190,6 +190,7 @@ for time = t0:dt:tend
     [xPlusSRUKFAdd,SPlusSRUKFAdd] = my_SR_UKF_additive(xMinusSRUKFAdd,SMinusSRUKFAdd,u(i),yMeas,tSpan,p_KF,SQ,SR);
     [xPlusUKF_sysID,PPlusUKF_sysID] = my_UKF(ukf,u(i),yMeas,tSpan,p_KF,testParamValue);
     [xPluscUKFAdd,PPluscUKFAdd] = my_cUKF_additive(xMinuscUKFAdd,PMinuscUKFAdd,u(i),yMeas,tSpan,p_KF,Q,R);
+%     [xPluscUKFAdd,PPluscUKFAdd] = my_cUKF_QP_additive(xMinuscUKFAdd,PMinuscUKFAdd,u(i),yMeas,tSpan,p_KF,Q,R); 
     [xPlusUKFAug,PPlusUKFAug] = my_UKF_augmented(xMinusUKFAug,PMinusUKFAug,u(i),yMeas,tSpan,p_KF,Q,R);
 %     [xPluscUKFAug,PPluscUKFAug] = my_cUKF_augmented(xMinuscUKFAug,PMinuscUKFAug,u(i),yMeas,tSpan,p_KF,Q,R);
     [xPlusUKFFullyAug,PPlusUKFFullyAug] = my_UKF_fullyAugmented(xMinusUKFFullyAug,PMinusUKFFullyAug,u(i),yMeas,tSpan,p_KF,Q,R);

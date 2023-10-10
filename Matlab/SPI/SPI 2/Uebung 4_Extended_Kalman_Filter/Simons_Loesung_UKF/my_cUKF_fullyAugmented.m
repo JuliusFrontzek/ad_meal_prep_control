@@ -130,7 +130,7 @@ b = zeros(nStates,1);
 sigmaXOpt = nan(nStates,nSigmaPointsAug);    % allocate memory
 % optimize all updated sigma points: 
 for k = 1:nSigmaPointsAug
-    costFun = @(sigmaX) evaluateCUKFCostFun(sigmaX,sigmaXProp(:,k),yMeas,R,PMinus); 
+    costFun = @(sigmaX) evaluateCUKF_NLPCostFun(sigmaX,sigmaXProp(:,k),yMeas,R,PMinus); 
     % XY: for Terrance: insert Sensitivities here:
     % choose the old sigmaXProp as initial value for optimization:
     sigmaXOpt(:,k) = fmincon(costFun,sigmaXProp(:,k),A,b); 
