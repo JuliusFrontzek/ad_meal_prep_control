@@ -1,6 +1,7 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 1.10.2023
+% last modified: 07.10.2023
 % Autor: Simon Hellmann
 
 % create the MESS-vector (synthetic measurement data) for Kalman Filtering. 
@@ -32,9 +33,9 @@ k_La    = 200;     % mass transfer coefficient [1/d]
 k_p     = 5e4;     % friction parameter [L/bar/d]
 
 T_op    = 273.15;  % operating temperature [K]
-V_liq   = 100;     % liquid volume, aus Sörens GitHub [L]
-V_gas   = 10;      % gas volume, aus Sörens GitHub [L]
-rho_liq = 1000;    % mass density of digestate [g/L]
+V_liq   = 100E-3;  % liquid volume, aus Sörens GitHub [m3]
+V_gas   = 10E-3;   % gas volume, aus Sörens GitHub [m3]
+rho_liq = 1000;    % mass density of digestate [kg/m3]
 M_ch4   = 16;      % molar mass CH4 [kg/kmol]
 M_co2   = 44;      % molar mass CO2 [kg/kmol]
 
@@ -77,7 +78,7 @@ aNum = [0.2482, 0.6809,   0.0207,     0.0456,    -1,      0,      0,       0.137
 
 % inlet concentrations [GitHub Sören], vmtl. Rindergülle
 %          S_ch4, S_IC,S_IN,  S_h2o,   X_ch,   X_pr,  X_li,  X_bac, X_ash,  S_ch4,g, S_co2,g
-xIn     = [0,     0,   0.592, 960.512, 23.398, 4.75,  1.381, 0,     17,     0,       0]'; % [g/L]
+xIn     = [0,     0,   0.592, 960.512, 23.398, 4.75,  1.381, 0,     17,     0,       0]'; % [kg/m3]
 % xAshIn = 17 selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
 
 % combine constant parameters in struct: 
@@ -113,7 +114,7 @@ tOverall    = unique([tGrid; tEvents]); % Join and sort timestamps
 % steady state but with no feeding first)
 nIntervals  = length(tEvents); 
 [~,idxFeedOn] = ismember(tFeedOn,tEvents); 
-feedMax     = 10*24;  % max. feed volume flow [L/h] converted to [L/d]
+feedMax     = 10*24*1E-3;  % max. feed volume flow [L/h] converted to [m3/d]
 feedFactors = [70,30]'/100; 
 portions    = feedFactors*feedMax; % [L/d]         	
 % steady state feed volume flow [L/d] should be the average of what is fed
@@ -285,10 +286,10 @@ VSClean     = yClean(:,6);
  
 % define std. deviations of sensors assuming zero mean (see Übersicht_Messrauschen.xlsx):
 % sigmaV = 0.08*1000;    % Trommelgaszähler FBGA [m³/h] -> [L/h]
-sigmaV      = 0.2*24;   % Trommelgaszähler Labor [L/h] -> [L/d]
+sigmaV      = 0.2*24*1E-3;   % Trommelgaszähler Labor [L/h] -> [m3/d]
 sigmaCh4    = 0.2/100;  % [Vol-%] -> [-]; für ideale Gase und p_atm ungefähr 1 bar: -> [bar]
 sigmaCo2    = 0.2/100;  % [Vol-%] -> [-]; für ideale Gase und p_atm ungefähr 1 bar: -> [bar]
-sigmaSIN    = 0.12;     % NH4-N [g/L]
+sigmaSIN    = 0.12;     % NH4-N [kg/m3]
 sigmaTS     = 1.73/100; % Trockenschrank großer Tiegel [%] -> [-]
 sigmaVS     = 0.31/100; % [%] -> [-]
 % combine all in sigma matrix and covariance matrix:
@@ -318,18 +319,18 @@ figure()
 
 % gas volume flow: 
 subplot(3,2,1)
-scatter(tGrid,yMeas(:,1)/24,'.','DisplayName','noisy', 'MarkerEdgeColor',colorPaletteHex(1), 'LineWidth',1);
-% scatter(tGrid,yMeas(:,1)/24,'DisplayName','noisy',...
+scatter(tGrid,yMeas(:,1),'.','DisplayName','noisy', 'MarkerEdgeColor',colorPaletteHex(1), 'LineWidth',1);
+% scatter(tGrid,yMeas(:,1),'DisplayName','noisy',...
 %         'Marker','.', 'MarkerEdgeColor', colorPaletteHex(1), 'LineWidth',1.5); 
 hold on; 
-plot(tGrid,yClean(:,1)/24,'DisplayName','clean',...
+plot(tGrid,yClean(:,1),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
-ylabel('gas vol flow [L/h]')
+ylabel('gas vol flow [m3/d]')
 yyaxis right
-stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
 set(gca, "YColor", 'k')     % make right y-axis black 
-ylabel('feed vol flow [L/h]')
+ylabel('feed vol flow [m3/d]')
 legend('Location','NorthEast'); 
 
 % pch4: 
@@ -342,10 +343,10 @@ plot(tGrid,yClean(:,2),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('p_{ch4} in bar')
 yyaxis right
-stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
 set(gca, "YColor", 'k')     % make right y-axis black 
-ylabel('feed vol flow [L/h]')
+ylabel('feed vol flow [m3/d]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
@@ -359,10 +360,10 @@ plot(tGrid,yClean(:,3),'DisplayName','clean',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5);
 ylabel('p_{co2} in bar')
 yyaxis right
-stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
 set(gca, "YColor", 'k')     % make right y-axis black 
-ylabel('feed vol flow [L/h]')
+ylabel('feed vol flow [m3/d]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
@@ -374,12 +375,12 @@ scatter(tGrid,yMeas(:,4),'.', 'DisplayName','noisy', 'MarkerEdgeColor',colorPale
 hold on; 
 plot(tGrid,yClean(:,4),'r',...
      'LineWidth',1.2,'DisplayName','clean')
-ylabel('inorg. nitrogen in g/L')
+ylabel('inorg. nitrogen in kg/m3')
 yyaxis right
-stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
 set(gca, "YColor", 'k')     % make right y-axis black 
-ylabel('feed vol flow [L/h]')
+ylabel('feed vol flow [m3/d]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
@@ -394,10 +395,10 @@ plot(tGrid,yClean(:,5),'DisplayName','clean',...
 ylabel('total solids [-]')
 xlabel('time [d]')
 yyaxis right
-stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
 set(gca, "YColor", 'k')     % make right y-axis black 
-ylabel('feed vol flow [L/h]')
+ylabel('feed vol flow [m3/d]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 
@@ -412,10 +413,10 @@ plot(tGrid,yClean(:,6),'DisplayName','clean',...
 ylabel('volatile solids [-]')
 xlabel('time [d]')
 yyaxis right
-stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
 set(gca, "YColor", 'k')     % make right y-axis black 
-ylabel('feed vol flow [L/h]')
+ylabel('feed vol flow [m3/d]')
 legend('Location','NorthEast'); 
 set(gca, "YColor", 'k')
 

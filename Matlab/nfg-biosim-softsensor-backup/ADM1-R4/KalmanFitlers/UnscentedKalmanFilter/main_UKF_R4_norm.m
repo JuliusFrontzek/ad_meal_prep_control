@@ -79,12 +79,13 @@ COVARIANCENorm = zeros(nStates,nStates,nSamples + 1);
 
 % Initialize Kalman Filter:
 ESTIMATES(1,:) = xHat;
-P0 = eye(nStates); % XY: sicher besseres Tuning möglich
+% P0 = eye(nStates); % XY: sicher besseres Tuning möglich
+P0 = diag((xHat-x0).^2);    % Schneider und Georgakis 
 COVARIANCE(:,:,1) = P0; 
 PMinus = P0;          % to overwrite
 % same for normalized coordinates: 
 ESTIMATESNorm(1,:) = xHatNorm;
-P0Norm = eye(nStates)./(TxNum.^2); % for comparison with non-normalized case
+P0Norm = P0./(TxNum.^2); % for comparison with non-normalized case
 COVARIANCENorm(:,:,1) = P0Norm; 
 PMinusNorm = P0Norm;  % to overwrite
 
@@ -98,9 +99,9 @@ RNorm = R./(TyNum.^2);
 % fine-tuning: 
 % RNorm = eye(6); 
 % RNorm(1:3,1:3) = 1E-1*eye(3);
-RNorm(4,4) = 3E1*RNorm(4,4);   % IN very noisy
-RNorm(5,5) = 1E2*RNorm(5,5);   % TS very noisy
-RNorm(6,6) = 1E-2*RNorm(6,6);  % VS not so noisy
+% RNorm(4,4) = 3E1*RNorm(4,4);   % IN very noisy
+% RNorm(5,5) = 1E2*RNorm(5,5);   % TS very noisy
+% RNorm(6,6) = 1E-2*RNorm(6,6);  % VS not so noisy
 
 % fine-tuning of Kalman Filter - process uncertainty: 
 Q = diag([0.016, 0.555, 0.563, 958.4, 1.263, 2.654, 0.972, 2.894, 10, 0.374, 0.948]);
@@ -198,18 +199,18 @@ for k = 1:nSamples
 %                     tSpan,feedInfo,yMeas,params,Q,R,f,g);
     
     % UKF-add-norm:
-%     [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xMinusNorm,PMinusNorm,...
-%                     tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
-%                     fNorm,gNorm,TxNum,TyNum,TuNum); 
+    [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAdditiveNorm(xMinusNorm,PMinusNorm,...
+                    tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
+                    fNorm,gNorm,TxNum,TyNum,TuNum); 
     
     % UKF-aug:
     [xPlus,PPlus] = unscKalmanFilterKolasAugmented(xMinus,PMinus,...
                     tSpan,feedInfo,yMeas,params,Q,R,f,g);
 
     % UKF-aug-norm:
-    [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAugmentedNorm(xMinusNorm,PMinusNorm,...
-                    tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
-                    fNorm,gNorm,TxNum,TyNum,TuNum); 
+%     [xPlusNorm,PPlusNorm] = unscKalmanFilterKolasAugmentedNorm(xMinusNorm,PMinusNorm,...
+%                     tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm,...
+%                     fNorm,gNorm,TxNum,TyNum,TuNum); 
 
 %     [xPlusNorm,PPlusNorm] = constrUnscKalmanFilterKolasAdditiveNorm(xMinusNorm,PMinusNorm, ...
 %                     tSpan,feedInfoNorm,yMeas,params,QNorm,RNorm, ...

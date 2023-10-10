@@ -32,7 +32,7 @@ x0 = x0Init;            % x0 will be replaced in every iteration later
 % false initial estimate (add random number but ensure positive concentrations)
 nStates = length(x0); 
 rng('default');     % fix seed for random number generation (for replicable results)
-xHat = x0Init.*abs(randn(nStates,1)); 
+xHat = x0Init.*(ones(nStates,1)) + 0.1*abs(randn(nStates,1)); 
 xMinus = xHat;      % to be overwritten
 % xMinus = x0Init;    % XY Rania
 
@@ -54,17 +54,18 @@ COVARIANCE = zeros(nStates,nStates,nSamples + 1);
 
 % Initialize Kalman Filter:
 ESTIMATES(1,:) = xHat;
-P0 = eye(nStates); % XY: sicher besseres Tuning möglich
+% P0 = eye(nStates); % XY: sicher besseres Tuning möglich
+P0 = diag((xHat-x0).^2);    % Schneider und Georgakis 
 COVARIANCE(:,:,1) = P0; 
 PMinus = P0;      % to overwrite
 buffer = 1.5;   % conservative safety margin of 50% for measurement noise covariance
 R = buffer * MESS.C; 
 % Tune Kalman Filter: measurement uncertainty: 
-% R(4,4) = 1E1*R(4,4);    % SIN
+R(4,4) = 1E-2*R(4,4);    % SIN
 % R(5,5) = 5E2*R(5,5);    % TS
 % Tune Kalman Filter: process uncertainty: 
-% Q = diag([0.016, 0.555, 0.563, 958.4, 1.263, 2.654, 0.972, 2.894, 10, 0.374, 0.948]);
-Q = eye(nStates); 
+Q = diag([0.016, 0.555, 5.563, 958.4, 1.263, 2.654, 0.972, 2.894, 10, 0.374, 0.948]);
+% Q = eye(nStates); 
 
 % obtain feeding information:
 inputMat = MESS.inputMat;   % [tEvents,feed vol flow,inlet concentrations]
@@ -125,9 +126,11 @@ for k = 1:nSamples
 %     [xPlus,PPlus,Kv] = extendedKalmanFilter(xMinus,POld,tSpan,feedInfo,yMeas,params,Q,R,f,g,dfdxNew,dhdxNew); % standard EKF
     [xPlus,PPlus] = unscKalmanFilterKolasAdditive(xMinus,PMinus,...
                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-    [xPlus,PPlus] = unscKalmanFilterKolasAugmented(xMinus,PMinus,...
-                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
-    
+%     [xPlus,PPlus] = unscKalmanFilterKolasAugmented(xMinus,PMinus,...
+%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+%     [xPlus,PPlus] = constrUnscKalmanFilterKolasAdditive(xMinus,PMinus, ...
+%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+
     % save results:
     ESTIMATES(k+1,:) = xPlus';
     COVARIANCE(:,:,k+1) = PPlus; 
@@ -274,9 +277,11 @@ figure()
 
 % S_IN:
 subplot(3,1,1)
+scatter(tMeas, MESS.yMeas(:,4),'DisplayName','noisy measurements',...
+        'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+hold on; 
 plot(tMeas,trueStates(:,3),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
-hold on; 
 plot(t,ESTIMATES(:,3),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
@@ -292,10 +297,10 @@ set(gca, "YColor", 'k')     % make right y-axis black
 
 % X_ch:
 subplot(3,1,2)
-plot(tMeas,trueStates(:,4),'DisplayName','true',...
+plot(tMeas,trueStates(:,5),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
 hold on; 
-plot(t,ESTIMATES(:,4),'DisplayName','estimate',...
+plot(t,ESTIMATES(:,5),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('X_{ch} [g/L]')
@@ -309,10 +314,10 @@ xlabel('time [d]')
 
 % X_bac:
 subplot(3,1,3)
-plot(tMeas,trueStates(:,7),'DisplayName','true',...
+plot(tMeas,trueStates(:,8),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHex(2), 'LineWidth',1.5); 
 hold on; 
-plot(t,ESTIMATES(:,7),'DisplayName','estimate',...
+plot(t,ESTIMATES(:,8),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
 ylabel('X_{bac} [g/L]')
