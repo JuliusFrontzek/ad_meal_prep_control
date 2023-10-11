@@ -179,7 +179,7 @@ xPlus = sum(Wx.*sigmaX,2);
 % only for comparison: 
 Kv = K*(yMeas' - yAggregated);
 xPlusvdM = xMinus + Kv; % standard formulation of vdMerwe
-disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusvdM - xPlus)))])
+% disp(['max. Abweichung xPlus (add.):', num2str(max(abs(xPlusvdM - xPlus)))])
 
 diffxPlusFromSigmaX = sigmaX - xPlus; 
 PPlusKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
@@ -188,10 +188,10 @@ PPlusVachhaniTemp = PPlusKolasFullyAugmented;
 
 % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 
-disp(['max. Abweichung PPlus (add.): ', ...
-      num2str(max(max(abs(PPlusTempvdM - PPlusTemp))))])
+% disp(['max. Abweichung PPlus (add.): ', ...
+%       num2str(max(max(abs(PPlusTempvdM - PPlusTemp))))])
 
 PPlus = 1/2*(PPlusTemp + PPlusTemp');   % make sure PPlus is symmetric!
-disp(['sum of PPlus diagonal (add.): ', num2str(sum(diag(PPlus)))])
+% disp(['sum of PPlus diagonal (add.): ', num2str(sum(diag(PPlus)))])
 
 end
