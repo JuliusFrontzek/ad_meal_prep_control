@@ -65,48 +65,6 @@ COVARIANCEcUKFQP = zeros(nStates,nStates,nSamples + 1);
 COVARIANCECKF = zeros(nStates,nStates,nSamples + 1);
 COVARIANCEEKF = zeros(nStates,nStates,nSamples + 1);
 
-% Initialize Kalman Filters:
-xMinusUKFAdd = xHat;      % to be overwritten
-% xMinus = x0Init;    % XY Rania
-xMinusUKF_sysID = xMinusUKFAdd;
-xMinusUKFAug = xMinusUKFAdd;
-xMinusUKFFullyAug = xMinusUKFAdd;
-xMinusSRUKF = xMinusUKFAdd;
-xMinuscUKFNLP = xMinusUKFAdd; 
-xMinuscUKFQP = xMinusUKFAdd; 
-% xMinusCKF = xMinusUKF; 
-xMinusEKF = xMinusUKFAdd; 
-
-ESTIMATESUKFAdd(1,:) = xMinusUKFAdd;
-ESTIMATESUKF_sysID(1,:) = xMinusUKF_sysID;
-ESTIMATESUKFAug(1,:) = xMinusUKFAug;
-ESTIMATESUKFFullyAug(1,:) = xMinusUKFAug;
-ESTIMATESSRUKF(1,:) = xMinusSRUKF;
-ESTIMATEScUKFNLP(1,:) = xMinuscUKFNLP;
-ESTIMATEScUKFQP(1,:) = xMinuscUKFQP;
-% ESTIMATESCKF(1,:) = xMinusCKF;
-ESTIMATESEKF(1,:) = xMinusEKF;
-
-P0 = diag((xHat-x0).^2);    % Schneider und Georgakis 
-PMinusUKFAdd = P0;      % to overwrite
-PMinusUKF_sysID = PMinusUKFAdd; 
-PMinusUKFAug = PMinusUKFAdd;
-PMinusUKFFullyAug = PMinusUKFAdd;
-SMinusSRUKF = chol(PMinusUKFAdd,'upper'); 
-PMinuscUKFNLP = PMinusUKFAdd; 
-PMinuscUKFQP = PMinusUKFAdd; 
-% PMinusCKF = PMinusUKF; 
-PMinusEKF = PMinusUKFAdd; 
-
-COVARIANCEUKFAdd(:,:,1) = PMinusUKFAdd; 
-COVARIANCEUKF_sysID(:,:,1) = PMinusUKFAdd; 
-COVARIANCEUKFAug(:,:,1) = PMinusUKFAug;
-COVARIANCEUKFFullyAug(:,:,1) = PMinusUKFFullyAug;
-COVARIANCEcUKFNLP(:,:,1) = PMinuscUKFNLP; 
-COVARIANCEcUKFQP(:,:,1) = PMinuscUKFQP; 
-% COVARIANCECKF(:,:,1) = PMinusCKF; 
-COVARIANCEEKF(:,:,1) = PMinusEKF; 
-
 buffer = 1.5;   % conservative safety margin of 50% for measurement noise covariance
 R = buffer * MESS.C; 
 % Tune Kalman Filter: 
@@ -164,24 +122,68 @@ dhdx = matlabFunction(dhdxSym, 'Vars', {xS});
 %     'HasAdditiveProcessNoise',true, 'HasAdditiveMeasurementNoise',true, ...
 %     'MeasurementNoise',R, 'ProcessNoise',Q); % , 'EnableSmoothing',true
 
-%% create UKF object and tune it
-% Set up Unscented Kalman Filter
-ukf = unscentedKalmanFilter(@stateTransitionFcnADM1R4,@measurementFcnADM1R4_Core,xMinusUKFAdd, ...
-    'HasAdditiveProcessNoise',true, 'HasAdditiveMeasurementNoise',true, ...
-    'MeasurementNoise',R, 'ProcessNoise',Q); % , 'EnableSmoothing',true
-
 %% Tune SR-UKF van der Merwe (2001)
 
 SQ = chol(Q,'lower'); 
 SR = chol(R,'lower'); 
 
 %% integrate across all (online) measurement intervals (like in reality):
-nRuns = 3;         % # runs
+nRuns = 20;         % # runs
 runTime = nan(1,nRuns); % save run times per run here
 EstimatesForRMSE1 = nan(nSamples,nStates,nRuns); % analyzed algorithm 1
 EstimatesForRMSE2 = nan(nSamples,nStates,nRuns); % analyzed algorithm 2
 EstimatesForRMSE3 = nan(nSamples,nStates,nRuns); % analyzed algorithm 3
+
 for runK = 1:nRuns
+
+% Initialize Kalman Filters:
+xMinusUKFAdd = xHat;      % to be overwritten
+% xMinus = x0Init;    % XY Rania
+xMinusUKF_sysID = xMinusUKFAdd;
+xMinusUKFAug = xMinusUKFAdd;
+xMinusUKFFullyAug = xMinusUKFAdd;
+xMinusSRUKF = xMinusUKFAdd;
+xMinuscUKFNLP = xMinusUKFAdd; 
+xMinuscUKFQP = xMinusUKFAdd; 
+% xMinusCKF = xMinusUKF; 
+xMinusEKF = xMinusUKFAdd; 
+
+ESTIMATESUKFAdd(1,:) = xMinusUKFAdd;
+ESTIMATESUKF_sysID(1,:) = xMinusUKF_sysID;
+ESTIMATESUKFAug(1,:) = xMinusUKFAug;
+ESTIMATESUKFFullyAug(1,:) = xMinusUKFAug;
+ESTIMATESSRUKF(1,:) = xMinusSRUKF;
+ESTIMATEScUKFNLP(1,:) = xMinuscUKFNLP;
+ESTIMATEScUKFQP(1,:) = xMinuscUKFQP;
+% ESTIMATESCKF(1,:) = xMinusCKF;
+ESTIMATESEKF(1,:) = xMinusEKF;
+
+P0 = diag((xHat-x0).^2);    % Schneider und Georgakis 
+PMinusUKFAdd = P0;      % to overwrite
+PMinusUKF_sysID = PMinusUKFAdd; 
+PMinusUKFAug = PMinusUKFAdd;
+PMinusUKFFullyAug = PMinusUKFAdd;
+SMinusSRUKF = chol(PMinusUKFAdd,'upper'); 
+PMinuscUKFNLP = PMinusUKFAdd; 
+PMinuscUKFQP = PMinusUKFAdd; 
+% PMinusCKF = PMinusUKF; 
+PMinusEKF = PMinusUKFAdd; 
+
+COVARIANCEUKFAdd(:,:,1) = PMinusUKFAdd; 
+COVARIANCEUKF_sysID(:,:,1) = PMinusUKFAdd; 
+COVARIANCEUKFAug(:,:,1) = PMinusUKFAug;
+COVARIANCEUKFFullyAug(:,:,1) = PMinusUKFFullyAug;
+COVARIANCEcUKFNLP(:,:,1) = PMinuscUKFNLP; 
+COVARIANCEcUKFQP(:,:,1) = PMinuscUKFQP; 
+% COVARIANCECKF(:,:,1) = PMinusCKF; 
+COVARIANCEEKF(:,:,1) = PMinusEKF; 
+
+% create UKF object and tune it
+% Set up Unscented Kalman Filter
+ukf = unscentedKalmanFilter(@stateTransitionFcnADM1R4,@measurementFcnADM1R4_Core,xMinusUKFAdd, ...
+    'HasAdditiveProcessNoise',true, 'HasAdditiveMeasurementNoise',true, ...
+    'MeasurementNoise',R, 'ProcessNoise',Q); % , 'EnableSmoothing',true
+
 tic
 for k = 1:nSamples 
     
@@ -215,14 +217,14 @@ for k = 1:nSamples
 
     % ---UKFs------------------------------
     [xPlusUKF_sysID,PPlusUKF_sysID] = my_UKF_ADM1_Core(ukf,feedInfo,yMeas,tSpan,params,f,g);    
-    [xPlusUKFAdd,PPlusUKFAdd] = unscKalmanFilterKolasAdditiveCore(xMinusUKFAdd,PMinusUKFAdd,...
+%     [xPlusUKFAdd,PPlusUKFAdd] = unscKalmanFilterKolasAdditiveCore(xMinusUKFAdd,PMinusUKFAdd,...
+%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    [xPlusUKFAug,PPlusUKFAug] = unscKalmanFilterKolasAugmentedCore(xMinusUKFAug,PMinusUKFAug,...
                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPlusUKFAug,PPlusUKFAug] = unscKalmanFilterKolasAugmentedCore(xMinusUKFAug,PMinusUKFAug,...
-%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPlusUKFFullyAug,PPlusUKFFullyAug] = unscKalmanFilterKolasFullyAugmentedCore(xMinusUKFFullyAug,PMinusUKFFullyAug,...
-%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-    [xPlusSRUKF,SPlusSRUKF] = SRunscKalmanFilterAdditiveCore(xMinusSRUKF,SMinusSRUKF,...
-                            tSpan,feedInfo,yMeas,params,SQ,SR,f,g);
+    [xPlusUKFFullyAug,PPlusUKFFullyAug] = unscKalmanFilterKolasFullyAugmentedCore(xMinusUKFFullyAug,PMinusUKFFullyAug,...
+                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
+%     [xPlusSRUKF,SPlusSRUKF] = SRunscKalmanFilterAdditiveCore(xMinusSRUKF,SMinusSRUKF,...
+%                             tSpan,feedInfo,yMeas,params,SQ,SR,f,g);
 %     [xPluscUKFNLP,PPluscUKFNLP] = constrUnscKalmanFilterKolasAdditiveCore(xMinuscUKFNLP,PMinuscUKFNLP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 %     [xPluscUKFQP,PPluscUKFQP] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQP,PMinuscUKFQP, ...
@@ -235,24 +237,24 @@ for k = 1:nSamples
     
     % save results:
     EstimatesForRMSE1(k,:,runK) = xPlusUKF_sysID; % to compute RMSE later
-    EstimatesForRMSE2(k,:,runK) = xPlusUKFAdd; 
-    EstimatesForRMSE3(k,:,runK) = xPlusSRUKF; 
+    EstimatesForRMSE2(k,:,runK) = xPlusUKFAug; 
+    EstimatesForRMSE3(k,:,runK) = xPlusUKFFullyAug; 
 
     ESTIMATESEKF(k+1,:) = xPlusEKF';
     ESTIMATESUKF_sysID(k+1,:) = xPlusUKF_sysID';
-    ESTIMATESUKFAdd(k+1,:) = xPlusUKFAdd';
-%     ESTIMATESUKFAug(k+1,:) = xPlusUKFAug';
-%     ESTIMATESUKFFullyAug(k+1,:) = xPlusUKFFullyAug';
-    ESTIMATESSRUKF(k+1,:) = xPlusSRUKF; 
+%     ESTIMATESUKFAdd(k+1,:) = xPlusUKFAdd';
+%     ESTIMATESSRUKF(k+1,:) = xPlusSRUKF; 
+    ESTIMATESUKFAug(k+1,:) = xPlusUKFAug';
+    ESTIMATESUKFFullyAug(k+1,:) = xPlusUKFFullyAug';
 %     ESTIMATEScUKFNLP(k+1,:) = xPluscUKFNLP';
 %     ESTIMATEScUKFQP(k+1,:) = xPluscUKFQP';
 %     ESTIMATESCKF(k+1,:) = xPlusCKF';
     
     COVARIANCEEKF(:,:,k+1) = PPlusEKF; 
     COVARIANCEUKF_sysID(:,:,k+1) = PPlusUKF_sysID; 
-    COVARIANCEUKFAdd(:,:,k+1) = PPlusUKFAdd; 
-%     COVARIANCEUKFAug(:,:,k+1) = PPlusUKFAug; 
-%     COVARIANCEUKFFullyAug(:,:,k+1) = PPlusUKFFullyAug; 
+%     COVARIANCEUKFAdd(:,:,k+1) = PPlusUKFAdd; 
+    COVARIANCEUKFAug(:,:,k+1) = PPlusUKFAug; 
+    COVARIANCEUKFFullyAug(:,:,k+1) = PPlusUKFFullyAug; 
 %     COVARIANCEcUKFNLP(:,:,k+1) = PPluscUKFNLP;
 %     COVARIANCEcUKFQP(:,:,k+1) = PPluscUKFQP;
 %     COVARIANCECKF(:,:,k+1) = PPlusCKF; 
@@ -261,10 +263,10 @@ for k = 1:nSamples
     % ... estimated state from Kalman Filter:
     xMinusEKF = xPlusEKF;
     xMinusUKF_sysID = xPlusUKF_sysID; 
-    xMinusUKFAdd = xPlusUKFAdd;
-%     xMinusUKFAug = xPlusUKFAug;
-%     xMinusUKFFullyAug = xPlusUKFFullyAug;
-    xMinusSRUKF = xPlusSRUKF; 
+%     xMinusUKFAdd = xPlusUKFAdd;
+%     xMinusSRUKF = xPlusSRUKF;
+    xMinusUKFAug = xPlusUKFAug;
+    xMinusUKFFullyAug = xPlusUKFFullyAug; 
 %     xMinuscUKFNLP = xPluscUKFNLP;
 %     xMinuscUKFQP = xPluscUKFQP;
 %     xMinusCKF = xPlusCKF; 
@@ -272,10 +274,10 @@ for k = 1:nSamples
     % ... state error covariance matrices:
     PMinusEKF = PPlusEKF;
     PMinusUKF_sysID = PPlusUKF_sysID; 
-    PMinusUKFAdd = PPlusUKFAdd;
-%     PMinusUKFAug = PPlusUKFAug;
-%     PMinusUKFFullyAug = PPlusUKFFullyAug;
-    SMinusSRUKF = SPlusSRUKF; 
+%     PMinusUKFAdd = PPlusUKFAdd;
+%     SMinusSRUKF = SPlusSRUKF; 
+    PMinusUKFAug = PPlusUKFAug;
+    PMinusUKFFullyAug = PPlusUKFFullyAug;
 %     PMinuscUKFNLP = PPluscUKFNLP;
 %     PMinuscUKFQP = PPluscUKFQP;
 %     PMinusCKF = PPlusCKF; 
@@ -310,7 +312,6 @@ yClean = MESS.yClean;
 feedVolFlow = inputMat(:,2);    % [l/d]
 
 %% compute goodness of fit for all measurements
-RMSSE = zeros(q,1);         % allocate memory
 RMSSE_UKF_SRUKF = zeros(q,1); % allocate memory
 
 % compute RMSSE for each measurement signal:
@@ -318,19 +319,42 @@ for kk = 1:q
     measurements = MESS.yMeas(:,kk); 
     
     % ignore the first value because that's only the output of x0:
-    estimatedMeasurementsUKF = UKFAddOutput(2:end,kk); 
     estimatedMeasurementsUKFMatlab = UKFOutput_sysID(2:end,kk); 
     estimatedMeasurementsSRUKF = SRUKFOutput(2:end,kk); 
-%     estimatedMeasurementsCKF = CKFOutput(2:end,kk);    
     
-    % get RMSSE and squared numerators and denominators:
-    [RMSSE(kk)] = computeRMSSE(measurements,estimatedMeasurementsUKF); 
-    
-    % get same between UKF and CKF: 
-    RMSSE_UKF_SRUKF(kk) = computeRMSSE(estimatedMeasurementsUKFMatlab,estimatedMeasurementsSRUKF); 
+    % get RMSSE between UKF and CKF: 
+    RMSSE_UKF_SRUKF(kk) = computeRMSSE(estimatedMeasurementsUKFMatlab,estimatedMeasurementsSRUKF);     
 end
 
-RMSSE_mean = mean(RMSSE); 
+%% compute normalized RMSE for all states and all runs: 
+nRMSE1 = nan(nStates,nRuns);  % allocate memory
+nRMSE2 = nan(nStates,nRuns);
+nRMSE3 = nan(nStates,nRuns);
+trueStates = MESS.x; 
+
+for runK = 1:nRuns
+    for m = 1:nStates
+        nRMSE1(m,runK) = compute_normRMSE(trueStates(:,m),EstimatesForRMSE1(:,m,runK)); 
+        nRMSE2(m,runK) = compute_normRMSE(trueStates(:,m),EstimatesForRMSE2(:,m,runK)); 
+        nRMSE3(m,runK) = compute_normRMSE(trueStates(:,m),EstimatesForRMSE3(:,m,runK)); 
+    end
+end
+
+% compute mean of nRMSE for measurable and non-measurable states for all algorithms: 
+mean_nRMSE1y = mean(nRMSE1([1,2,6],:),2);   % algorithm 1
+mean_nRMSE1x = mean(nRMSE1([3,4,5],:),2); 
+mean_nRMSE2y = mean(nRMSE2([1,2,6],:),2);   % algorithm 2
+mean_nRMSE2x = mean(nRMSE2([3,4,5],:),2); 
+mean_nRMSE3y = mean(nRMSE3([1,2,6],:),2);   % algorithm 3
+mean_nRMSE3x = mean(nRMSE3([3,4,5],:),2); 
+
+% aggregate all means to one number each: 
+meanOfMean_nRMSE1y = mean(mean_nRMSE1y);    % algorithm 1
+meanOfMean_nRMSE1x = mean(mean_nRMSE1x); 
+meanOfMean_nRMSE2y = mean(mean_nRMSE2y);    % algorithm 2
+meanOfMean_nRMSE2x = mean(mean_nRMSE2x); 
+meanOfMean_nRMSE3y = mean(mean_nRMSE3y);    % algorithm 3
+meanOfMean_nRMSE3x = mean(mean_nRMSE3x); 
 
 %% Plot results
 
@@ -350,18 +374,18 @@ plot(tMeas,yClean(:,1),'DisplayName','clean model output',...
 %      'LineStyle',':', 'Color', 'red', 'LineWidth',0.8); 
 plot(t,UKFOutput_sysID(:,1),'DisplayName','UKF-sysID-Output',...
      'LineStyle','-.', 'Color', colorPaletteHex(3), 'LineWidth',1.2); 
-% plot(t,UKFAddOutput(:,1),'DisplayName','UKF-Add-Output',...
-%      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',2); 
+plot(t,UKFAddOutput(:,1),'DisplayName','UKF-Add-Output',...
+     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',2); 
+plot(t,SRUKFOutput(:,1),'DisplayName','SR-UKF-Output',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1); 
 % plot(t,UKFAugOutput(:,1),'DisplayName','UKF-Aug-Output',...
 %      'LineStyle',':', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 % plot(t,UKFFullyAugOutput(:,1),'DisplayName','UKF-Fully-Aug-Output',...
 %      'LineStyle','--', 'Color', colorPaletteHex(1), 'LineWidth',1); 
-% plot(t,SRUKFOutput(:,1),'DisplayName','SR-UKF-Output',...
-%      'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1); 
-plot(t,cUKFNLPOutput(:,1),'DisplayName','cUKF-NLP-Output',...
-     'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1);
-plot(t,cUKFQPOutput(:,1),'DisplayName','cUKF-QP-Output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(1), 'LineWidth',1.4); 
+% plot(t,cUKFNLPOutput(:,1),'DisplayName','cUKF-NLP-Output',...
+%      'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1);
+% plot(t,cUKFQPOutput(:,1),'DisplayName','cUKF-QP-Output',...
+%      'LineStyle','-.', 'Color', colorPaletteHex(1), 'LineWidth',1.4); 
 % plot(t,CKFOutput(:,1),'DisplayName','CKF-Output',...
 %      'LineStyle','-.', 'Color', 'magenta', 'LineWidth',1.2); 
 % ylim([0.4,0.85])
@@ -374,7 +398,7 @@ set(gca, "YColor", 'k')     % make right y-axis black
 % xlabel('time [d]')
 legend('Location','NorthEast'); 
 
-% Sco2:
+% S_co2:
 subplot(3,1,2)
 scatter(tMeas, MESS.yMeas(:,2),'DisplayName','noisy measurements',...
         'Marker','.', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
@@ -385,18 +409,18 @@ plot(tMeas,yClean(:,2),'DisplayName','clean model output',...
 %      'LineStyle',':', 'Color', 'red', 'LineWidth',0.8); 
 plot(t,UKFOutput_sysID(:,2),'DisplayName','UKF-sysID-Output',...
      'LineStyle','-.', 'Color', colorPaletteHex(3), 'LineWidth',1.2);
-% plot(t,UKFAddOutput(:,2),'DisplayName','UKF-Add-Output',...
-%      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',2)
-plot(t,UKFAugOutput(:,2),'DisplayName','UKF-Aug-Output',...
-     'LineStyle',':', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
-plot(t,UKFFullyAugOutput(:,2),'DisplayName','UKF-Fully-Aug-Output',...
-     'LineStyle','--', 'Color', colorPaletteHex(1), 'LineWidth',1); 
-% plot(t,SRUKFOutput(:,2),'DisplayName','SR-UKF-Output',...
-%      'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1); 
-plot(t,cUKFNLPOutput(:,2),'DisplayName','cUKF-NLP-Output',...
-     'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1); 
-plot(t,cUKFQPOutput(:,2),'DisplayName','cUKF-QP-Output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(1), 'LineWidth',1.4); 
+plot(t,UKFAddOutput(:,2),'DisplayName','UKF-Add-Output',...
+     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',2)
+plot(t,SRUKFOutput(:,2),'DisplayName','SR-UKF-Output',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1); 
+% plot(t,UKFAugOutput(:,2),'DisplayName','UKF-Aug-Output',...
+%      'LineStyle',':', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
+% plot(t,UKFFullyAugOutput(:,2),'DisplayName','UKF-Fully-Aug-Output',...
+%      'LineStyle','--', 'Color', colorPaletteHex(1), 'LineWidth',1); 
+% plot(t,cUKFNLPOutput(:,2),'DisplayName','cUKF-NLP-Output',...
+%      'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1); 
+% plot(t,cUKFQPOutput(:,2),'DisplayName','cUKF-QP-Output',...
+%      'LineStyle','-.', 'Color', colorPaletteHex(1), 'LineWidth',1.4); 
 % plot(t,CKFOutput(:,2),'DisplayName','CKF-Output',...
 %      'LineStyle','-.', 'Color', 'magenta', 'LineWidth',1.2)
 % ylim([0.4,0.85])
@@ -421,18 +445,18 @@ plot(tMeas,yClean(:,3),'DisplayName','clean model output',...
 %      'LineStyle',':', 'Color', 'red', 'LineWidth',0.8); 
 plot(t,UKFOutput_sysID(:,3),'DisplayName','UKF-sysID-Output',...
      'LineStyle','-.', 'Color', colorPaletteHex(3), 'LineWidth',1.2);
-% plot(t,UKFAddOutput(:,3),'DisplayName','UKF-Add-Output',...
-%      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',2)
+plot(t,UKFAddOutput(:,3),'DisplayName','UKF-Add-Output',...
+     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',2)
+plot(t,SRUKFOutput(:,3),'DisplayName','SR-UKF-Output',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1);
 % plot(t,UKFAugOutput(:,3),'DisplayName','UKF-Aug-Output',...
 %      'LineStyle',':', 'Color', colorPaletteHex(1), 'LineWidth',1.5); 
 % plot(t,UKFFullyAugOutput(:,3),'DisplayName','UKF-Fully-Aug-Output',...
-%      'LineStyle','--', 'Color', colorPaletteHex(1), 'LineWidth',1); 
-% plot(t,SRUKFOutput(:,3),'DisplayName','SR-UKF-Output',...
-%      'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1); 
-plot(t,cUKFNLPOutput(:,3),'DisplayName','cUKF-NLP-Output',...
-     'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1);
-plot(t,cUKFQPOutput(:,3),'DisplayName','cUKF-QP-Output',...
-     'LineStyle','-.', 'Color', colorPaletteHex(1), 'LineWidth',1.4); 
+%      'LineStyle','--', 'Color', colorPaletteHex(1), 'LineWidth',1);  
+% plot(t,cUKFNLPOutput(:,3),'DisplayName','cUKF-NLP-Output',...
+%      'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1);
+% plot(t,cUKFQPOutput(:,3),'DisplayName','cUKF-QP-Output',...
+%      'LineStyle','-.', 'Color', colorPaletteHex(1), 'LineWidth',1.4); 
 % plot(t,CKFOutput(:,3),'DisplayName','CKF-Output',...
 %      'LineStyle','-.', 'Color', 'magenta', 'LineWidth',1.2);  
 % ylim([0.4,0.85])
@@ -466,8 +490,6 @@ sgtitle('Comparison of UKF and clean model output')
 % legend()
 
 %% Plot trajectories of relevant states: 
-trueStates = MESS.x; 
-
 figure()
 
 % X_ch:
@@ -481,12 +503,12 @@ plot(t,ESTIMATESUKF_sysID(:,3),'DisplayName','UKF-sysID',...
      'LineStyle','-.', 'Color', colorPaletteHex(3), 'LineWidth',1.2);
 plot(t,ESTIMATESUKFAdd(:,3),'DisplayName','UKF-Add',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8);
+plot(t,ESTIMATESSRUKF(:,3),'DisplayName','SR-UKF',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1);
 % plot(t,ESTIMATESUKFAug(:,3),'DisplayName','UKF-Aug',...
 %      'LineStyle',':', 'Color', colorPaletteHex(1), 'LineWidth',1.5);
 % plot(t,ESTIMATESUKFFullyAug(:,3),'DisplayName','UKF-Fully-Aug',...
 %      'LineStyle','--', 'Color', colorPaletteHex(1), 'LineWidth',1);
-plot(t,ESTIMATESSRUKF(:,3),'DisplayName','SR-UKF',...
-     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1);
 % plot(t,ESTIMATEScUKFNLP(:,3),'DisplayName','cUKF-NLP',...
 %      'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1);
 % plot(t,ESTIMATEScUKFQP(:,3),'DisplayName','cUKF-QP',...
@@ -514,12 +536,12 @@ plot(t,ESTIMATESUKF_sysID(:,4),'DisplayName','UKF-sysID',...
      'LineStyle','-.', 'Color', colorPaletteHex(3), 'LineWidth',1.2);
 plot(t,ESTIMATESUKFAdd(:,4),'DisplayName','UKF-Add',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+plot(t,ESTIMATESSRUKF(:,4),'DisplayName','SR-UKF',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1);
 % plot(t,ESTIMATESUKFAug(:,4),'DisplayName','UKF-Aug',...
 %      'LineStyle',':', 'Color', colorPaletteHex(1), 'LineWidth',1.5);
 % plot(t,ESTIMATESUKFFullyAug(:,4),'DisplayName','UKF-Fully-Aug',...
 %      'LineStyle','--', 'Color', colorPaletteHex(1), 'LineWidth',1);
-plot(t,ESTIMATESSRUKF(:,4),'DisplayName','SR-UKF',...
-     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1);
 % plot(t,ESTIMATEScUKFNLP(:,4),'DisplayName','cUKF-NLP',...
 %      'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1);
 % plot(t,ESTIMATEScUKFQP(:,4),'DisplayName','cUKF-QP',...
@@ -546,18 +568,18 @@ hold on;
 %      'LineStyle',':', 'Color', 'red', 'LineWidth',0.6); 
 plot(t,ESTIMATESUKF_sysID(:,5),'DisplayName','UKF-sysID',...
      'LineStyle','-.', 'Color', colorPaletteHex(3), 'LineWidth',1.2);
-% plot(t,ESTIMATESUKFAdd(:,5),'DisplayName','UKF-Add',...
-%      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+plot(t,ESTIMATESUKFAdd(:,5),'DisplayName','UKF-Add',...
+     'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
+plot(t,ESTIMATESSRUKF(:,5),'DisplayName','SR-UKF',...
+     'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1);
 % plot(t,ESTIMATESUKFAug(:,5),'DisplayName','UKF-Aug',...
 %      'LineStyle',':', 'Color', colorPaletteHex(1), 'LineWidth',1.5);
 % plot(t,ESTIMATESUKFFullyAug(:,5),'DisplayName','UKF-Fully-Aug',...
 %      'LineStyle','--', 'Color', colorPaletteHex(1), 'LineWidth',1);
-% plot(t,ESTIMATESSRUKF(:,5),'DisplayName','SR-UKF',...
-%      'LineStyle','--', 'Color', colorPaletteHex(5), 'LineWidth',1);
-plot(t,ESTIMATEScUKFNLP(:,5),'DisplayName','cUKF-NLP',...
-     'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1);
-plot(t,ESTIMATEScUKFQP(:,5),'DisplayName','cUKF-QP',...
-     'LineStyle','-.', 'Color', colorPaletteHex(1), 'LineWidth',1.4); 
+% plot(t,ESTIMATEScUKFNLP(:,5),'DisplayName','cUKF-NLP',...
+%      'LineStyle','--', 'Color', colorPaletteHex(4), 'LineWidth',1);
+% plot(t,ESTIMATEScUKFQP(:,5),'DisplayName','cUKF-QP',...
+%      'LineStyle','-.', 'Color', colorPaletteHex(1), 'LineWidth',1.4); 
 % plot(t,ESTIMATESCKF(:,5),'DisplayName','CKF',...
 %      'LineStyle','--', 'Color', 'magenta', 'LineWidth',0.6); 
 % ylim([0.4,0.7])
@@ -582,7 +604,7 @@ colorFeeding = "#02C39A"; % light green
 
 ECCPlot = figure;
 
-% pco2:
+% S_co2:
 subplot(2,1,1)
 yyaxis right
 stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
@@ -599,18 +621,18 @@ scatter(tMeas, MESS.yMeas(:,2),70,'DisplayName','noisy measurements',...
 %      'LineStyle',':', 'Color', 'red', 'LineWidth',0.8); 
 plot(t,UKFOutput_sysID(:,2),'DisplayName','UKF-sysID',...
      'LineStyle',':', 'Color', eccColorPalette(4), 'LineWidth',1) % 2
-plot(t,UKFAddOutput(:,2),'DisplayName','UKF-Add',...
-     'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1.5)
+% plot(t,UKFAddOutput(:,2),'DisplayName','UKF-Add',...
+%      'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1.5)
+% plot(t,SRUKFOutput(:,2),'DisplayName','SR-UKF',...
+%      'LineStyle','--', 'Marker','none', 'Color', eccColorPalette(5), 'LineWidth',1); 
 % plot(t,UKFAugOutput(:,2),'DisplayName','UKF-Aug',...
 %      'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1); 
 % plot(t,UKFFullyAugOutput(:,2),'DisplayName','UKF-Fully-Aug','Marker','none',...
 %      'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
-plot(t,SRUKFOutput(:,2),'DisplayName','SR-UKF',...
-     'LineStyle','--', 'Marker','none', 'Color', eccColorPalette(5), 'LineWidth',1); 
-% plot(t,cUKFNLPOutput(:,2),'DisplayName','cUKF-NLP',...
-%      'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1); 
-% plot(t,cUKFQPOutput(:,2),'DisplayName','cUKF-QP','Marker','none',...
-%      'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
+plot(t,cUKFNLPOutput(:,2),'DisplayName','cUKF-NLP',...
+     'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1); 
+plot(t,cUKFQPOutput(:,2),'DisplayName','cUKF-QP','Marker','none',...
+     'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
 % ylim([0.4,0.85])
 set(gca, "YColor", 'k')     % make right y-axis black 
 ylabel('S_{co2} [kg/m^3]')
@@ -631,20 +653,30 @@ hold on;
 %      'LineStyle',':', 'Color', 'red', 'LineWidth',0.6); 
 plot(t,ESTIMATESUKF_sysID(:,3),'DisplayName','UKF-sysID',...
      'LineStyle',':', 'Color', eccColorPalette(4), 'LineWidth',1); % 2
-plot(t,ESTIMATESUKFAdd(:,3),'DisplayName','UKF-Add',...
-     'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1.5);
+% plot(t,ESTIMATESUKFAdd(:,3),'DisplayName','UKF-Add',...
+%      'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1.5);
+% plot(t,ESTIMATESSRUKF(:,3),'DisplayName','SR-UKF',...
+%      'LineStyle','--', 'Color', eccColorPalette(5), 'LineWidth',1);
 % plot(t,ESTIMATESUKFAug(:,3),'DisplayName','UKF-Aug',...
 %      'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1);
 % plot(t,ESTIMATESUKFFullyAug(:,3),'DisplayName','UKF-Fully-Aug',...
 %      'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5);
-plot(t,ESTIMATESSRUKF(:,3),'DisplayName','SR-UKF',...
-     'LineStyle','--', 'Color', eccColorPalette(5), 'LineWidth',1);
-% plot(t,ESTIMATEScUKFNLP(:,3),'DisplayName','cUKF-NLP',...
-%      'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1);
-% plot(t,ESTIMATEScUKFQP(:,3),'DisplayName','cUKF-QP',...
-%      'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
+plot(t,ESTIMATEScUKFNLP(:,3),'DisplayName','cUKF-NLP',...
+     'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1);
+plot(t,ESTIMATEScUKFQP(:,3),'DisplayName','cUKF-QP',...
+     'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
 % ylim([0.4,0.7])
 set(gca, "YColor", 'k')     % make right y-axis black 
 ylabel('X_{ch} [kg/m^3]')
 xlabel('time [d]')
+
+%% create a plot of nRMSE over tCalc
+
+% tCalc1 = mean(runTime); 
+% nRMSE1 = mean([mean_nRMSE1y;mean_nRMSE1x]); 
+% 
+% % alg1 = [tCalc1, nRMSE1]; 
+% 
+% figure_t_RMSE = figure;
+% scatter()
 
