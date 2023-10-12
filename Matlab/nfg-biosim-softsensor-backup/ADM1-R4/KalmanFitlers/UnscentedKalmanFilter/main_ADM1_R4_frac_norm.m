@@ -78,8 +78,8 @@ aNum = [0.2482, 0.6809,   0.0207,     0.0456,    -1,      0,      0,      0,    
         0,     -1,        0,          0,          0,      0,      0,      0,       0,         0,      0,          c(22)]';
 
 % inlet concentrations [GitHub Sören], vmtl. Rindergülle
-%      S_ch4, S_IC,S_IN,  S_h2o,   X_chF,  X_chS,   X_pr,  X_li,  X_bac, X_ash,  S_ch4,g, S_co2,g
-xIn     = [0,     0,   0.592, 960.512, 23.398, 0,       4.75,  1.381, 0,     17,     0,       0]'; % [g/L]
+%      S_ch4, S_IC,   S_IN,    S_h2o,   X_chF,   X_chS, X_pr,  X_li,  X_bac,  X_ash,  S_ch4,g, S_co2,g
+xIn = [0,     0,      0.592,   960.512, 23.398,  0,     4.75,  1.381, 0,      17,     0,       0]'; % [g/L]
 % xAshIn = 17 selbst gewählt (grob abgeschätzt aus TS/oTS von Rindergülle/Maissilage)
 
 % combine constant parameters in struct: 

@@ -1,6 +1,7 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 06.10.2023
+% last modified: 12.10.2023
 % Autor: Simon Hellmann
 
 % create the MESS-vector (synthetic measurement data) for Kalman Filtering. 
@@ -73,8 +74,8 @@ aNum = [0.2482,  0.6809,   -1,     0,      0,       0.1372;
         0,       0,        0.18,   0.77,   0.05,   -1]';
 
 % inlet concentrations [GitHub Sören], vmtl. Rindergülle
-%      S_ch4, S_IC,X_ch, X_pr,    X_li,  X_bac
-xIn = [0,     0,   0.592, 23.398, 4.75,  1.381]'; % [kg/m3], 
+%      S_ch4, S_IC,X_ch,   X_pr,  X_li,  X_bac
+xIn = [0,     0,   23.398, 4.75,  1.381, 0]'; % [kg/m3], 
 
 % initial value: 
 %       S_ch4, S_IC,  X_ch, X_pr,  X_li,  X_bac
