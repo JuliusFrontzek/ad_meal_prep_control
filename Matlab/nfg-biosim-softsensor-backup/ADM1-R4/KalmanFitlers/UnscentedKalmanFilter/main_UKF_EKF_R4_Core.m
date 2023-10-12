@@ -678,7 +678,7 @@ xlabel('time [d]')
 eccColorPaletteRMSE = ["#000004","#b73779", "#721f81", "#932b80","#51127c","#3b528b","#287c8e","#fed799","#feb078","#fc8961","#f1605d"]; 
 markerShapes =        {'o',   'square', 'hexagram',  'o',      '*',   'diamond', 'square',  '<',      '>',      'v',      '^'}; 
 %               1               2              3                 4         5                6                  7                8           9                 10           11
-myLabels = {'UKF-sysID','UKF-Kolas-add','UKF-Kolas-add-kappa','SR-UKF','SR-UKF-kappa','UKF-Kolas-aug','UKF-Kolas-fully-aug','cUKF-NLP','cUKF-NLP-grad','cUKF-grad-hess','cUKF-QP'}; 
+myLabels = {'UKF-sysID','UKF-Kolas-add','UKF-Kolas-add-\gamma','SR-UKF','SR-UKF-\gamma','UKF-Kolas-aug','UKF-Kolas-fully-aug','cUKF-NLP','cUKF-NLP-grad','cUKF-grad-hess','cUKF-QP'}; 
 stdSz = 50; % standard size of markers
 magnifier = [1.5, 2, 3];
 myLineWidth = 1.5; 
@@ -698,7 +698,7 @@ scatter(tCalc(3),nRMSE(3),stdSz*magnifier(1),markerShapes{3},'filled','MarkerFac
     'MarkerEdgeColor',eccColorPaletteRMSE(3),'DisplayName',myLabels{3})
 scatter(tCalc(4),nRMSE(4),stdSz*magnifier(3),markerShapes{4},'LineWidth',myLineWidth, ...
     'MarkerEdgeColor',eccColorPaletteRMSE(4),'DisplayName',myLabels{4})
-scatter(tCalc(5),nRMSE(5),stdSz*magnifier(3),markerShapes{5},'LineWidth', myLineWidth, ...
+scatter(tCalc(5),nRMSE(5),stdSz*magnifier(3),markerShapes{5},'LineWidth', 1, ...
     'MarkerEdgeColor',eccColorPaletteRMSE(5),'DisplayName',myLabels{5})
 scatter(tCalc(6),nRMSE(6),stdSz,markerShapes{6},'filled','MarkerFaceColor',eccColorPaletteRMSE(6), ...
     'MarkerEdgeColor',eccColorPaletteRMSE(6),'DisplayName',myLabels{6})
@@ -712,7 +712,7 @@ scatter(tCalc(10),nRMSE(10),stdSz,markerShapes{10},'filled','MarkerFaceColor',ec
     'MarkerEdgeColor',eccColorPaletteRMSE(10),'DisplayName',myLabels{10})
 scatter(tCalc(11),nRMSE(11),stdSz,markerShapes{11},'filled','MarkerFaceColor',eccColorPaletteRMSE(11),...
     'MarkerEdgeColor',eccColorPaletteRMSE(11),'DisplayName',myLabels{11})
-xlabel('average computation time [s]')
+xlabel('average run time [s]')
 xlim([0,60]); 
 ylabel('average nRMSE')
 ylim([0,0.08])
