@@ -23,10 +23,6 @@ counterSigmaX = 0;
 counterX = 0; 
 counterSigmaXcUKF = 0;
 
-% XY for Simon
-global R
-global PMinus
-
 % Load Measurement Data:
 load Messung_ADM1_R4_Core
 
