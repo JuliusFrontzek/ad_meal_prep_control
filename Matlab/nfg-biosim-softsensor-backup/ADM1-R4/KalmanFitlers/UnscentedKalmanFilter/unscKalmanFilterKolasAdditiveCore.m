@@ -51,11 +51,11 @@ alpha = 1;  % Kolas 2009, (18)
 % beta = 0; 
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
 % kappa = 3 - nStates;  % acc. to Julier & Uhlmann
-kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
+kappa = 0;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 % lambda = 1;     % Vachhani
 gamma = sqrt(nStates + lambda); % scaling parameter
-gamma = 0.5;  % XY just to check: that delivers good estimations!
+gamma = 1;  % XY just to check: that delivers good estimations!
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
 Wx0 = lambda/(nStates + lambda); 
