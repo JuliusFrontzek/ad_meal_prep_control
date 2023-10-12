@@ -206,6 +206,6 @@ PPlusVachhaniTemp = PPlusKolasFullyAugmented; % Vachhani (2006), (25)
 
 % make sure PPlus is symmetric:
 PPlus = 1/2*(PPlusVachhaniTemp + PPlusVachhaniTemp');
-disp(['sum of PPlus diagonal (cUKF-add.): ', num2str(sum(diag(PPlus)))])
+% disp(['sum of PPlus diagonal (cUKF-add.): ', num2str(sum(diag(PPlus)))])
 
 end

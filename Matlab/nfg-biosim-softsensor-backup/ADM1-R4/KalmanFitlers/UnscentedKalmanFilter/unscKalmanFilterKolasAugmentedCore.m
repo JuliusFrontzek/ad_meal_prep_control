@@ -208,7 +208,7 @@ xPlus = sum(Wx.*sigmaX,2);
 % only for comparison: 
 Kv = K*(yMeas' - yAggregated);
 xPlusvdM = xMinus + Kv; % standard formulation of vdMerwe
-disp(['max. Abweichung xPlus (aug.):', num2str(max(abs(xPlusvdM - xPlus)))])
+% disp(['max. Abweichung xPlus (aug.):', num2str(max(abs(xPlusvdM - xPlus)))])
 
 % Kolas (2009), Table 8:
 diffxPlusFromSigmaX = sigmaX - xPlus; 
@@ -219,12 +219,12 @@ PPlusVachhaniTemp = PPlusReformulatedKolasFullyAugmented;
 % only for comparison: 
 PPlusTempvdM = PMinus - K*Pyy*K'; 
 PPlusvdM = 1/2*(PPlusTempvdM + PPlusTempvdM');  % regularization
-disp(['max. Abweichung PPlus (aug.): ', ...
-      num2str(max(max(abs(PPlusvdM - PPlusReformulatedKolasFullyAugmented))))])
+% disp(['max. Abweichung PPlus (aug.): ', ...
+%       num2str(max(max(abs(PPlusvdM - PPlusReformulatedKolasFullyAugmented))))])
 
 % make sure PPlus is symmetric:
 PPlus = 1/2*(PPlusReformulatedKolasAugmented + PPlusReformulatedKolasAugmented');   
 % show potential divergence/falling asleep of P-Matrix live:
-disp(['sum of PPlus diagonal (aug.): ', num2str(sum(diag(PPlus)))])
+% disp(['sum of PPlus diagonal (aug.): ', num2str(sum(diag(PPlus)))])
 
 end
