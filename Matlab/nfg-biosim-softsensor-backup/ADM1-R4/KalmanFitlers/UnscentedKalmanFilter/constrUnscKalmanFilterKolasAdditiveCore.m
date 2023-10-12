@@ -1,7 +1,7 @@
 %% Version
 % (R2022b) Update 6
 % Erstelldatum: 06.10.2023
-% last modified: 10.10.2023
+% last modified: 12.10.2023
 % Autor: Simon Hellmann
 
 function [xPlus,PPlus] = constrUnscKalmanFilterKolasAdditiveCore(xOld,POld, ...
@@ -36,6 +36,9 @@ global counterSigmaProp
 % global counterSigmaX
 global counterX
 global counterSigmaXcUKF
+
+% XY for Simon
+global PMinus
 
 % extract constant parameters out of struct: 
 th = params.th; 
@@ -157,34 +160,39 @@ end
 % aggregate outputs of sigma points in overall output:
 yAggregated = sum(Wx.*Y,2);
 
-
 % consider inequalities acc. to fmincon documentation: allow only positive 
 % state values (=concentrations):
 A = -eye(nStates); 
 b = zeros(nStates,1);  
+
 sigmaXOpt = nan(nStates,nSigmaPoints);    % allocate memory
 
 %%%%%%%%%%%%%%%%%%%%%
-%% run constrained optimization to determine sigmaX without gradients
+%% run constrained optimization to determine sigmaX without gradients/Hess
 %%%%%%%%%%%%%%%%%%%%%
-options = optimoptions('fmincon','Display','none'); % suppress command window output
-% tic
-% optimize all updated sigma points: 
-for k = 1:nSigmaPoints
 
-    ukfCostFun = @(sigmaX) evaluateCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
-                                yMeas',R,PMinus,g); 
-    % choose the old sigmaXProp as initial value for optimization:
-    [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaXProp(:,k),A,b,[],[],[],[],[],options); 
-
-end
-% toc
+% options = optimoptions('fmincon',...
+% 'Display','none');
+% % tic
+% % optimize all updated sigma points: 
+% for k = 1:nSigmaPoints
+% 
+%     ukfCostFun = @(sigmaX) evaluateCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
+%                                 yMeas',R,PMinus,g); 
+%     % choose the old sigmaXProp as initial value for optimization:
+%     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaXProp(:,k),A,b,[],[],[],[],[],options); 
+% %         [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaXProp(:,k),[],[],[],[],lb,ub,[],options); 
+% 
+% 
+% end
+% % toc
 % output
 
 %%%%%%%%%%%%%%%%%%%%%
 %% run constrained optimization to determine sigmaX with gradients
 %%%%%%%%%%%%%%%%%%%%%
-% setUp gradient for fmincon and suppress command window output:
+
+% % setUp gradient for fmincon
 % options = optimoptions('fmincon',...
 % 'SpecifyObjectiveGradient',true,'Display','none');
 % % tic
@@ -194,11 +202,43 @@ end
 %     gradCostFun = @(sigmaX) evaluateGradientCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
 %                                 yMeas',R,PMinus,g); 
 %     % choose the old sigmaXProp as initial value for optimization:       
-%     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaXProp(:,k),A,b,[],[],[],[],[],options); 
+%         [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaXProp(:,k),A,b,[],[],[],[],[],options); 
+% 
+% %     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaXProp(:,k),[],[],[],[],lb,ub,[],options); 
 % 
 % end 
-% toc
+% % toc
 % output
+
+%%%%%%%%%%%%%%%%%%%%%
+%% run constrained optimization to determine sigmaX with gradients & Hess
+%%%%%%%%%%%%%%%%%%%%%
+
+% XY for Simon
+options = optimoptions('fmincon',...
+    "SpecifyObjectiveGradient",true,...
+    'HessianFcn',@evaluateHessCUKFCostFunCore,'Display','none');
+
+% % Simons test: 
+% myHessFcn = @(sigmaX,lambda) evaluateHessCUKFCostFunCore_noGlobal(sigmaX,lambda,R,PMinus); 
+% options = optimoptions('fmincon',...
+%     "SpecifyObjectiveGradient",true,...
+%     'HessianFcn',myHessFcn,'Display','none');
+
+% tic
+% optimize all updated sigma points: 
+for k = 1:nSigmaPoints
+    gradCostFun = @(sigmaX) evaluateGradientCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
+                                yMeas',R,PMinus,g); 
+    % choose the old sigmaXProp as initial value for optimization:  
+    
+        [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaXProp(:,k),A,b,[],[],[],[],[],options); 
+%     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaXProp(:,k),[],[],[],[],lb,ub,[],options); 
+
+end 
+% toc
+output
+
 
 % % this clipping should no longer be required thanks to optimization:
 % % if updated sigma points violate constraints, apply clipping: 
@@ -230,8 +270,9 @@ K = Pxy/Pyy;
 
 PPlusKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
 % adapt Kolas (2009) just like for the unconstrained case:
-PPlusKolasAdditiveTemp = PPlusKolasFullyAugmented + K*R*K' + Q; % actually different formula for additive noise case!
+PPlusKolasAdditive = PPlusKolasFullyAugmented + K*R*K' + Q; % actually different formula for additive noise case!
 PPlusVachhaniTemp = PPlusKolasFullyAugmented; % Vachhani (2006), (25)
+
 
 % make sure PPlus is symmetric:
 PPlus = 1/2*(PPlusVachhaniTemp + PPlusVachhaniTemp');

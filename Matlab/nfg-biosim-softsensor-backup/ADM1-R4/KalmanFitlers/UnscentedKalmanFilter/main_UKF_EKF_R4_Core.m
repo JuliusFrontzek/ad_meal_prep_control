@@ -23,6 +23,10 @@ counterSigmaX = 0;
 counterX = 0; 
 counterSigmaXcUKF = 0;
 
+% XY for Simon
+global R
+global PMinus
+
 % Load Measurement Data:
 load Messung_ADM1_R4_Core
 
@@ -128,7 +132,7 @@ SQ = chol(Q,'lower');
 SR = chol(R,'lower'); 
 
 %% integrate across all (online) measurement intervals (like in reality):
-nRuns = 20;         % # runs
+nRuns = 1;         % # runs
 runTime = nan(1,nRuns); % save run times per run here
 EstimatesForRMSE1 = nan(nSamples,nStates,nRuns); % analyzed algorithm 1
 EstimatesForRMSE2 = nan(nSamples,nStates,nRuns); % analyzed algorithm 2
@@ -219,14 +223,14 @@ for k = 1:nSamples
     [xPlusUKF_sysID,PPlusUKF_sysID] = my_UKF_ADM1_Core(ukf,feedInfo,yMeas,tSpan,params,f,g);    
 %     [xPlusUKFAdd,PPlusUKFAdd] = unscKalmanFilterKolasAdditiveCore(xMinusUKFAdd,PMinusUKFAdd,...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-    [xPlusUKFAug,PPlusUKFAug] = unscKalmanFilterKolasAugmentedCore(xMinusUKFAug,PMinusUKFAug,...
-                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
+%     [xPlusUKFAug,PPlusUKFAug] = unscKalmanFilterKolasAugmentedCore(xMinusUKFAug,PMinusUKFAug,...
+%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
     [xPlusUKFFullyAug,PPlusUKFFullyAug] = unscKalmanFilterKolasFullyAugmentedCore(xMinusUKFFullyAug,PMinusUKFFullyAug,...
                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 %     [xPlusSRUKF,SPlusSRUKF] = SRunscKalmanFilterAdditiveCore(xMinusSRUKF,SMinusSRUKF,...
 %                             tSpan,feedInfo,yMeas,params,SQ,SR,f,g);
-%     [xPluscUKFNLP,PPluscUKFNLP] = constrUnscKalmanFilterKolasAdditiveCore(xMinuscUKFNLP,PMinuscUKFNLP, ...
-%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    [xPluscUKFNLP,PPluscUKFNLP] = constrUnscKalmanFilterKolasAdditiveCore(xMinuscUKFNLP,PMinuscUKFNLP, ...
+                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
 %     [xPluscUKFQP,PPluscUKFQP] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQP,PMinuscUKFQP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 %     [xPluscUKFQP,PPluscUKFQP] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xMinuscUKFQP,PMinuscUKFQP, ...
@@ -237,25 +241,25 @@ for k = 1:nSamples
     
     % save results:
     EstimatesForRMSE1(k,:,runK) = xPlusUKF_sysID; % to compute RMSE later
-    EstimatesForRMSE2(k,:,runK) = xPlusUKFAug; 
+    EstimatesForRMSE2(k,:,runK) = xPluscUKFNLP; 
     EstimatesForRMSE3(k,:,runK) = xPlusUKFFullyAug; 
 
     ESTIMATESEKF(k+1,:) = xPlusEKF';
     ESTIMATESUKF_sysID(k+1,:) = xPlusUKF_sysID';
 %     ESTIMATESUKFAdd(k+1,:) = xPlusUKFAdd';
 %     ESTIMATESSRUKF(k+1,:) = xPlusSRUKF; 
-    ESTIMATESUKFAug(k+1,:) = xPlusUKFAug';
+%     ESTIMATESUKFAug(k+1,:) = xPlusUKFAug';
     ESTIMATESUKFFullyAug(k+1,:) = xPlusUKFFullyAug';
-%     ESTIMATEScUKFNLP(k+1,:) = xPluscUKFNLP';
+    ESTIMATEScUKFNLP(k+1,:) = xPluscUKFNLP';
 %     ESTIMATEScUKFQP(k+1,:) = xPluscUKFQP';
 %     ESTIMATESCKF(k+1,:) = xPlusCKF';
     
     COVARIANCEEKF(:,:,k+1) = PPlusEKF; 
     COVARIANCEUKF_sysID(:,:,k+1) = PPlusUKF_sysID; 
 %     COVARIANCEUKFAdd(:,:,k+1) = PPlusUKFAdd; 
-    COVARIANCEUKFAug(:,:,k+1) = PPlusUKFAug; 
+%     COVARIANCEUKFAug(:,:,k+1) = PPlusUKFAug; 
     COVARIANCEUKFFullyAug(:,:,k+1) = PPlusUKFFullyAug; 
-%     COVARIANCEcUKFNLP(:,:,k+1) = PPluscUKFNLP;
+    COVARIANCEcUKFNLP(:,:,k+1) = PPluscUKFNLP;
 %     COVARIANCEcUKFQP(:,:,k+1) = PPluscUKFQP;
 %     COVARIANCECKF(:,:,k+1) = PPlusCKF; 
 
@@ -265,9 +269,9 @@ for k = 1:nSamples
     xMinusUKF_sysID = xPlusUKF_sysID; 
 %     xMinusUKFAdd = xPlusUKFAdd;
 %     xMinusSRUKF = xPlusSRUKF;
-    xMinusUKFAug = xPlusUKFAug;
+%     xMinusUKFAug = xPlusUKFAug;
     xMinusUKFFullyAug = xPlusUKFFullyAug; 
-%     xMinuscUKFNLP = xPluscUKFNLP;
+    xMinuscUKFNLP = xPluscUKFNLP;
 %     xMinuscUKFQP = xPluscUKFQP;
 %     xMinusCKF = xPlusCKF; 
 
@@ -276,9 +280,9 @@ for k = 1:nSamples
     PMinusUKF_sysID = PPlusUKF_sysID; 
 %     PMinusUKFAdd = PPlusUKFAdd;
 %     SMinusSRUKF = SPlusSRUKF; 
-    PMinusUKFAug = PPlusUKFAug;
+%     PMinusUKFAug = PPlusUKFAug;
     PMinusUKFFullyAug = PPlusUKFFullyAug;
-%     PMinuscUKFNLP = PPluscUKFNLP;
+    PMinuscUKFNLP = PPluscUKFNLP;
 %     PMinuscUKFQP = PPluscUKFQP;
 %     PMinusCKF = PPlusCKF; 
 
@@ -631,8 +635,8 @@ plot(t,UKFOutput_sysID(:,2),'DisplayName','UKF-sysID',...
 %      'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
 plot(t,cUKFNLPOutput(:,2),'DisplayName','cUKF-NLP',...
      'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1); 
-plot(t,cUKFQPOutput(:,2),'DisplayName','cUKF-QP','Marker','none',...
-     'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
+% plot(t,cUKFQPOutput(:,2),'DisplayName','cUKF-QP','Marker','none',...
+%      'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
 % ylim([0.4,0.85])
 set(gca, "YColor", 'k')     % make right y-axis black 
 ylabel('S_{co2} [kg/m^3]')
@@ -663,8 +667,8 @@ plot(t,ESTIMATESUKF_sysID(:,3),'DisplayName','UKF-sysID',...
 %      'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5);
 plot(t,ESTIMATEScUKFNLP(:,3),'DisplayName','cUKF-NLP',...
      'LineStyle','-', 'Color', eccColorPalette(2), 'LineWidth',1);
-plot(t,ESTIMATEScUKFQP(:,3),'DisplayName','cUKF-QP',...
-     'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
+% plot(t,ESTIMATEScUKFQP(:,3),'DisplayName','cUKF-QP',...
+%      'LineStyle','-.', 'Color', eccColorPalette(5), 'LineWidth',1.5); 
 % ylim([0.4,0.7])
 set(gca, "YColor", 'k')     % make right y-axis black 
 ylabel('X_{ch} [kg/m^3]')
