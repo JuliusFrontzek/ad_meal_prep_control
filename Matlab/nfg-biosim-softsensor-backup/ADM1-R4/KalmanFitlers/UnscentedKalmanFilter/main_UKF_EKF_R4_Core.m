@@ -134,6 +134,9 @@ EstimatesForRMSE1 = nan(nSamples,nStates,nRuns); % analyzed algorithm 1
 EstimatesForRMSE2 = nan(nSamples,nStates,nRuns); % analyzed algorithm 2
 EstimatesForRMSE3 = nan(nSamples,nStates,nRuns); % analyzed algorithm 3
 
+fCounts = nan(1,nSamples); 
+nIters = nan(1,nSamples); 
+
 for runK = 1:nRuns
 
 % Initialize Kalman Filters:
@@ -225,10 +228,10 @@ for k = 1:nSamples
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 %     [xPlusUKFFullyAug,PPlusUKFFullyAug] = unscKalmanFilterKolasFullyAugmentedCore(xMinusUKFFullyAug,PMinusUKFFullyAug,...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-    [xPluscUKFNLP,PPluscUKFNLP] = constrUnscKalmanFilterKolasAdditiveCore(xMinuscUKFNLP,PMinuscUKFNLP, ...
-                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPluscUKFQP,PPluscUKFQP] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQP,PMinuscUKFQP, ...
+%     [xPluscUKFNLP,PPluscUKFNLP,fCounts(k),nIters(k)] = constrUnscKalmanFilterKolasAdditiveCore(xMinuscUKFNLP,PMinuscUKFNLP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    [xPluscUKFQP,PPluscUKFQP,nIters(k)] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQP,PMinuscUKFQP, ...
+                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
 %     [xPluscUKFQP,PPluscUKFQP] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xMinuscUKFQP,PMinuscUKFQP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 
@@ -246,8 +249,8 @@ for k = 1:nSamples
 %     ESTIMATESSRUKF(k+1,:) = xPlusSRUKF; 
 %     ESTIMATESUKFAug(k+1,:) = xPlusUKFAug';
 %     ESTIMATESUKFFullyAug(k+1,:) = xPlusUKFFullyAug';
-    ESTIMATEScUKFNLP(k+1,:) = xPluscUKFNLP';
-%     ESTIMATEScUKFQP(k+1,:) = xPluscUKFQP';
+%     ESTIMATEScUKFNLP(k+1,:) = xPluscUKFNLP';
+    ESTIMATEScUKFQP(k+1,:) = xPluscUKFQP';
 %     ESTIMATESCKF(k+1,:) = xPlusCKF';
     
 %     COVARIANCEEKF(:,:,k+1) = PPlusEKF; 
@@ -255,7 +258,7 @@ for k = 1:nSamples
 %     COVARIANCEUKFAdd(:,:,k+1) = PPlusUKFAdd; 
 %     COVARIANCEUKFAug(:,:,k+1) = PPlusUKFAug; 
 %     COVARIANCEUKFFullyAug(:,:,k+1) = PPlusUKFFullyAug; 
-    COVARIANCEcUKFNLP(:,:,k+1) = PPluscUKFNLP;
+%     COVARIANCEcUKFNLP(:,:,k+1) = PPluscUKFNLP;
 %     COVARIANCEcUKFQP(:,:,k+1) = PPluscUKFQP;
 %     COVARIANCECKF(:,:,k+1) = PPlusCKF; 
 
@@ -267,8 +270,8 @@ for k = 1:nSamples
 %     xMinusSRUKF = xPlusSRUKF;
 %     xMinusUKFAug = xPlusUKFAug;
 %     xMinusUKFFullyAug = xPlusUKFFullyAug; 
-    xMinuscUKFNLP = xPluscUKFNLP;
-%     xMinuscUKFQP = xPluscUKFQP;
+%     xMinuscUKFNLP = xPluscUKFNLP;
+    xMinuscUKFQP = xPluscUKFQP;
 %     xMinusCKF = xPlusCKF; 
 
     % ... state error covariance matrices:
@@ -278,8 +281,8 @@ for k = 1:nSamples
 %     SMinusSRUKF = SPlusSRUKF; 
 %     PMinusUKFAug = PPlusUKFAug;
 %     PMinusUKFFullyAug = PPlusUKFFullyAug;
-    PMinuscUKFNLP = PPluscUKFNLP;
-%     PMinuscUKFQP = PPluscUKFQP;
+%     PMinuscUKFNLP = PPluscUKFNLP;
+    PMinuscUKFQP = PPluscUKFQP;
 %     PMinusCKF = PPlusCKF; 
 
 end

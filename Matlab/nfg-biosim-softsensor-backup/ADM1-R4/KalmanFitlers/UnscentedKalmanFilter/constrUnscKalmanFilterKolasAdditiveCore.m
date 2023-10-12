@@ -4,7 +4,7 @@
 % last modified: 12.10.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = constrUnscKalmanFilterKolasAdditiveCore(xOld,POld, ...
+function [xPlus,PPlus,fCount,nIter] = constrUnscKalmanFilterKolasAdditiveCore(xOld,POld, ...
                                     tSpan,feedInfo,yMeas,params,Q,R,f,g)
 
 % compute time and measurement update of constrained UKF acc. to  Kolas et al. 
@@ -18,6 +18,8 @@ function [xPlus,PPlus] = constrUnscKalmanFilterKolasAdditiveCore(xOld,POld, ...
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
+% fCount - # function calls of fmincon
+% nIter - # iterations until convergence
 % Kv - effective Kalman Gains (same dimension/units as states)
 % xOld - old state estimate
 % POld - old state error covariance matrix
@@ -182,8 +184,8 @@ for k = 1:nSigmaPoints
 %         [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaX0,[],[],[],[],lb,ub,[],options); 
 
 end
-% toc
 % output
+% toc
 
 %%%%%%%%%%%%%%%%%%%%%
 %% run constrained optimization to determine sigmaX with gradients
@@ -231,12 +233,12 @@ end
 % % toc
 % % output
 
-% this clipping should no longer be required thanks to optimization:
-% if updated sigma points violate constraints, apply clipping: 
-if any(any(sigmaXOpt < 0))
-    sigmaXOpt(sigmaXOpt < 0) = 0;
-    counterSigmaXcUKF = counterSigmaXcUKF + 1;
-end
+% % this clipping should no longer be required thanks to optimization:
+% % if updated sigma points violate constraints, apply clipping: 
+% if any(any(sigmaXOpt < 0))
+%     sigmaXOpt(sigmaXOpt < 0) = 0;
+%     counterSigmaXcUKF = counterSigmaXcUKF + 1;
+% end
 
 %% compute posteriors:
 xPlus = sum(Wx.*sigmaXOpt,2); 
@@ -264,9 +266,17 @@ PPlusKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';
 PPlusKolasAdditive = PPlusKolasFullyAugmented + K*R*K' + Q; % actually different formula for additive noise case!
 PPlusVachhaniTemp = PPlusKolasFullyAugmented; % Vachhani (2006), (25)
 
-
 % make sure PPlus is symmetric:
 PPlus = 1/2*(PPlusVachhaniTemp + PPlusVachhaniTemp');
 % disp(['sum of PPlus diagonal (cUKF-add.): ', num2str(sum(diag(PPlus)))])
+
+%% return # function evaluations and # iterations 
+% but only if someone explicitly asks for them when calling this function:
+fCount = output.funcCount; 
+nIter = output.iterations; 
+if nargout < 3
+    fCount = []; 
+    nIter = [];
+end
 
 end

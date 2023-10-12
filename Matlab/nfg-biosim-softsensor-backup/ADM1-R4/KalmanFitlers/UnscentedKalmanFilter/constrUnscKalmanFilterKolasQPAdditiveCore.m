@@ -3,7 +3,7 @@
 % Erstelldatum: 09.10.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = constrUnscKalmanFilterKolasQPAdditiveCore(xOld,POld, ...
+function [xPlus,PPlus,nIter] = constrUnscKalmanFilterKolasQPAdditiveCore(xOld,POld, ...
                                     tSpan,feedInfo,yMeas,params,Q,R,f,g)
 
 % compute time and measurement update of constrained QP-UKF acc. to  Kolas 
@@ -17,6 +17,7 @@ function [xPlus,PPlus] = constrUnscKalmanFilterKolasQPAdditiveCore(xOld,POld, ..
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
+% nIter - # iterations until convergence
 % Kv - effective Kalman Gains (same dimension/units as states)
 % xOld - old state estimate
 % POld - old state error covariance matrix
@@ -168,7 +169,7 @@ for k = 1:nSigmaPoints
     % compute matrices H and f for QP-solver quadprog:
     [HMat,fTranspose] = computeQPCostFunMatrices(sigmaXProp(:,k),yMeas,R,PMinus); 
     x0QP = sigmaXProp(:,k); % initial vector for optimization
-    sigmaXOpt(:,k) = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
+    [sigmaXOpt(:,k),fval,exitflag,output] = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
 end 
 
 % this clipping should no longer be required thanks to optimization:
@@ -207,5 +208,12 @@ PPlusVachhaniTemp = PPlusKolasFullyAugmented; % Vachhani (2006), (25)
 % make sure PPlus is symmetric:
 PPlus = 1/2*(PPlusVachhaniTemp + PPlusVachhaniTemp');
 % disp(['sum of PPlus diagonal (cUKF-add.): ', num2str(sum(diag(PPlus)))])
+
+%% return # iterations 
+% but only if someone explicitly asks for them when calling this function:
+nIter = output.iterations; 
+if nargout < 3 
+    nIter = [];
+end
 
 end
