@@ -106,12 +106,12 @@ if isempty(tRelEvents)
     xInCurr = feedInfo(3:end)';  % current inlet concentrations
     tEval = tSpan;
     odeFun = @(t,X) f(X,feedVolFlow,xInCurr,th,c,a); 
-    % create zero-mean normally distributed process noise for each sigma point:
-    normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
     for k = 1:nSigmaPointsAug
         [~,XTUSol] = ode15s(odeFun,tEval,sigmaXInit(1:nStates,k));
         sigmaXPropNom(:,k) = XTUSol(end,:)';     % nominal value (without noise)
     end 
+    % create zero-mean normally distributed process noise for each sigma point:
+    normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
     % add normally-distributed process noise acc. to Q (zero-mean):
     sigmaXProp = sigmaXPropNom + normalNoiseMatX;
 
@@ -129,14 +129,14 @@ else
         xInCurr = feedInfo(m,3:end)';   % current inlet concentrations
         tEval = [tOverall(m), tOverall(m+1)];
         odeFun = @(t,X) f(X,feedVolFlow,xInCurr,th,c,a);
-        % create zero-mean normally distributed process noise for each sigma point:
-        normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
         for kk = 1:nSigmaPointsAug
             [~,XTUSol] = ode15s(odeFun,tEval,XAtBeginOfInt(:,kk));
             XAtEndOfIntNom(:,kk) = XTUSol(end,:)';  % nominal value (without system noise)
         end
         XAtBeginOfInt = XAtEndOfIntNom; % overwrite for next interval
     end
+    % create zero-mean normally distributed process noise for each sigma point:
+    normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
     % add gaussian, zero-mean process noise: 
     sigmaXProp = XAtEndOfIntNom + normalNoiseMatX;    
 end
@@ -172,12 +172,12 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for fully augme
 
 %% 2.1) Derive Sigma-Measurements and aggregate them:
 YNom = nan(q,nSigmaPointsAug);    % allocate memory
-% create zero-mean normally distributed measurement noise for each sigma point:
-zeroMeanY = zeros(q,1);
-normalNoiseMatY = mvnrnd(zeroMeanY,R,nSigmaPointsAug)';
 for mm = 1:nSigmaPointsAug
     YNom(:,mm) = g(sigmaXProp(:,mm)); 
 end
+% create zero-mean normally distributed measurement noise for each sigma point:
+zeroMeanY = zeros(q,1);
+normalNoiseMatY = mvnrnd(zeroMeanY,R,nSigmaPointsAug)';
 % add normally-distributed process noise acc. to Q (zero-mean):
 Y = YNom + normalNoiseMatY;
 
