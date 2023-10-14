@@ -61,7 +61,7 @@ kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 
 % gamma = sqrt(nStates + lambda); % scaling parameter
 gamma = sqrt(nStatesAug + lambda); % scaling parameter
-% gamma = 0.5;  % XY just to check
+gamma = 1;  % XY just to check
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
 % Wx0 = lambda/(nStates + lambda); 
@@ -94,12 +94,14 @@ sigmaXInit = [xOldAug, repmat(xOldAug,1,nStatesAug) + gamma*sqrtPOld, ...
 % end
 
 %% 1.2) Propagate all Sigma Points through system ODEs
-sigmaXPropNom = nan(nStates, nSigmaPointsAug); % allocate memory
-zeroMeanX = zeros(nStates,1); % zero mean for additive noise
+sigmaXPropNom = nan(nStates, nSigmaPointsAug); % allocate memory for nominal values
 
 tEvents = feedInfo(:,1);    % feeding time points (on/off)
 idxRelEvents = tEvents >= tSpan(1) & tEvents <= tSpan(2);
 tRelEvents = tEvents(idxRelEvents);
+
+% additive process noise to be added after propagation:
+addNoiseOnSigmapointsXMat = sigmaXInit(nStates+1:2*nStates,:); 
 
 % we can only perform integration when feeding is constant!
 % Fall a: konst. Fütterung während gesamtem Messintervalls (keine Änderung)
@@ -108,14 +110,12 @@ if isempty(tRelEvents)
     xInCurr = feedInfo(3:end)';  % current inlet concentrations
     tEval = tSpan;
     odeFun = @(t,X) f(X,feedVolFlow,xInCurr,th,c,a); 
-    % create zero-mean normally distributed process noise for each sigma point:
-    normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
     for k = 1:nSigmaPointsAug
         [~,XTUSol] = ode15s(odeFun,tEval,sigmaXInit(1:nStates,k));
         sigmaXPropNom(:,k) = XTUSol(end,:)';     % nominal value (without noise)
     end 
-    % add normally-distributed process noise acc. to Q (zero-mean):
-    sigmaXProp = sigmaXPropNom + normalNoiseMatX;
+    % add effect of process noise to sigma points (Kolas, Tab. 8, Line 2):
+    sigmaXProp = sigmaXPropNom + addNoiseOnSigmapointsXMat;
 
 % Fall b: veränderliche Fütterung während Messintervalls:
 else 
@@ -131,20 +131,15 @@ else
         xInCurr = feedInfo(m,3:end)';   % current inlet concentrations
         tEval = [tOverall(m), tOverall(m+1)];
         odeFun = @(t,X) f(X,feedVolFlow,xInCurr,th,c,a);
-        % create zero-mean normally distributed process noise for each sigma point:
-        normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
         for kk = 1:nSigmaPointsAug
             [~,XTUSol] = ode15s(odeFun,tEval,XAtBeginOfInt(:,kk));
             XAtEndOfIntNom(:,kk) = XTUSol(end,:)';  % nominal value (without system noise)
         end
         XAtBeginOfInt = XAtEndOfIntNom; % overwrite for next interval
     end
-    % add gaussian, zero-mean process noise: 
-    sigmaXProp = XAtEndOfIntNom + normalNoiseMatX;    
+    % add effect of process noise to sigma points (Kolas, Tab. 8, Line 2):
+    sigmaXProp = XAtEndOfIntNom + addNoiseOnSigmapointsXMat;    
 end
-
-% % draw noise matrix: 
-% plot(normalNoiseMat(1,:),normalNoiseMat(2,:),'+');
 
 % % if any propagated sigma points violate constraints, apply clipping: 
 % if any(any(sigmaXProp < 0))
@@ -174,14 +169,12 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for augmented p
 
 %% 2.1) Derive Sigma-Measurements and aggregate them:
 YNom = nan(q,nSigmaPointsAug);    % allocate memory
-% create zero-mean normally distributed measurement noise for each sigma point:
-zeroMeanY = zeros(q,1);
-normalNoiseMatY = mvnrnd(zeroMeanY,R,nSigmaPointsAug)';
 for mm = 1:nSigmaPointsAug
     YNom(:,mm) = g(sigmaXProp(:,mm)); 
 end
-% add normally-distributed process noise acc. to Q (zero-mean):
-Y = YNom + normalNoiseMatY;
+% add noise to outputs of sigma points:
+addNoiseOnSigmapointsYMat = sigmaXInit(2*nStates+1:end,:); 
+Y = YNom + addNoiseOnSigmapointsYMat;
 
 % 2.2) aggregate outputs of sigma points in overall output:
 yAggregated = sum(Wx.*Y,2);
