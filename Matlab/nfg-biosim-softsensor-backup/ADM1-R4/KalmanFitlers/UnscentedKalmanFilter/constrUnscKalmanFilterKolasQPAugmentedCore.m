@@ -1,14 +1,13 @@
 %% Version
 % (R2022b) Update 6
-% Erstelldatum: 10.10.2023
-% last modified: 15.10.2023
+% Erstelldatum: 15.10.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xOld,POld, ...
+function [xPlus,PPlus] = constrUnscKalmanFilterKolasQPAugmentedCore(xOld,POld, ...
                                     tSpan,feedInfo,yMeas,params,Q,R,f,g)
 
 % compute time and measurement update of constrained QP-UKF acc. to  Kolas 
-% et al. (2009), Tab. 10 for fully augmented noise and QP formulation (abs. coordinates).
+% et al. (2009), Tab. 10 for augmented process noise and QP formulation (abs. coordinates).
 % assume measurements of ADM1-R4-Core
 
 % xPlus - new state estimate
@@ -46,8 +45,8 @@ nStates = numel(xOld);
 q = numel(yMeas); 
 
 % augment x and P: 
-xOldAug = [xOld;zeros(nStates,1);zeros(q,1)]; 
-POldAug = blkdiag(POld,Q,R);   % (2*nStates+q, 2*nStates+q)
+xOldAug = [xOld;zeros(nStates,1)]; 
+POldAug = blkdiag(POld,Q);   % (2*nStates, 2*nStates)
 
 nStatesAug = numel(xOldAug); 
 nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
@@ -172,14 +171,10 @@ PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for fully augme
 % Table 4 or Vachhani 2006)!
 
 %% 2.1) Derive Sigma-Measurements and aggregate them:
-YNom = nan(q,nSigmaPointsAug);    % allocate memory
+Y = nan(q,nSigmaPointsAug);    % allocate memory
 for mm = 1:nSigmaPointsAug
-    YNom(:,mm) = g(sigmaXProp(:,mm)); 
+    Y(:,mm) = g(sigmaXProp(:,mm)); 
 end
-% add noise to outputs of sigma points:
-addNoiseOnSigmapointsYMat = sigmaXInit(2*nStates+1:end,:); 
-Y = YNom + addNoiseOnSigmapointsYMat;
-
 % 2.2) aggregate outputs of sigma points in overall output:
 yAggregated = sum(Wx.*Y,2);
 
@@ -210,7 +205,8 @@ xPlus = sum(Wx.*sigmaXOpt,2);
 
 diffxPlusFromSigmaX = sigmaXOpt - xPlus; 
 PPlusKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';
+PPlusKolasAugmented = PPlusKolasFullyAugmented; % acc. to Vachhani (2006)
 
-PPlus = 0.5*(PPlusKolasFullyAugmented + PPlusKolasFullyAugmented'); % ensure symmetry
+PPlus = 0.5*(PPlusKolasAugmented + PPlusKolasAugmented'); % ensure symmetry
 
 end
