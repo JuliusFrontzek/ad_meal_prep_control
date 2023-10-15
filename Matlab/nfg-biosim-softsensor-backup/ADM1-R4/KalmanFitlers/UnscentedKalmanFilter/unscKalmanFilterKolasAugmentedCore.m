@@ -1,6 +1,7 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 06.10.2023
+% last modified: 14.10.2023
 % Autor: Simon Hellmann
 
 function [xPlus,PPlus] = unscKalmanFilterKolasAugmentedCore(xOld,POld, ...
@@ -8,7 +9,7 @@ function [xPlus,PPlus] = unscKalmanFilterKolasAugmentedCore(xOld,POld, ...
 
 % compute time and measurement update acc. to Joseph-version of the UKF
 % acc. to Kolas et al. (2009) with clipping wherever possible, but for 
-% augmented process noise (Tab. 6), use abs. coordinates
+% augmented process noise (Tab. 6) (abs. coordinates)
 
 global counterSigmaInit
 global counterSigmaProp
@@ -45,7 +46,7 @@ q = numel(yMeas);
 
 % augment x and P: 
 xOldAug = [xOld;zeros(nStates,1)]; 
-POldAug = blkdiag(POld,Q);   % (nStates+q, nStates+q)
+POldAug = blkdiag(POld,Q);    % (2*nStates, 2*nStates)
 
 nStatesAug = numel(xOldAug); 
 nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
@@ -56,18 +57,17 @@ nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
 alpha = 1;  % Kolas 2009, (18)
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
 kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
-% lambda = alpha^2*(nStates + kappa) - nStates; 
-lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 
-% gamma = sqrt(nStates + lambda); % scaling parameter
-gamma = sqrt(nStatesAug + lambda); % scaling parameter
-gamma = 1;  % XY just to check
+% this creates a false scaling:
+% lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 
+% gamma = sqrt(nStatesAug + lambda); % scaling parameter
+% this creates the correct scaling:
+lambda = alpha^2*(nStates + kappa) - nStates; 
+gamma = sqrt(nStates + lambda); % scaling parameter
+% gamma = 1;  % XY just to check
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
-% Wx0 = lambda/(nStates + lambda); 
 Wx0 = lambda/(nStatesAug + lambda); 
-% Wc0 = lambda/(nStates + lambda) + 1 - alpha^2 + beta; 
 Wc0 = lambda/(nStatesAug + lambda) + 1 - alpha^2 + beta; 
-% Wi = 1/(2*(nStates + lambda)); 
 Wi = 1/(2*(nStatesAug + lambda)); 
 Wx = [Wx0, repmat(Wi,1,nSigmaPointsAug-1)];
 Wc = [Wc0, repmat(Wi,1,nSigmaPointsAug-1)];
