@@ -3,7 +3,7 @@
 % Erstelldatum: 15.10.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = constrUnscKalmanFilterKolasQPAugmentedCore(xOld,POld, ...
+function [xPlus,PPlus,nIter] = constrUnscKalmanFilterKolasQPAugmentedCore(xOld,POld, ...
                                     tSpan,feedInfo,yMeas,params,Q,R,f,g)
 
 % compute time and measurement update of constrained QP-UKF acc. to  Kolas 
@@ -24,11 +24,10 @@ function [xPlus,PPlus] = constrUnscKalmanFilterKolasQPAugmentedCore(xOld,POld, .
 % f - function handle of ODEs of system equations
 % g - function handle of output equations 
 
-global counterSigmaInit
-global counterSigmaProp
-% global counterSigmaX
-global counterX
-global counterSigmaXcUKF
+% global counterSigmaInit
+% global counterSigmaProp
+% global counterX
+% global counterSigmaXcUKF
 
 % extract constant parameters out of struct: 
 th = params.th; 
@@ -190,7 +189,7 @@ for k = 1:nSigmaPointsAug
     % compute matrices H and f for QP-solver quadprog:    
     [HMat,fTranspose] = computeQPCostFunMatrices(sigmaXProp(:,k),yMeas,R,PMinus); 
     x0QP = sigmaXProp(:,k); % initial vector for optimization
-    sigmaXOpt(:,k) = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
+    [sigmaXOpt(:,k),fval,exitflag,output] = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
 end 
 
 % % this clipping should no longer be required thanks to optimization:
@@ -208,5 +207,12 @@ PPlusKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';
 PPlusKolasAugmented = PPlusKolasFullyAugmented; % acc. to Vachhani (2006)
 
 PPlus = 0.5*(PPlusKolasAugmented + PPlusKolasAugmented'); % ensure symmetry
+
+%% return # iterations 
+% but only if someone explicitly asks for them when calling this function:
+nIter = output.iterations; 
+if nargout < 3 
+    nIter = [];
+end
 
 end

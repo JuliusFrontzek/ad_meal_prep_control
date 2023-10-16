@@ -220,12 +220,12 @@ for k = 1:nSamples
 
     % ---UKFs------------------------------
 %     [xPlusUKF_sysID,PPlusUKF_sysID] = my_UKF_ADM1_Core(ukf,feedInfo,yMeas,tSpan,params,f,g);    
-%     [xPlusUKFAdd,PPlusUKFAdd] = unscKalmanFilterKolasAdditiveCore(xMinusUKFAdd,PMinusUKFAdd,...
-%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    [xPlusUKFAdd,PPlusUKFAdd] = unscKalmanFilterKolasAdditiveCore(xMinusUKFAdd,PMinusUKFAdd,...
+                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
 %     [xPlusSRUKF,SPlusSRUKF] = SRunscKalmanFilterAdditiveCore(xMinusSRUKF,SMinusSRUKF,...
 %                             tSpan,feedInfo,yMeas,params,SQ,SR,f,g);
-%     [xPlusUKFAug,PPlusUKFAug] = unscKalmanFilterKolasAugmentedCore(xMinusUKFAug,PMinusUKFAug,...
-%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    [xPlusUKFAug,PPlusUKFAug] = unscKalmanFilterKolasAugmentedCore(xMinusUKFAug,PMinusUKFAug,...
+                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
     [xPlusUKFFullyAug,PPlusUKFFullyAug] = unscKalmanFilterKolasFullyAugmentedCore(xMinusUKFFullyAug,PMinusUKFFullyAug,...
                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 
@@ -239,18 +239,18 @@ for k = 1:nSamples
     %% cUKF-QP:
 %     [xPluscUKFQP,PPluscUKFQP,nIters(k)] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQP,PMinuscUKFQP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPluscUKFQP,PPluscUKFQP] = constrUnscKalmanFilterKolasQPAugmentedCore(xMinuscUKFQP,PMinuscUKFQP, ...
+%     [xPluscUKFQP,PPluscUKFQP,nIters(k)] = constrUnscKalmanFilterKolasQPAugmentedCore(xMinuscUKFQP,PMinuscUKFQP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPluscUKFQP,PPluscUKFQP] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xMinuscUKFQP,PMinuscUKFQP, ...
+%     [xPluscUKFQP,PPluscUKFQP,nIters(k)] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xMinuscUKFQP,PMinuscUKFQP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 
 %     % ---CKF-----------------------------
 %     [xPlusCKF,PPlusCKF] = my_CKF_ADM1_Core(ckf,feedInfo,yMeas,tSpan,params,f,g);
     
     % save results:
-%     EstimatesForRMSE1(k,:,runK) = xPlusUKFAdd; % to compute RMSE later
-%     EstimatesForRMSE2(k,:,runK) = xPlusUKFAug; 
-%     EstimatesForRMSE3(k,:,runK) = xPlusUKFFullyAug; 
+    EstimatesForRMSE1(k,:,runK) = xPlusUKFAdd; % to compute RMSE later
+    EstimatesForRMSE2(k,:,runK) = xPlusUKFAug; 
+    EstimatesForRMSE3(k,:,runK) = xPlusUKFFullyAug; 
 
 %     ESTIMATESEKF(k+1,:) = xPlusEKF';
 %     ESTIMATESUKF_sysID(k+1,:) = xPlusUKF_sysID';
@@ -275,9 +275,9 @@ for k = 1:nSamples
     % ... estimated state from Kalman Filter:
 %     xMinusEKF = xPlusEKF;
 %     xMinusUKF_sysID = xPlusUKF_sysID; 
-%     xMinusUKFAdd = xPlusUKFAdd;
+    xMinusUKFAdd = xPlusUKFAdd;
 %     xMinusSRUKF = xPlusSRUKF;
-%     xMinusUKFAug = xPlusUKFAug;
+    xMinusUKFAug = xPlusUKFAug;
     xMinusUKFFullyAug = xPlusUKFFullyAug; 
 %     xMinuscUKFNLP = xPluscUKFNLP;
 %     xMinuscUKFQP = xPluscUKFQP;
@@ -286,9 +286,9 @@ for k = 1:nSamples
     % ... state error covariance matrices:
 %     PMinusEKF = PPlusEKF;
 %     PMinusUKF_sysID = PPlusUKF_sysID; 
-%     PMinusUKFAdd = PPlusUKFAdd;
+    PMinusUKFAdd = PPlusUKFAdd;
 %     SMinusSRUKF = SPlusSRUKF; 
-%     PMinusUKFAug = PPlusUKFAug;
+    PMinusUKFAug = PPlusUKFAug;
     PMinusUKFFullyAug = PPlusUKFFullyAug;
 %     PMinuscUKFNLP = PPluscUKFNLP;
 %     PMinuscUKFQP = PPluscUKFQP;

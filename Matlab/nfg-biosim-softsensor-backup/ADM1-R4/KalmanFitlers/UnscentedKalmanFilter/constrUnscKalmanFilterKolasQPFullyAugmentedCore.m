@@ -4,7 +4,7 @@
 % last modified: 15.10.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xOld,POld, ...
+function [xPlus,PPlus,nIter] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xOld,POld, ...
                                     tSpan,feedInfo,yMeas,params,Q,R,f,g)
 
 % compute time and measurement update of constrained QP-UKF acc. to  Kolas 
@@ -195,7 +195,7 @@ for k = 1:nSigmaPointsAug
     % compute matrices H and f for QP-solver quadprog:    
     [HMat,fTranspose] = computeQPCostFunMatrices(sigmaXProp(:,k),yMeas,R,PMinus); 
     x0QP = sigmaXProp(:,k); % initial vector for optimization
-    sigmaXOpt(:,k) = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
+    [sigmaXOpt(:,k),fval,exitflag,output] = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
 end 
 
 % % this clipping should no longer be required thanks to optimization:
@@ -212,5 +212,13 @@ diffxPlusFromSigmaX = sigmaXOpt - xPlus;
 PPlusKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';
 
 PPlus = 0.5*(PPlusKolasFullyAugmented + PPlusKolasFullyAugmented'); % ensure symmetry
+
+%% return # iterations 
+% but only if someone explicitly asks for them when calling this function:
+nIter = output.iterations; 
+if nargout < 3 
+    nIter = [];
+end
+
 
 end
