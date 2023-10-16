@@ -11,10 +11,10 @@ function [xPlus,PPlus] = unscKalmanFilterKolasFullyAugmentedCore(xOld,POld, ...
 % augmented process noise (Tab. 6), use abs. coordinates
 % assume measurements of ADM1-R4-Core
 
-global counterSigmaInit
-global counterSigmaProp
-global counterSigmaX
-global counterX
+% global counterSigmaInit
+% global counterSigmaProp
+% global counterSigmaX
+% global counterX
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
@@ -49,7 +49,7 @@ xOldAug = [xOld;zeros(nStates,1);zeros(q,1)];
 POldAug = blkdiag(POld,Q,R);   % (2*nStates+q, 2*nStates+q)
 
 nStatesAug = numel(xOldAug); 
-nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
+nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with full augmentation
 
 %% 1. Time Update (TU)
 
@@ -147,7 +147,6 @@ end
 % end
 
 %% 1.3) Aggregate Sigma Points to Priors for x and P
-% xMinus = sum(Wx.*sigmaXProp(:,1:nSigmaPointsNom),2);  % state prior
 xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 
 % % if any state priors violate constraints, apply clipping:

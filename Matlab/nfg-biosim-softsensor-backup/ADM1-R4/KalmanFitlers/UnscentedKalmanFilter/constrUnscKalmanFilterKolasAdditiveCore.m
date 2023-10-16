@@ -33,11 +33,10 @@ function [xPlus,PPlus,fCount,nIter] = constrUnscKalmanFilterKolasAdditiveCore(xO
 % f - function handle of ODEs of system equations
 % g - function handle of output equations 
 
-global counterSigmaInit
-global counterSigmaProp
-% global counterSigmaX
-global counterX
-global counterSigmaXcUKF
+% global counterSigmaInit
+% global counterSigmaProp
+% global counterX
+% global counterSigmaXcUKF
 
 % extract constant parameters out of struct: 
 th = params.th; 
@@ -58,9 +57,7 @@ nSigmaPoints = 2*nStates + 1;
 
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
-% beta = 0;
 beta = 2;   % for Gaussian prior (Diss vdM, S.56) 
-% kappa = 3 - nStates;  % acc. to Julier & Uhlmann
 kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
@@ -182,7 +179,6 @@ sigmaXOpt = nan(nStates,nSigmaPoints);    % allocate memory
 %     sigmaX0 = sigmaXProp(:,k); 
 %     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaX0,A,b,[],[],[],[],[],options); 
 % %         [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaX0,[],[],[],[],lb,ub,[],options); 
-% 
 % end
 % % output
 % % toc
@@ -204,7 +200,6 @@ sigmaXOpt = nan(nStates,nSigmaPoints);    % allocate memory
 %     sigmaX0 = sigmaXProp(:,k); 
 %     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaX0,A,b,[],[],[],[],[],options); 
 % %     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaX0,[],[],[],[],lb,ub,[],options); 
-% 
 % end 
 % % toc
 % % output
@@ -224,11 +219,10 @@ options = optimoptions('fmincon',...
 for k = 1:nSigmaPoints
     gradCostFun = @(sigmaX) evaluateGradientCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
                                 yMeas',R,PMinus,g); 
-    % choose the old sigmaXProp as initial value for optimization:  
+%     choose the old sigmaXProp as initial value for optimization:  
     sigmaX0 = sigmaXProp(:,k); 
     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaX0,A,b,[],[],[],[],[],options); 
 %     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaX0,[],[],[],[],lb,ub,[],options); 
-
 end 
 % toc
 % output

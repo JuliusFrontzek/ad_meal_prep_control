@@ -9,10 +9,10 @@ function [xPlus,PPlus] = unscKalmanFilterKolasAdditiveCore(xOld,POld,...
 % acc. to Kolas et al. (2009) with clipping wherever possible
 % assume measurements of ADM1-R4-Core
 
-global counterSigmaInit
-global counterSigmaProp
-global counterSigmaX
-global counterX
+% global counterSigmaInit
+% global counterSigmaProp
+% global counterSigmaX
+% global counterX
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
@@ -48,12 +48,9 @@ nSigmaPoints = 2*nStates + 1;
 
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
-% beta = 0; 
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
-% kappa = 3 - nStates;  % acc. to Julier & Uhlmann
 kappa = 0;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
-% lambda = 1;     % Vachhani
 gamma = sqrt(nStates + lambda); % scaling parameter
 % gamma = 1;  % XY just to check: that delivers good estimations!
 
@@ -154,7 +151,7 @@ yAggregated = sum(Wx.*Y,2);
 
 % compute cov. matrix of output Pyy:
 diffYFromSigmaOutputs = Y - yAggregated; 
-Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R;
+Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R; % Kolas, Tab. 5
 
 % compute cross covariance matrix states/measurements:
 Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs'; 

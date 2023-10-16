@@ -11,10 +11,10 @@ function [xPlus,PPlus] = unscKalmanFilterKolasAugmentedCore(xOld,POld, ...
 % acc. to Kolas et al. (2009) with clipping wherever possible, but for 
 % augmented process noise (Tab. 6) (abs. coordinates)
 
-global counterSigmaInit
-global counterSigmaProp
-global counterSigmaX
-global counterX
+% global counterSigmaInit
+% global counterSigmaProp
+% global counterSigmaX
+% global counterX
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
@@ -150,7 +150,6 @@ end
 % end
 
 %% 1.3) Aggregate Sigma Points to Priors for x and P
-% xMinus = sum(Wx.*sigmaXProp(:,1:nSigmaPointsNom),2);  % state prior
 xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 
 % % if any state priors violate constraints, apply clipping:
