@@ -56,9 +56,7 @@ nSigmaPoints = 2*nStates + 1;
 
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
-% beta = 0;
 beta = 2;   % for Gaussian prior (Diss vdM, S.56) 
-% kappa = 3 - nStates;  % acc. to Julier & Uhlmann
 kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
@@ -172,12 +170,12 @@ for k = 1:nSigmaPoints
     [sigmaXOpt(:,k),fval,exitflag,output] = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
 end 
 
-% this clipping should no longer be required thanks to optimization:
-% if updated sigma points violate constraints, apply clipping: 
-if any(any(sigmaXOpt < 0))
-    sigmaXOpt(sigmaXOpt < 0) = 0;
-    counterSigmaXcUKF = counterSigmaXcUKF + 1;
-end
+% % this clipping should no longer be required thanks to optimization:
+% % if updated sigma points violate constraints, apply clipping: 
+% if any(any(sigmaXOpt < 0))
+%     sigmaXOpt(sigmaXOpt < 0) = 0;
+%     counterSigmaXcUKF = counterSigmaXcUKF + 1;
+% end
 
 %% compute posteriors:
 xPlus = sum(Wx.*sigmaXOpt,2); 
@@ -202,11 +200,11 @@ K = Pxy/Pyy;
 
 PPlusKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX'; 
 % adapt Kolas (2009) just like for the unconstrained case:
-PPlusKolasAdditiveTemp = PPlusKolasFullyAugmented + K*R*K' + Q; % actually different formula for additive noise case!
-PPlusVachhaniTemp = PPlusKolasFullyAugmented; % Vachhani (2006), (25)
+% PPlusKolasAdditive = PPlusKolasFullyAugmented + K*R*K' + Q; % actually different formula for additive noise case!
+PPlusKolasAdditive = PPlusKolasFullyAugmented; % Vachhani (2006), (25)
 
 % make sure PPlus is symmetric:
-PPlus = 1/2*(PPlusVachhaniTemp + PPlusVachhaniTemp');
+PPlus = 1/2*(PPlusKolasAdditive + PPlusKolasAdditive');
 % disp(['sum of PPlus diagonal (cUKF-add.): ', num2str(sum(diag(PPlus)))])
 
 %% return # iterations 

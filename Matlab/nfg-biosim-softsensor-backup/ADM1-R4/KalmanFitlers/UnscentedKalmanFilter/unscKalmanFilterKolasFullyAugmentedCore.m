@@ -57,18 +57,17 @@ nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
 alpha = 1;  % Kolas 2009, (18)
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
 kappa = 0.0;  % leichte Abweichung zu Kolas (er nimmt 0)
-% lambda = alpha^2*(nStates + kappa) - nStates; 
-lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 
-% gamma = sqrt(nStates + lambda); % scaling parameter
-gamma = sqrt(nStatesAug + lambda); % scaling parameter
-% gamma = 0.5;  % XY just to check
+% this creates a false scaling:
+% lambda = alpha^2*(nStatesAug + kappa) - nStatesAug; 
+% gamma = sqrt(nStatesAug + lambda); % scaling parameter
+% this creates the correct scaling:
+lambda = alpha^2*(nStates + kappa) - nStates; 
+gamma = sqrt(nStates + lambda); % scaling parameter
+% gamma = 1;  % XY just to check
 
-% weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
-% Wx0 = lambda/(nStates + lambda); 
+% weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation):  
 Wx0 = lambda/(nStatesAug + lambda); 
-% Wc0 = lambda/(nStates + lambda) + 1 - alpha^2 + beta; 
 Wc0 = lambda/(nStatesAug + lambda) + 1 - alpha^2 + beta; 
-% Wi = 1/(2*(nStates + lambda)); 
 Wi = 1/(2*(nStatesAug + lambda)); 
 Wx = [Wx0, repmat(Wi,1,nSigmaPointsAug-1)];
 Wc = [Wc0, repmat(Wi,1,nSigmaPointsAug-1)];
@@ -94,12 +93,14 @@ sigmaXInit = [xOldAug, repmat(xOldAug,1,nStatesAug) + gamma*sqrtPOld, ...
 % end
 
 %% 1.2) Propagate all Sigma Points through system ODEs
-sigmaXPropNom = nan(nStates, nSigmaPointsAug); % allocate memory
-zeroMeanX = zeros(nStates,1); % zero mean for additive noise
+sigmaXPropNom = nan(nStates, nSigmaPointsAug); % allocate memory for nominal values
 
 tEvents = feedInfo(:,1);    % feeding time points (on/off)
 idxRelEvents = tEvents >= tSpan(1) & tEvents <= tSpan(2);
 tRelEvents = tEvents(idxRelEvents);
+
+% additive process noise to be added after propagation:
+addNoiseOnSigmapointsXMat = sigmaXInit(nStates+1:2*nStates,:); 
 
 % we can only perform integration when feeding is constant!
 % Fall a: konst. Fütterung während gesamtem Messintervalls (keine Änderung)
@@ -112,10 +113,8 @@ if isempty(tRelEvents)
         [~,XTUSol] = ode15s(odeFun,tEval,sigmaXInit(1:nStates,k));
         sigmaXPropNom(:,k) = XTUSol(end,:)';     % nominal value (without noise)
     end 
-    % create zero-mean normally distributed process noise for each sigma point:
-    normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
-    % add normally-distributed process noise acc. to Q (zero-mean):
-    sigmaXProp = sigmaXPropNom + normalNoiseMatX;
+    % add effect of process noise to sigma points (Kolas, Tab. 8, Line 2):
+    sigmaXProp = sigmaXPropNom + addNoiseOnSigmapointsXMat;
 
 % Fall b: veränderliche Fütterung während Messintervalls:
 else 
@@ -137,14 +136,9 @@ else
         end
         XAtBeginOfInt = XAtEndOfIntNom; % overwrite for next interval
     end
-    % create zero-mean normally distributed process noise for each sigma point:
-    normalNoiseMatX = mvnrnd(zeroMeanX,Q,nSigmaPointsAug)';
-    % add gaussian, zero-mean process noise: 
-    sigmaXProp = XAtEndOfIntNom + normalNoiseMatX;    
+    % add effect of process noise to sigma points (Kolas, Tab. 8, Line 2):
+    sigmaXProp = XAtEndOfIntNom + addNoiseOnSigmapointsXMat;    
 end
-
-% % draw noise matrix: 
-% plot(normalNoiseMat(1,:),normalNoiseMat(2,:),'+');
 
 % % if any propagated sigma points violate constraints, apply clipping: 
 % if any(any(sigmaXProp < 0))
@@ -165,7 +159,7 @@ xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 % aggregate state error cov. matrix P:
 % diffXPriorFromSigma = sigmaXProp(:,1:nSigmaPointsNom) - xMinus; 
 diffXPriorFromSigma = sigmaXProp - xMinus; 
-PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for augmented process noise case acc. to Kolas, Tab. 6
+PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % for augmented process noise case acc. to Kolas, Tab. 6
 
 %% 2. Measurement Update (MU)
 
@@ -177,11 +171,9 @@ YNom = nan(q,nSigmaPointsAug);    % allocate memory
 for mm = 1:nSigmaPointsAug
     YNom(:,mm) = g(sigmaXProp(:,mm)); 
 end
-% create zero-mean normally distributed measurement noise for each sigma point:
-zeroMeanY = zeros(q,1);
-normalNoiseMatY = mvnrnd(zeroMeanY,R,nSigmaPointsAug)';
-% add normally-distributed process noise acc. to Q (zero-mean):
-Y = YNom + normalNoiseMatY;
+% add noise to outputs of sigma points:
+addNoiseOnSigmapointsYMat = sigmaXInit(2*nStates+1:end,:); 
+Y = YNom + addNoiseOnSigmapointsYMat;
 
 % 2.2) aggregate outputs of sigma points in overall output:
 yAggregated = sum(Wx.*Y,2);

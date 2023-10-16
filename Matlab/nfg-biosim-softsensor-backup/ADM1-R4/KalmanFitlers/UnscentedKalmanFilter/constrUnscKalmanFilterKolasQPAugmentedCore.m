@@ -1,20 +1,14 @@
 %% Version
-% (R2022b) Update 5
-% Erstelldatum: 06.10.2023
-% last modified: 14.10.2023
+% (R2022b) Update 6
+% Erstelldatum: 15.10.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = unscKalmanFilterKolasAugmentedCore(xOld,POld, ...
+function [xPlus,PPlus] = constrUnscKalmanFilterKolasQPAugmentedCore(xOld,POld, ...
                                     tSpan,feedInfo,yMeas,params,Q,R,f,g)
 
-% compute time and measurement update acc. to Joseph-version of the UKF
-% acc. to Kolas et al. (2009) with clipping wherever possible, but for 
-% augmented process noise (Tab. 6) (abs. coordinates)
-
-global counterSigmaInit
-global counterSigmaProp
-global counterSigmaX
-global counterX
+% compute time and measurement update of constrained QP-UKF acc. to  Kolas 
+% et al. (2009), Tab. 10 for augmented process noise and QP formulation (abs. coordinates).
+% assume measurements of ADM1-R4-Core
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
@@ -29,6 +23,12 @@ global counterX
 % R - covariance matrix of measurement noise
 % f - function handle of ODEs of system equations
 % g - function handle of output equations 
+
+global counterSigmaInit
+global counterSigmaProp
+% global counterSigmaX
+global counterX
+global counterSigmaXcUKF
 
 % extract constant parameters out of struct: 
 th = params.th; 
@@ -46,7 +46,7 @@ q = numel(yMeas);
 
 % augment x and P: 
 xOldAug = [xOld;zeros(nStates,1)]; 
-POldAug = blkdiag(POld,Q);    % (2*nStates, 2*nStates)
+POldAug = blkdiag(POld,Q);   % (2*nStates, 2*nStates)
 
 nStatesAug = numel(xOldAug); 
 nSigmaPointsAug = 2*(nStatesAug) + 1;   % # sigma points with augmentation
@@ -66,6 +66,7 @@ gamma = sqrt(nStates + lambda); % scaling parameter
 % gamma = 1;  % XY just to check
 
 % weights acc. Diss vdM, (3.12) (Scaled Unscented Transformation): 
+% Wx0 = lambda/(nStates + lambda); 
 Wx0 = lambda/(nStatesAug + lambda); 
 Wc0 = lambda/(nStatesAug + lambda) + 1 - alpha^2 + beta; 
 Wi = 1/(2*(nStatesAug + lambda)); 
@@ -100,7 +101,7 @@ idxRelEvents = tEvents >= tSpan(1) & tEvents <= tSpan(2);
 tRelEvents = tEvents(idxRelEvents);
 
 % additive process noise to be added after propagation:
-addNoiseOnSigmapointsXMat = sigmaXInit(nStates+1:end,:); 
+addNoiseOnSigmapointsXMat = sigmaXInit(nStates+1:2*nStates,:); 
 
 % we can only perform integration when feeding is constant!
 % Fall a: konst. Fütterung während gesamtem Messintervalls (keine Änderung)
@@ -162,7 +163,7 @@ xMinus = sum(Wx.*sigmaXProp,2);  % state prior
 % aggregate state error cov. matrix P:
 % diffXPriorFromSigma = sigmaXProp(:,1:nSigmaPointsNom) - xMinus; 
 diffXPriorFromSigma = sigmaXProp - xMinus; 
-PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for augmented process noise case acc. to Kolas, Tab. 6
+PMinus = Wc.*diffXPriorFromSigma*diffXPriorFromSigma'; % adapted for fully augmented noise case acc. to Kolas, Tab. 10
 
 %% 2. Measurement Update (MU)
 
@@ -177,52 +178,35 @@ end
 % 2.2) aggregate outputs of sigma points in overall output:
 yAggregated = sum(Wx.*Y,2);
 
-%% 2.3) compute Kalman Gain
+%% run constrained optimization to determine sigmaX
+% consider inequalities acc. to fmincon documentation: allow only positive 
+% state values (=concentrations):
+A = -eye(nStates); 
+b = zeros(nStates,1);  
+sigmaXOpt = nan(nStates,nSigmaPointsAug);    % allocate memory
+options = optimoptions('quadprog','Display','none'); % suppress command window output 
+% optimize all updated sigma points: 
+for k = 1:nSigmaPointsAug
+    % compute matrices H and f for QP-solver quadprog:    
+    [HMat,fTranspose] = computeQPCostFunMatrices(sigmaXProp(:,k),yMeas,R,PMinus); 
+    x0QP = sigmaXProp(:,k); % initial vector for optimization
+    sigmaXOpt(:,k) = quadprog(HMat,fTranspose,A,b,[],[],[],[],x0QP,options); 
+end 
 
-% compute cov. matrix of output Pyy:
-diffYFromSigmaOutputs = Y - yAggregated; 
-Pyy = Wc.*diffYFromSigmaOutputs*diffYFromSigmaOutputs' + R; % Kolas, Tab. 6
-
-% compute cross covariance matrix states/measurements:
-Pxy = Wc.*diffXPriorFromSigma*diffYFromSigmaOutputs'; 
-
-% PyyInv = Pyy\eye(q);     % efficient least squares
-% K = Pxy*PyyInv; 
-K = Pxy/Pyy; 
-
-%% 2.4) update propagated sigma points individually 
-% use alternative formulation of Kolas 2009, eq. (23):
-sigmaX = sigmaXProp + K*(repmat(yMeas',1,nSigmaPointsAug) - Y);
-
+% % this clipping should no longer be required thanks to optimization:
 % % if updated sigma points violate constraints, apply clipping: 
-% if any(any(sigmaX < 0))
-%     sigmaX(sigmaX < 0) = 0;
-%     counterSigmaX = counterSigmaX + 1;
+% if any(any(sigmaXOpt < 0))
+%     sigmaXOpt(sigmaXOpt < 0) = 0;
+%     counterSigmaXcUKF = counterSigmaXcUKF + 1;
 % end
 
-%% 2.5) compute posteriors:
-xPlus = sum(Wx.*sigmaX,2); 
+%% compute posteriors:
+xPlus = sum(Wx.*sigmaXOpt,2); 
 
-% only for comparison: 
-Kv = K*(yMeas' - yAggregated);
-xPlusvdM = xMinus + Kv; % standard formulation of vdMerwe
-% disp(['max. Abweichung xPlus (aug.):', num2str(max(abs(xPlusvdM - xPlus)))])
+diffxPlusFromSigmaX = sigmaXOpt - xPlus; 
+PPlusKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';
+PPlusKolasAugmented = PPlusKolasFullyAugmented; % acc. to Vachhani (2006)
 
-% Kolas (2009), Table 8:
-diffxPlusFromSigmaX = sigmaX - xPlus; 
-PPlusReformulatedKolasFullyAugmented = Wc.*diffxPlusFromSigmaX*diffxPlusFromSigmaX';
-PPlusReformulatedKolasAugmented = PPlusReformulatedKolasFullyAugmented + K*R*K'; % adapted Kolas' proof in appendix for augmented process noise
-PPlusVachhaniTemp = PPlusReformulatedKolasFullyAugmented; 
-
-% only for comparison: 
-PPlusTempvdM = PMinus - K*Pyy*K'; 
-PPlusvdM = 1/2*(PPlusTempvdM + PPlusTempvdM');  % regularization
-% disp(['max. Abweichung PPlus (aug.): ', ...
-%       num2str(max(max(abs(PPlusvdM - PPlusReformulatedKolasFullyAugmented))))])
-
-% make sure PPlus is symmetric:
-PPlus = 1/2*(PPlusReformulatedKolasAugmented + PPlusReformulatedKolasAugmented');   
-% show potential divergence/falling asleep of P-Matrix live:
-% disp(['sum of PPlus diagonal (aug.): ', num2str(sum(diag(PPlus)))])
+PPlus = 0.5*(PPlusKolasAugmented + PPlusKolasAugmented'); % ensure symmetry
 
 end
