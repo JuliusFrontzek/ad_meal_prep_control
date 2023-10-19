@@ -53,7 +53,9 @@ ESTIMATESUKFAug = zeros(nSamples + 1,nStates);
 ESTIMATESUKFFullyAug = zeros(nSamples + 1,nStates);
 ESTIMATESSRUKF = zeros(nSamples + 1,nStates);
 ESTIMATEScUKFNLP = zeros(nSamples + 1,nStates);
-ESTIMATEScUKFQP = zeros(nSamples + 1,nStates);
+ESTIMATEScUKFQPAdd = zeros(nSamples + 1,nStates);
+ESTIMATEScUKFQPAug = zeros(nSamples + 1,nStates);
+ESTIMATEScUKFQPFullyAug = zeros(nSamples + 1,nStates);
 ESTIMATESCKF = zeros(nSamples + 1,nStates);
 ESTIMATESEKF = zeros(nSamples + 1,nStates);
 COVARIANCEUKFAdd = zeros(nStates,nStates,nSamples + 1);
@@ -61,7 +63,7 @@ COVARIANCEUKF_sysID = zeros(nStates,nStates,nSamples + 1);
 COVARIANCEUKFAug = zeros(nStates,nStates,nSamples + 1);
 COVARIANCEUKFFullyAug = zeros(nStates,nStates,nSamples + 1);
 COVARIANCEcUKFNLP = zeros(nStates,nStates,nSamples + 1);
-COVARIANCEcUKFQP = zeros(nStates,nStates,nSamples + 1);
+COVARIANCEcUKFQPAdd = zeros(nStates,nStates,nSamples + 1);
 COVARIANCECKF = zeros(nStates,nStates,nSamples + 1);
 COVARIANCEEKF = zeros(nStates,nStates,nSamples + 1);
 
@@ -147,7 +149,9 @@ xMinusUKFAug = xMinusUKFAdd;
 xMinusUKFFullyAug = xMinusUKFAdd;
 xMinusSRUKF = xMinusUKFAdd;
 xMinuscUKFNLP = xMinusUKFAdd; 
-xMinuscUKFQP = xMinusUKFAdd; 
+xMinuscUKFQPAdd = xMinusUKFAdd; 
+xMinuscUKFQPAug = xMinusUKFAdd; 
+xMinuscUKFQPFullyAug = xMinusUKFAdd; 
 % xMinusCKF = xMinusUKF; 
 xMinusEKF = xMinusUKFAdd; 
 
@@ -157,7 +161,9 @@ ESTIMATESUKFAug(1,:) = xMinusUKFAug;
 ESTIMATESUKFFullyAug(1,:) = xMinusUKFAug;
 ESTIMATESSRUKF(1,:) = xMinusSRUKF;
 ESTIMATEScUKFNLP(1,:) = xMinuscUKFNLP;
-ESTIMATEScUKFQP(1,:) = xMinuscUKFQP;
+ESTIMATEScUKFQPAdd(1,:) = xMinuscUKFQPAdd;
+ESTIMATEScUKFQPAug(1,:) = xMinuscUKFQPAug;
+ESTIMATEScUKFQPFullyAug(1,:) = xMinuscUKFQPFullyAug;
 % ESTIMATESCKF(1,:) = xMinusCKF;
 ESTIMATESEKF(1,:) = xMinusEKF;
 
@@ -168,7 +174,9 @@ PMinusUKFAug = PMinusUKFAdd;
 PMinusUKFFullyAug = PMinusUKFAdd;
 SMinusSRUKF = chol(PMinusUKFAdd,'upper'); 
 PMinuscUKFNLP = PMinusUKFAdd; 
-PMinuscUKFQP = PMinusUKFAdd; 
+PMinuscUKFQPAdd = PMinusUKFAdd; 
+PMinuscUKFQPAug = PMinusUKFAug; 
+PMinuscUKFQPFullyAug = PMinusUKFFullyAug; 
 % PMinusCKF = PMinusUKF; 
 PMinusEKF = PMinusUKFAdd; 
 
@@ -177,7 +185,7 @@ COVARIANCEUKF_sysID(:,:,1) = PMinusUKFAdd;
 COVARIANCEUKFAug(:,:,1) = PMinusUKFAug;
 COVARIANCEUKFFullyAug(:,:,1) = PMinusUKFFullyAug;
 COVARIANCEcUKFNLP(:,:,1) = PMinuscUKFNLP; 
-COVARIANCEcUKFQP(:,:,1) = PMinuscUKFQP; 
+COVARIANCEcUKFQPAdd(:,:,1) = PMinuscUKFQPAdd; 
 % COVARIANCECKF(:,:,1) = PMinusCKF; 
 COVARIANCEEKF(:,:,1) = PMinusEKF; 
 
@@ -237,11 +245,11 @@ for k = 1:nSamples
 %     [xPluscUKFNLP,PPluscUKFNLP,fCounts(k),nIters(k)] = constrUnscKalmanFilterKolasFullyAugmentedCore(xMinuscUKFNLP,PMinuscUKFNLP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
     %% cUKF-QP:
-%     [xPluscUKFQP,PPluscUKFQP,nIters(k)] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQP,PMinuscUKFQP, ...
+%     [xPluscUKFQPAdd,PPluscUKFQPAdd,nIters(k)] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQPAdd,PMinuscUKFQPAdd, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPluscUKFQP,PPluscUKFQP,nIters(k)] = constrUnscKalmanFilterKolasQPAugmentedCore(xMinuscUKFQP,PMinuscUKFQP, ...
+%     [xPluscUKFQPAug,PPluscUKFQPAug,nIters(k)] = constrUnscKalmanFilterKolasQPAugmentedCore(xMinuscUKFQPAug,PMinuscUKFQPAdd, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPluscUKFQP,PPluscUKFQP,nIters(k)] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xMinuscUKFQP,PMinuscUKFQP, ...
+%     [xPluscUKFQPFullyAug,PPluscUKFQPFullyAug,nIters(k)] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xMinuscUKFQPFullyAug,PMinuscUKFQPAdd, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 
 %     % ---CKF-----------------------------
@@ -259,7 +267,9 @@ for k = 1:nSamples
     ESTIMATESUKFAug(k+1,:) = xPlusUKFAug';
     ESTIMATESUKFFullyAug(k+1,:) = xPlusUKFFullyAug';
 %     ESTIMATEScUKFNLP(k+1,:) = xPluscUKFNLP';
-%     ESTIMATEScUKFQP(k+1,:) = xPluscUKFQP';
+%     ESTIMATEScUKFQPAdd(k+1,:) = xPluscUKFQPAdd';
+%     ESTIMATEScUKFQPAug(k+1,:) = xPluscUKFQPAug';
+%     ESTIMATEScUKFQPFullyAug(k+1,:) = xPluscUKFQPFullyAug';
 %     ESTIMATESCKF(k+1,:) = xPlusCKF';
     
 %     COVARIANCEEKF(:,:,k+1) = PPlusEKF; 
@@ -280,7 +290,9 @@ for k = 1:nSamples
     xMinusUKFAug = xPlusUKFAug;
     xMinusUKFFullyAug = xPlusUKFFullyAug; 
 %     xMinuscUKFNLP = xPluscUKFNLP;
-%     xMinuscUKFQP = xPluscUKFQP;
+%     xMinuscUKFQPAdd = xPluscUKFQPAdd;
+%     xMinuscUKFQPAug = xPluscUKFQPAug;
+%     xMinuscUKFQPFullyAug = xPluscUKFQPFullyAug;
 %     xMinusCKF = xPlusCKF; 
 
     % ... state error covariance matrices:
@@ -291,7 +303,9 @@ for k = 1:nSamples
     PMinusUKFAug = PPlusUKFAug;
     PMinusUKFFullyAug = PPlusUKFFullyAug;
 %     PMinuscUKFNLP = PPluscUKFNLP;
-%     PMinuscUKFQP = PPluscUKFQP;
+%     PMinuscUKFQPAdd = PPluscUKFQPAdd;
+%     PMinuscUKFQPAug = PPluscUKFQPAug;
+%     PMinuscUKFQPFullyAug = PPluscUKFQPFullyAug;
 %     PMinusCKF = PPlusCKF; 
 
 end
@@ -307,7 +321,9 @@ UKFAugOutput = nan(size(EKFOutput));        % allocate memory
 UKFFullyAugOutput = nan(size(EKFOutput));   % allocate memory
 SRUKFOutput = nan(size(EKFOutput));         % allocate memory
 cUKFNLPOutput = nan(size(EKFOutput));       % allocate memory
-cUKFQPOutput = nan(size(EKFOutput));        % allocate memory
+cUKFQPAddOutput = nan(size(EKFOutput));     % allocate memory
+cUKFQPAugOutput = nan(size(EKFOutput));     % allocate memory
+cUKFQPFullyAugOutput = nan(size(EKFOutput));% allocate memory
 % CKFOutput = nan(size(EKFOutput));       % allocate memory
 for k = 1:nSamples + 1
     EKFOutput(k,:) = g(ESTIMATESEKF(k,:)');
@@ -317,7 +333,9 @@ for k = 1:nSamples + 1
     UKFFullyAugOutput(k,:) = g(ESTIMATESUKFFullyAug(k,:)');
     SRUKFOutput(k,:) = g(ESTIMATESSRUKF(k,:)');
     cUKFNLPOutput(k,:) = g(ESTIMATEScUKFNLP(k,:)');
-    cUKFQPOutput(k,:) = g(ESTIMATEScUKFQP(k,:)');
+    cUKFQPAddOutput(k,:) = g(ESTIMATEScUKFQPAdd(k,:)');
+    cUKFQPAugOutput(k,:) = g(ESTIMATEScUKFQPAug(k,:)');
+    cUKFQPFullyAugOutput(k,:) = g(ESTIMATEScUKFQPFullyAug(k,:)');
 %     CKFOutput(k,:) = g(ESTIMATESCKF(k,:)');
 end
 yClean = MESS.yClean; 
@@ -368,7 +386,7 @@ meanOfMean_nRMSE2x = mean(mean_nRMSE2x);
 meanOfMean_nRMSE3y = mean(mean_nRMSE3y);    % algorithm 3
 meanOfMean_nRMSE3x = mean(mean_nRMSE3x); 
 
-%% Plot results
+%% Plot trajectories of measurable states
 
 % % plot model output based on EKF estimation and compare with real
 % % measurements:
@@ -611,18 +629,17 @@ meanOfMean_nRMSE3x = mean(mean_nRMSE3x);
 
 % color palette for UKF plots: 
 eccColPalUKF = ["#feb078", "#f1605d", "#b73779", "#721f81", "#2c115f"]; % 7 magma. Ignore 1st and last one
+eccColPalcUKF = ["#fe9f6d", "#de4968", "#8c2981", "#3b0f70"]; % 6 magma. Ignore 1st and last one
 feedCol = "#02C39A";    % light green 
-measCol = "de4968";     % light blue
+measCol = "#00BFFF";    % light blue
 trueCol = "#000004";    % black
 colorFeeding = "#02C39A"; % light green 
 
-figure_number = 1;
 x      = 100;   % Screen position
-y      = 300;   % Screen position
-width  = 1500; % Width of figure
-height = width/16*9; % Height of figure (by default in pixels)
-
-% figure(figure_number, 'Position', [x y width height]);
+y      = 200;   % Screen position
+width  = 600; % Width of figure
+heightFactor = 0.6;
+height = width*heightFactor; % Height of figure (by default in pixels)
 
 ECCPlot = figure('Position', [x y width height]);
 
@@ -630,29 +647,33 @@ ECCPlot = figure('Position', [x y width height]);
 subplot(2,1,1)
 yyaxis right    % plot feeding first
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
-       'LineStyle','-', 'Color', feedCol, 'LineWidth',4); 
+       'LineStyle','-', 'Color', feedCol, 'LineWidth',2); 
 ylabel('feed vol flow $\mathrm{[m^3/d]}$','Interpreter', 'latex')
 set(gca, "YColor", 'k')     % make right y-axis black 
 yyaxis left     % now plot all the curves
 plot(tMeas,trueStates(:,3),'DisplayName','true',...
-     'LineStyle','-', 'Color', trueCol, 'LineWidth',1.6); 
+     'LineStyle','-', 'Color', trueCol, 'LineWidth',0.8); 
 hold on; 
 % plot(t,ESTIMATESEKF(:,3),'DisplayName','EKF',...
 %      'LineStyle',':', 'Color', 'red', 'LineWidth',0.6); 
 plot(t,ESTIMATESUKF_sysID(:,3),'DisplayName','UKF-sysID',...
-     'LineStyle',':', 'Marker','none', 'Color', eccColPalUKF(1), 'LineWidth',4);
-plot(t,ESTIMATESSRUKF(:,3),'DisplayName','SR-UKF',...
-     'LineStyle','--', 'Marker','none', 'Color', eccColPalUKF(2), 'LineWidth',3.6);
+     'LineStyle',':', 'Marker','none', 'Color', eccColPalUKF(1), 'LineWidth',2);
+plot(t,ESTIMATESSRUKF(:,3),'DisplayName','UKF-SR',...
+     'LineStyle','--', 'Marker','none', 'Color', eccColPalUKF(2), 'LineWidth',1.8);
 plot(t,ESTIMATESUKFAdd(:,3),'DisplayName','UKF-add',...
-     'LineStyle','-.', 'Marker','none', 'Color', eccColPalUKF(3), 'LineWidth',3.6);
+     'LineStyle','-.', 'Marker','none', 'Color', eccColPalUKF(3), 'LineWidth',1.8);
 plot(t,ESTIMATESUKFAug(:,3),'DisplayName','UKF-aug',...
-     'LineStyle','--', 'Marker','none', 'Color', eccColPalUKF(4), 'LineWidth',2.4);
+     'LineStyle','--', 'Marker','none', 'Color', eccColPalUKF(4), 'LineWidth',1.2);
 plot(t,ESTIMATESUKFFullyAug(:,3),'DisplayName','UKF-fully-aug',...
-     'LineStyle','-.', 'Marker','none', 'Color', eccColPalUKF(5), 'LineWidth',2.4);
+     'LineStyle','-.', 'Marker','none', 'Color', eccColPalUKF(5), 'LineWidth',1.2);
 % plot(t,ESTIMATEScUKFNLP(:,3),'DisplayName','cUKF-NLP',...
 %      'LineStyle','-', 'Marker','none', 'Color', eccColorPalette(2), 'LineWidth',1);
-% plot(t,ESTIMATEScUKFQP(:,3),'DisplayName','cUKF-QP',...
-%      'LineStyle','-.', 'Marker','none', 'Color', eccColorPalette(4), 'LineWidth',1.5); 
+% plot(t,ESTIMATEScUKFQPAdd(:,3),'DisplayName','cUKF-add',...
+%      'LineStyle','--', 'Marker','none', 'Color', eccColPalcUKF(3), 'LineWidth',2); 
+% plot(t,ESTIMATEScUKFQPAug(:,3),'DisplayName','cUKF-aug',...
+%      'LineStyle','-.', 'Marker','none', 'Color', eccColPalcUKF(2), 'LineWidth',1.7); 
+% plot(t,ESTIMATEScUKFQPFullyAug(:,3),'DisplayName','cUKF-fully-aug',...
+%      'LineStyle','-.', 'Marker','none', 'Color', eccColPalcUKF(4), 'LineWidth',1.2); 
 % ylim([0.4,0.7])
 set(gca, "YColor", 'k')     % make right y-axis black 
 set(gca,'xticklabel',[])    % remove x-tick-lables
@@ -663,38 +684,54 @@ ylabel('$X_\mathrm{ch4} \mathrm{[kg/m^3]}$','Interpreter', 'latex')
 subplot(2,1,2)
 yyaxis right
 stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
-       'LineStyle','-', 'Color', feedCol, 'LineWidth',4); 
+       'LineStyle','-', 'Color', feedCol, 'LineWidth',2); 
 ylabel('feed vol flow $\mathrm{[m^3/d]}$','Interpreter', 'latex')
 set(gca, "YColor", 'k')     % make right y-axis black 
 yyaxis left % now plot all the curves
-plot(tMeas,yClean(:,2),'DisplayName','clean model output',...
-     'LineStyle','-', 'Color', trueCol, 'LineWidth',1.6)
+plot(tMeas, MESS.yMeas(:,2),'w','DisplayName','noisy measurements',...
+        'Marker','o', 'MarkerSize',4, 'MarkerFaceColor',measCol); 
 hold on; 
-scatter(tMeas, MESS.yMeas(:,2),150,'DisplayName','noisy measurements',...
-        'Marker','.', 'Color', measCol); 
+plot(tMeas,yClean(:,2),'DisplayName','clean model output',...
+     'LineStyle','-', 'Color', trueCol, 'LineWidth',0.8)
 % plot(t,EKFOutput(:,2),'DisplayName','EKF',...
 %      'LineStyle',':', 'Marker','none', 'Color', 'red', 'LineWidth',0.8); 
 plot(t,UKFOutput_sysID(:,2),'DisplayName','UKF-sysID',...
-     'LineStyle',':', 'Marker','none', 'Color', eccColPalUKF(1), 'LineWidth',4) 
-plot(t,SRUKFOutput(:,2),'DisplayName','SR-UKF',...
-     'LineStyle','--', 'Marker','none', 'Color', eccColPalUKF(2), 'LineWidth',3.6); 
+     'LineStyle',':', 'Marker','none', 'Color', eccColPalUKF(1), 'LineWidth',2) 
+plot(t,SRUKFOutput(:,2),'DisplayName','UKF-SR',...
+     'LineStyle','--', 'Marker','none', 'Color', eccColPalUKF(2), 'LineWidth',1.8); 
 plot(t,UKFAddOutput(:,2),'DisplayName','UKF-add',...
-     'LineStyle','-.', 'Marker','none', 'Color', eccColPalUKF(3), 'LineWidth',3.6)
+     'LineStyle','-.', 'Marker','none', 'Color', eccColPalUKF(3), 'LineWidth',1.8)
 plot(t,UKFAugOutput(:,2),'DisplayName','UKF-aug',...
-     'LineStyle','--', 'Marker','none', 'Color', eccColPalUKF(4), 'LineWidth',2.4); 
+     'LineStyle','--', 'Marker','none', 'Color', eccColPalUKF(4), 'LineWidth',1.2); 
 plot(t,UKFFullyAugOutput(:,2),'DisplayName','UKF-fully-aug','Marker','none',...
-     'LineStyle','-.', 'Marker','none', 'Color', eccColPalUKF(5), 'LineWidth',2.4); 
+     'LineStyle','-.', 'Marker','none', 'Color', eccColPalUKF(5), 'LineWidth',1.2); 
 % plot(t,cUKFNLPOutput(:,2),'DisplayName','cUKF-NLP',...
 %      'LineStyle','-', 'Marker','none', 'Color', eccColorPalette(2), 'LineWidth',1); 
-% plot(t,cUKFQPOutput(:,2),'DisplayName','cUKF-QP','Marker','none',...
-%      'LineStyle','-.', 'Marker','none', 'Color', eccColorPalette(4), 'LineWidth',1.5); 
+% plot(t,cUKFQPAddOutput(:,2),'DisplayName','cUKF-add','Marker','none',...
+%      'LineStyle','--', 'Marker','none', 'Color', eccColPalcUKF(3), 'LineWidth',2); 
+% plot(t,cUKFQPAugOutput(:,2),'DisplayName','cUKF-aug','Marker','none',...
+%      'LineStyle','-.', 'Marker','none', 'Color', eccColPalcUKF(2), 'LineWidth',1.7); 
+% plot(t,cUKFQPFullyAugOutput(:,2),'DisplayName','cUKF-fully-aug','Marker','none',...
+%      'LineStyle','--', 'Marker','none', 'Color', eccColPalcUKF(4), 'LineWidth',1.2); 
 % ylim([0.4,0.85])
 set(gca, "YColor", 'k')     % make right y-axis black 
 ylabel('$S_\mathrm{co2} \mathrm{[kg/m^3]}$','Interpreter', 'latex')
 xlabel('time $\mathrm{[d]}$','Interpreter', 'latex')
-% change font size:
-fontsize(ECCPlot,26,'points')
-% change marker size in legend:
-[h,icons] = legend('Position',[0.74 0.36 0.1 0.2],'Interpreter', 'latex'); 
-objhl = findobj(icons, 'type', 'patch');    % objects of legend of type patch
-set(objhl, 'Markersize', 15);               % set marker size as desired
+% increase font size:
+fontsize(ECCPlot,14,'points')
+% set up legend:
+leg = legend('Interpreter','latex','Position',[0.35 0.42 0.5 0.2]); 
+leg.NumColumns = 2; %   2 column legend
+% prepare plot to be saved as pdf:
+set(gcf, 'PaperPosition', [0 0 16 16*heightFactor]); %Position plot at left hand corner with width 5 and height 5.
+set(gcf, 'PaperSize', [16 16*heightFactor]); %Set the paper to have width 5 and height 5.
+
+% % create sub-folder (if non-existent yet) and save plot there:
+% currPath = pwd; 
+% pathToResults = fullfile(currPath,'generatedPlots');
+% if ~exist(pathToResults, 'dir')
+%     mkdir(pathToResults)
+% end
+% plotName = 'UKF'; 
+% fileName = fullfile(pathToResults,plotName); 
+% saveas(gcf, fileName, 'pdf') %Save figure
