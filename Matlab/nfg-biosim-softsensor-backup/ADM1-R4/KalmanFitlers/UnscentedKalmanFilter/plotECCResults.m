@@ -7,70 +7,104 @@
 
 %% create a bar plot with the improvements in computation time
 %   
-close 
-figBarPlot = figure(); 
+
+x      = 100;   % Screen position
+y      = 200;   % Screen position
+width  = 600;   % Width of figure (by default in pixels)
+heightFactor = 0.3;
+height = width*heightFactor; % Height of figure
+figBarPlot = figure('Position', [x y width height]);
+
 noiseVersion = categorical({'add','aug','fully-aug'});
 tRun = [54.17 48.42 28.77 5.12; ... %   add                     
         129.57 97.59 56.24 17.17; ... % aug         
         158.06 147.55 66.21 19.36]; %   fully-aug
 b = bar(noiseVersion,tRun); % "CData", colorVector
 % change color of bars (1 color for 1 setup)
-colorPaletteViridis = ["#fc8961", "#b73779", "#51127c", "#000004"]; % 5 colors magma
+colPalMagma = ["#fc8961", "#b73779", "#51127c", "#000004"]; % 5 colors magma
 for k = 1:4
-    b(k).FaceColor = colorPaletteViridis(k);
+    b(k).FaceColor = colPalMagma(k);
 end
-ylim([0,160])
-ylabel('run time in [s]')
-legend('NLP', 'NLP-grad', 'NLP-grad-hess', 'QP','Location','northwest')
-fontsize(figBarPlot,20,"point")
+ylim([0,165])
+ylabel('run time in [s]', 'Interpreter','latex')
+% set up legend:
+legend('NLP', 'NLP-grad', 'NLP-grad-hess', 'QP','Position',[0.18 0.6 0.2 0.2],'Interpreter','latex')
+fontsize(figBarPlot,14,"point")
+
+% prepare plot to be saved as pdf:
+set(gcf, 'PaperPosition', [0 0 16 16*heightFactor]); %Position plot at left hand corner with width 5 and height 5.
+set(gcf, 'PaperSize', [16 16*heightFactor]); %Set the paper to have width 5 and height 5.
+
+% create sub-folder (if non-existent yet) and save plot there:
+currPath = pwd; 
+pathToResults = fullfile(currPath,'generatedPlots');
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+plotName = 'barPlotcUKF'; 
+fileName = fullfile(pathToResults,plotName); 
+saveas(gcf, fileName, 'pdf') %Save figure
 
 
-%%
-y = [2 2 3; 2 5 6; 2 8 9; 2 11 12];
-h = bar(y); 
-
-
-% %% create a plot of nRMSE over tCalc
-% %                         1        2           3         4         5           6         7        8         9        10        11       
-% eccColorPaletteRMSE = ["#000004","#b73779", "#721f81", "#932b80","#51127c","#3b528b","#287c8e","#fed799","#feb078","#fc8961","#f1605d"]; 
+%% create a plot of nRMSE over tCalc
+%                         1          2         3           4         5         6        7         8       
+eccColorPaletteRMSE = ["#fcfdbf","#febb81", "#f8765c", "#d3436e","#982d80","#5f187f","#221150","#000004"]; 
+markerShapes =        {'diamond', '>',        '^',      '<',     'square',    'o',  'pentagram','hexagram'}; 
 % markerShapes =        {'o',   'square', 'hexagram',  'o',      '*',   'diamond', 'square',  '<',      '>',      'v',      '^'}; 
-% %               1               2              3                 4         5                6                  7                8           9                 10           11
-% myLabels = {'UKF-sysID','UKF-add','UKF-add-\gamma','SR-UKF','SR-UKF-\gamma','UKF-aug','UKF-fully-aug','cUKF-NLP','cUKF-NLP-grad','cUKF-NLP-grad-hess','cUKF-QP'}; 
-% stdSz = 50; % standard size of markers
-% magnifier = [1.5, 2, 3];
-% myLineWidth = 1.5; 
-% 
-% % tCalc = [1,2,2,3,4,5,50,45,30,20]; 
-% tCalc = [1.7288, 1.5909, 1.4433, 1.4735, 1.5681, 2.7592, 3.5497, 54.1704, 48.4247, 28.7659, 5.1166];
-% nRMSE = [0.0158, 0.0261, 0.0261, 0.0118, 0.0118, 0.0542, 0.0666, 0.0105, 0.0105, 0.0105, 0.0105]; 
-% 
-% % close
-% figure_t_RMSE = figure;
+%               1                     2                    3               4               5          6             7                8                   
+myLabels = {'UKF-SR-$\gamma$','UKF-add-$\gamma$','UKF-aug-$\gamma$','UKF-fully-aug','UKF-sysID','cUKF-add-QP','cUKF-aug-QP','cUKF-fully-aug-QP'}; 
+stdSz = 50; % >standard size of markers
+newStdSz = 10; % new standard size of markers
+magnifier = [1.5, 2, 3];
+myLineWidth = 1.5; 
+
+% tCalc = [1,2,2,3,4,5,50,45,30,20]; 
+tCalc = [2.18,  2.15,   3.84,   4.14,   1.73,   5.12,   17.17,  19.36];
+nRMSE = [0.0118,0.0118, 0.0116, 0.0125, 0.0158, 0.0105, 0.0206, 0.0194]; 
+
+x      = 100;   % Screen position
+y      = 200;   % Screen position
+width  = 700;   % Width of figure (by default in pixels)
+heightFactor = 0.3;
+height = width*heightFactor; % Height of figure
+figure_t_RMSE = figure('Position', [x y width height]);
+
 % scatter(tCalc(1),nRMSE(1),stdSz,markerShapes{1},'filled','MarkerFaceColor',eccColorPaletteRMSE(1),...
 %     'MarkerEdgeColor',eccColorPaletteRMSE(1),'DisplayName',myLabels{1})
-% hold on 
-% scatter(tCalc(2),nRMSE(2),stdSz*magnifier(3),markerShapes{2},'LineWidth', myLineWidth,...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(2),'DisplayName',myLabels{2})
-% scatter(tCalc(3),nRMSE(3),stdSz*magnifier(1),markerShapes{3},'filled','MarkerFaceColor',eccColorPaletteRMSE(3),...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(3),'DisplayName',myLabels{3})
-% scatter(tCalc(4),nRMSE(4),stdSz*magnifier(3),markerShapes{4},'LineWidth',myLineWidth, ...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(4),'DisplayName',myLabels{4})
-% scatter(tCalc(5),nRMSE(5),stdSz*magnifier(3),markerShapes{5},'LineWidth', 1, ...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(5),'DisplayName',myLabels{5})
-% scatter(tCalc(6),nRMSE(6),stdSz,markerShapes{6},'filled','MarkerFaceColor',eccColorPaletteRMSE(6), ...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(6),'DisplayName',myLabels{6})
-% scatter(tCalc(7),nRMSE(7),stdSz*magnifier(2),markerShapes{7},'filled','MarkerFaceColor',eccColorPaletteRMSE(7), ...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(7),'DisplayName',myLabels{7})
-% scatter(tCalc(8),nRMSE(8),stdSz,markerShapes{8},'filled','MarkerFaceColor',eccColorPaletteRMSE(8), ...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(8),'DisplayName',myLabels{8})
-% scatter(tCalc(9),nRMSE(9),stdSz,markerShapes{9},'filled','MarkerFaceColor',eccColorPaletteRMSE(9), ...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(9),'DisplayName',myLabels{9})
-% scatter(tCalc(10),nRMSE(10),stdSz,markerShapes{10},'filled','MarkerFaceColor',eccColorPaletteRMSE(10), ...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(10),'DisplayName',myLabels{10})
-% scatter(tCalc(11),nRMSE(11),stdSz,markerShapes{11},'filled','MarkerFaceColor',eccColorPaletteRMSE(11),...
-%     'MarkerEdgeColor',eccColorPaletteRMSE(11),'DisplayName',myLabels{11})
-% xlabel('average run time [s]')
-% xlim([0,60]); 
-% ylabel('average nRMSE')
-% ylim([0,0.08])
-% legend()
+plot(tCalc(1),nRMSE(1),'w','DisplayName',myLabels{1},'Marker',markerShapes{1},...
+    'MarkerSize',newStdSz*magnifier(1), 'MarkerFaceColor',eccColorPaletteRMSE(1),'MarkerEdgeColor','k','LineWidth',myLineWidth);
+hold on 
+plot(tCalc(2),nRMSE(2),'w','DisplayName',myLabels{2},'Marker',markerShapes{2},...
+    'MarkerSize',newStdSz, 'MarkerFaceColor',eccColorPaletteRMSE(3)); 
+plot(tCalc(3),nRMSE(3),'w','DisplayName',myLabels{3},'Marker',markerShapes{3},...
+    'MarkerSize',newStdSz, 'MarkerFaceColor',eccColorPaletteRMSE(4)); 
+plot(tCalc(4),nRMSE(4),'w','DisplayName',myLabels{4},'Marker',markerShapes{4},...
+    'MarkerSize',newStdSz, 'MarkerFaceColor',eccColorPaletteRMSE(5)); 
+plot(tCalc(5),nRMSE(5),'w','DisplayName',myLabels{5},'Marker',markerShapes{5},...
+    'MarkerSize',newStdSz, 'MarkerFaceColor',eccColorPaletteRMSE(2)); 
+plot(tCalc(6),nRMSE(6),'w','DisplayName',myLabels{6},'Marker',markerShapes{6},...
+    'MarkerSize',newStdSz, 'MarkerFaceColor',eccColorPaletteRMSE(6)); 
+plot(tCalc(7),nRMSE(7),'w','DisplayName',myLabels{7},'Marker',markerShapes{7},...
+    'MarkerSize',newStdSz*magnifier(1), 'MarkerFaceColor',eccColorPaletteRMSE(7)); 
+plot(tCalc(8),nRMSE(8),'w','DisplayName',myLabels{8},'Marker',markerShapes{8},...
+    'MarkerSize',newStdSz*magnifier(1), 'MarkerFaceColor',eccColorPaletteRMSE(8)); 
+xlabel('run time [s]','Interpreter','latex')
+xlim([0,20]); 
+ylabel('NRMSE','Interpreter','latex')
+ylim([0,0.025])
+fontsize(figure_t_RMSE,15,'points')
+leg = legend('Interpreter','latex','Position',[0.37 0.42 0.5 0.2]); 
+leg.NumColumns = 2; %   2 column legend
+% prepare plot to be saved as pdf:
+set(gcf, 'PaperPosition', [0 0 18 18*heightFactor]); %Position plot at left hand corner with width 5 and height 5.
+set(gcf, 'PaperSize', [18 18*heightFactor]); %Set the paper to have width 5 and height 5.
+
+% create sub-folder (if non-existent yet) and save plot there:
+currPath = pwd; 
+pathToResults = fullfile(currPath,'generatedPlots');
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+plotName = 'nRMSE_vs_runTime'; 
+fileName = fullfile(pathToResults,plotName); 
+saveas(gcf, fileName, 'pdf') %Save figure
