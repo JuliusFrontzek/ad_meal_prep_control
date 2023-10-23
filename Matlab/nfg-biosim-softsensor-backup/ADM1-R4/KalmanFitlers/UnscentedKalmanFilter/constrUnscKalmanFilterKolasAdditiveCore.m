@@ -167,21 +167,21 @@ sigmaXOpt = nan(nStates,nSigmaPoints);    % allocate memory
 %% run constrained optimization to determine sigmaX without gradients/Hess
 %%%%%%%%%%%%%%%%%%%%%
 
-% options = optimoptions('fmincon',...
-% 'Display','none');
-% % tic
-% % optimize all updated sigma points: 
-% for k = 1:nSigmaPoints
-% 
-%     ukfCostFun = @(sigmaX) evaluateCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
-%                                 yMeas',R,PMinus,g); 
-%     % choose the old sigmaXProp as initial value for optimization:
-%     sigmaX0 = sigmaXProp(:,k); 
-%     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaX0,A,b,[],[],[],[],[],options); 
-% %         [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaX0,[],[],[],[],lb,ub,[],options); 
-% end
-% % output
-% % toc
+options = optimoptions('fmincon',...
+'Display','none');
+% tic
+% optimize all updated sigma points: 
+for k = 1:nSigmaPoints
+
+    ukfCostFun = @(sigmaX) evaluateCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
+                                yMeas',R,PMinus,g); 
+    % choose the old sigmaXProp as initial value for optimization:
+    sigmaX0 = sigmaXProp(:,k); 
+    [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaX0,A,b,[],[],[],[],[],options); 
+%         [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(ukfCostFun,sigmaX0,[],[],[],[],lb,ub,[],options); 
+end
+% output
+% toc
 
 %%%%%%%%%%%%%%%%%%%%%
 %% run constrained optimization to determine sigmaX with gradients
@@ -208,24 +208,24 @@ sigmaXOpt = nan(nStates,nSigmaPoints);    % allocate memory
 %% run constrained optimization to determine sigmaX with gradients & Hess
 %%%%%%%%%%%%%%%%%%%%%
 
-% setUp gradient and Hessian for fmincon:
-myHessFcn = @(sigmaX,lambda) evaluateHessCUKFCostFunCore(sigmaX,lambda,R,PMinus); 
-options = optimoptions('fmincon',...
-    "SpecifyObjectiveGradient",true,...
-    'HessianFcn',myHessFcn,'Display','none');
-
-% tic
-% optimize all updated sigma points: 
-for k = 1:nSigmaPoints
-    gradCostFun = @(sigmaX) evaluateGradientCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
-                                yMeas',R,PMinus,g); 
-%     choose the old sigmaXProp as initial value for optimization:  
-    sigmaX0 = sigmaXProp(:,k); 
-    [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaX0,A,b,[],[],[],[],[],options); 
-%     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaX0,[],[],[],[],lb,ub,[],options); 
-end 
-% toc
-% output
+% % setUp gradient and Hessian for fmincon:
+% myHessFcn = @(sigmaX,lambda) evaluateHessCUKFCostFunCore(sigmaX,lambda,R,PMinus); 
+% options = optimoptions('fmincon',...
+%     "SpecifyObjectiveGradient",true,...
+%     'HessianFcn',myHessFcn,'Display','none');
+% 
+% % tic
+% % optimize all updated sigma points: 
+% for k = 1:nSigmaPoints
+%     gradCostFun = @(sigmaX) evaluateGradientCUKFCostFunCore(sigmaX,sigmaXProp(:,k), ...
+%                                 yMeas',R,PMinus,g); 
+% %     choose the old sigmaXProp as initial value for optimization:  
+%     sigmaX0 = sigmaXProp(:,k); 
+%     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaX0,A,b,[],[],[],[],[],options); 
+% %     [sigmaXOpt(:,k),fval,exitflag,output] = fmincon(gradCostFun,sigmaX0,[],[],[],[],lb,ub,[],options); 
+% end 
+% % toc
+% % output
 
 % % this clipping should no longer be required thanks to optimization:
 % % if updated sigma points violate constraints, apply clipping: 

@@ -49,7 +49,7 @@ nSigmaPoints = 2*nStates + 1;
 % define scaling parameters and weights: 
 alpha = 1;  % Kolas 2009, (18)
 beta = 2;   % for Gaussian prior (Diss vdM, S.56)
-kappa = 0;  % leichte Abweichung zu Kolas (er nimmt 0)
+kappa = 0;  % Kolas nimmt 0
 lambda = alpha^2*(nStates + kappa) - nStates; 
 gamma = sqrt(nStates + lambda); % scaling parameter
 % gamma = 1;  % XY just to check: that delivers good estimations!
