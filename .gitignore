@@ -6,10 +6,10 @@ __pycache__
 coinhsl
 
 # File types
+*.pdf
 *.c
 *.asv
 *.png
 *.pkl
 *.DS_Store
-*.pdf
 .DS_Store
