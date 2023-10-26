@@ -228,14 +228,14 @@ for k = 1:nSamples
 
     % ---UKFs------------------------------
     [xPlusUKF_sysID,PPlusUKF_sysID] = my_UKF_ADM1_Core(ukf,feedInfo,yMeas,tSpan,params,f,g);    
-%     [xPlusSRUKF,SPlusSRUKF] = SRunscKalmanFilterAdditiveCore(xMinusSRUKF,SMinusSRUKF,...
-%                             tSpan,feedInfo,yMeas,params,SQ,SR,f,g);
-%     [xPlusUKFAdd,PPlusUKFAdd] = unscKalmanFilterKolasAdditiveCore(xMinusUKFAdd,PMinusUKFAdd,...
-%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPlusUKFAug,PPlusUKFAug] = unscKalmanFilterKolasAugmentedCore(xMinusUKFAug,PMinusUKFAug,...
-%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
-%     [xPlusUKFFullyAug,PPlusUKFFullyAug] = unscKalmanFilterKolasFullyAugmentedCore(xMinusUKFFullyAug,PMinusUKFFullyAug,...
-%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    [xPlusSRUKF,SPlusSRUKF] = SRunscKalmanFilterAdditiveCore(xMinusSRUKF,SMinusSRUKF,...
+                            tSpan,feedInfo,yMeas,params,SQ,SR,f,g);
+    [xPlusUKFAdd,PPlusUKFAdd] = unscKalmanFilterKolasAdditiveCore(xMinusUKFAdd,PMinusUKFAdd,...
+                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    [xPlusUKFAug,PPlusUKFAug] = unscKalmanFilterKolasAugmentedCore(xMinusUKFAug,PMinusUKFAug,...
+                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
+    [xPlusUKFFullyAug,PPlusUKFFullyAug] = unscKalmanFilterKolasFullyAugmentedCore(xMinusUKFFullyAug,PMinusUKFFullyAug,...
+                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
 
     %% cUKF-NLP:
 %     [xPluscUKFNLP,PPluscUKFNLP,fCounts(k),nIters(k)] = constrUnscKalmanFilterKolasAdditiveCore(xMinuscUKFNLP,PMinuscUKFNLP, ...
@@ -245,12 +245,12 @@ for k = 1:nSamples
 %     [xPluscUKFNLP,PPluscUKFNLP,fCounts(k),nIters(k)] = constrUnscKalmanFilterKolasFullyAugmentedCore(xMinuscUKFNLP,PMinuscUKFNLP, ...
 %                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
     %% cUKF-QP:
-    [xPluscUKFQPAdd,PPluscUKFQPAdd,nIters(k)] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQPAdd,PMinuscUKFQPAdd, ...
-                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
-    [xPluscUKFQPAug,PPluscUKFQPAug,nIters(k)] = constrUnscKalmanFilterKolasQPAugmentedCore(xMinuscUKFQPAug,PMinuscUKFQPAdd, ...
-                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
-    [xPluscUKFQPFullyAug,PPluscUKFQPFullyAug,nIters(k)] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xMinuscUKFQPFullyAug,PMinuscUKFQPAdd, ...
-                            tSpan,feedInfo,yMeas,params,Q,R,f,g);
+%     [xPluscUKFQPAdd,PPluscUKFQPAdd,nIters(k)] = constrUnscKalmanFilterKolasQPAdditiveCore(xMinuscUKFQPAdd,PMinuscUKFQPAdd, ...
+%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+%     [xPluscUKFQPAug,PPluscUKFQPAug,nIters(k)] = constrUnscKalmanFilterKolasQPAugmentedCore(xMinuscUKFQPAug,PMinuscUKFQPAdd, ...
+%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
+%     [xPluscUKFQPFullyAug,PPluscUKFQPFullyAug,nIters(k)] = constrUnscKalmanFilterKolasQPFullyAugmentedCore(xMinuscUKFQPFullyAug,PMinuscUKFQPAdd, ...
+%                             tSpan,feedInfo,yMeas,params,Q,R,f,g);
 
 %     % ---CKF-----------------------------
 %     [xPlusCKF,PPlusCKF] = my_CKF_ADM1_Core(ckf,feedInfo,yMeas,tSpan,params,f,g);
@@ -262,14 +262,14 @@ for k = 1:nSamples
 
 %     ESTIMATESEKF(k+1,:) = xPlusEKF';
     ESTIMATESUKF_sysID(k+1,:) = xPlusUKF_sysID';
-%     ESTIMATESSRUKF(k+1,:) = xPlusSRUKF; 
-%     ESTIMATESUKFAdd(k+1,:) = xPlusUKFAdd';
-%     ESTIMATESUKFAug(k+1,:) = xPlusUKFAug';
-%     ESTIMATESUKFFullyAug(k+1,:) = xPlusUKFFullyAug';
+    ESTIMATESSRUKF(k+1,:) = xPlusSRUKF; 
+    ESTIMATESUKFAdd(k+1,:) = xPlusUKFAdd';
+    ESTIMATESUKFAug(k+1,:) = xPlusUKFAug';
+    ESTIMATESUKFFullyAug(k+1,:) = xPlusUKFFullyAug';
 %     ESTIMATEScUKFNLP(k+1,:) = xPluscUKFNLP';
-    ESTIMATEScUKFQPAdd(k+1,:) = xPluscUKFQPAdd';
-    ESTIMATEScUKFQPAug(k+1,:) = xPluscUKFQPAug';
-    ESTIMATEScUKFQPFullyAug(k+1,:) = xPluscUKFQPFullyAug';
+%     ESTIMATEScUKFQPAdd(k+1,:) = xPluscUKFQPAdd';
+%     ESTIMATEScUKFQPAug(k+1,:) = xPluscUKFQPAug';
+%     ESTIMATEScUKFQPFullyAug(k+1,:) = xPluscUKFQPFullyAug';
 %     ESTIMATESCKF(k+1,:) = xPlusCKF';
     
 %     COVARIANCEEKF(:,:,k+1) = PPlusEKF; 
@@ -285,27 +285,27 @@ for k = 1:nSamples
     % ... estimated state from Kalman Filter:
 %     xMinusEKF = xPlusEKF;
     xMinusUKF_sysID = xPlusUKF_sysID; 
-%     xMinusSRUKF = xPlusSRUKF;
-%     xMinusUKFAdd = xPlusUKFAdd;
-%     xMinusUKFAug = xPlusUKFAug;
-%     xMinusUKFFullyAug = xPlusUKFFullyAug; 
+    xMinusSRUKF = xPlusSRUKF;
+    xMinusUKFAdd = xPlusUKFAdd;
+    xMinusUKFAug = xPlusUKFAug;
+    xMinusUKFFullyAug = xPlusUKFFullyAug; 
 %     xMinuscUKFNLP = xPluscUKFNLP;
-    xMinuscUKFQPAdd = xPluscUKFQPAdd;
-    xMinuscUKFQPAug = xPluscUKFQPAug;
-    xMinuscUKFQPFullyAug = xPluscUKFQPFullyAug;
+%     xMinuscUKFQPAdd = xPluscUKFQPAdd;
+%     xMinuscUKFQPAug = xPluscUKFQPAug;
+%     xMinuscUKFQPFullyAug = xPluscUKFQPFullyAug;
 %     xMinusCKF = xPlusCKF; 
 
     % ... state error covariance matrices:
 %     PMinusEKF = PPlusEKF;
     PMinusUKF_sysID = PPlusUKF_sysID; 
-%     SMinusSRUKF = SPlusSRUKF; 
-%     PMinusUKFAdd = PPlusUKFAdd;
-%     PMinusUKFAug = PPlusUKFAug;
-%     PMinusUKFFullyAug = PPlusUKFFullyAug;
+    SMinusSRUKF = SPlusSRUKF; 
+    PMinusUKFAdd = PPlusUKFAdd;
+    PMinusUKFAug = PPlusUKFAug;
+    PMinusUKFFullyAug = PPlusUKFFullyAug;
 %     PMinuscUKFNLP = PPluscUKFNLP;
-    PMinuscUKFQPAdd = PPluscUKFQPAdd;
-    PMinuscUKFQPAug = PPluscUKFQPAug;
-    PMinuscUKFQPFullyAug = PPluscUKFQPFullyAug;
+%     PMinuscUKFQPAdd = PPluscUKFQPAdd;
+%     PMinuscUKFQPAug = PPluscUKFQPAug;
+%     PMinuscUKFQPFullyAug = PPluscUKFQPFullyAug;
 %     PMinusCKF = PPlusCKF; 
 
 end
@@ -638,15 +638,15 @@ colorFeeding = "#02C39A"; % light green
 x      = 100;   % Screen position
 y      = 200;   % Screen position
 width  = 600; % Width of figure
-heightFactor = 0.6;
+heightFactor = 0.7;
 height = width*heightFactor; % Height of figure (by default in pixels)
 
 ECCPlot = figure('Position', [x y width height]);
 
 % X_ch:
-subplot(2,1,1) 
+s1 = subplot(3,1,1); 
 yyaxis right    % plot feeding first
-stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
+stairs([tEvents;tMeas(end)], [feedVolFlow;feedVolFlow(end)],'DisplayName','feeding',...
        'LineStyle','-', 'Color', feedCol, 'LineWidth',2); 
 ylabel('feed vol flow $\mathrm{[m^3 d^{-1}]}$','Interpreter', 'latex')
 set(gca, "YColor", 'k')     % make right y-axis black 
@@ -680,10 +680,14 @@ set(gca, "YColor", 'k')     % make right y-axis black
 set(gca,'xticklabel',[])    % remove x-tick-lables
 % legend('Location','NorthEast'); 
 
+% create an additional (empty) middle subplot window for the legend: 
+s2 = subplot(3,1,2); 
+plot(1, nan, 1, nan, 'r'); % just plot anything for fun (will be invisible later)
+
 % S_co2/X_li:
-subplot(2,1,2)
+s3 = subplot(3,1,3); 
 yyaxis right
-stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
+stairs([tEvents;tMeas(end)], [feedVolFlow;feedVolFlow(end)], 'DisplayName','feeding',...
        'LineStyle','-', 'Color', feedCol, 'LineWidth',2); 
 ylabel('feed vol flow $\mathrm{[m^3 d^{-1}]}$','Interpreter', 'latex')
 set(gca, "YColor", 'k')     % make right y-axis black 
@@ -715,8 +719,7 @@ yyaxis left % now plot all the curves
 % % plot(t,cUKFQPFullyAugOutput(:,2),'DisplayName','cUKF-fully-aug','Marker','none',...
 % %      'LineStyle','--', 'Marker','none', 'Color', eccColPalcUKF(4), 'LineWidth',1.2); 
 % ylabel('$S_\mathrm{co2} \mathrm{[kg\, m^{-3}]}$','Interpreter', 'latex')
-% leg = legend('Interpreter','latex','Position',[0.32 0.4 0.5 0.2]); 
-% leg.NumColumns = 2; %   2 column legend
+% % legend: see below
 
 % x-values:
 plot(tMeas,trueStates(:,5),'DisplayName','true',...
@@ -740,25 +743,34 @@ plot(t,ESTIMATEScUKFQPAug(:,5),'DisplayName','cUKF-aug',...
      'LineStyle','-.', 'Marker','none', 'Color', eccColPalcUKF(2), 'LineWidth',1.7); 
 plot(t,ESTIMATEScUKFQPFullyAug(:,5),'DisplayName','cUKF-fully-aug',...
      'LineStyle','-.', 'Marker','none', 'Color', eccColPalcUKF(4), 'LineWidth',1.2); 
-% ylim([0,2.5])
+ylim([0,2.5])
 ylabel('$X_\mathrm{li} \mathrm{[kg \, m^{-3}]}$','Interpreter', 'latex')
-leg = legend('Interpreter','latex','Position',[0.39 0.8 0.5 0.2]); 
-leg.NumColumns = 2; %   2 column legend
+% legend: see below
 
+set(gca, "YColor", 'k')     % make left y-axis black 
 xlabel('time $\mathrm{[d]}$','Interpreter', 'latex')
 fontsize(ECCPlot,14,'points') % increase font size
-set(gca, "YColor", 'k')     % make right y-axis black 
-% set up legend:
-% prepare plot to be saved as pdf:
-set(gcf, 'PaperPosition', [0 0 16 16*heightFactor]); %Position plot at left hand corner with width 5 and height 5.
-set(gcf, 'PaperSize', [16 16*heightFactor]); %Set the paper to have width 5 and height 5.
 
-% create sub-folder (if non-existent yet) and save plot there:
-currPath = pwd; 
-pathToResults = fullfile(currPath,'generatedPlots');
-if ~exist(pathToResults, 'dir')
-    mkdir(pathToResults)
-end
-plotName = 'cUKF'; 
-fileName = fullfile(pathToResults,plotName); 
-saveas(gcf, fileName, 'pdf') %Save figure
+% set up legend:
+leg = legend('Interpreter','latex','Position',[0.28 0.4 0.5 0.2]); 
+leg.NumColumns = 2; %   2 column legend
+
+% set the dimensions of all three windows right: 
+set(s3, 'OuterPosition', [0, 0, 1, .42]); % [x0, y0, width, height]
+set(s2, 'OuterPosition', [0, .32, 1, .36]); % [x0, y0, width, height]
+set(s1, 'OuterPosition', [0, .58, 1, .33]); % [x0, y0, width, height]
+set(s2, 'Visible', 'off'); % make plot invisible
+
+% % prepare plot to be saved as pdf:
+% set(gcf, 'PaperPosition', [0 0 16 16*heightFactor]); %Position plot at left hand corner with width 5 and height 5.
+% set(gcf, 'PaperSize', [16 16*heightFactor]); %Set the paper to have width 5 and height 5.
+% 
+% % create sub-folder (if non-existent yet) and save plot there:
+% currPath = pwd; 
+% pathToResults = fullfile(currPath,'generatedPlots');
+% if ~exist(pathToResults, 'dir')
+%     mkdir(pathToResults)
+% end
+% plotName = 'cUKF'; % -gamma 
+% fileName = fullfile(pathToResults,plotName); 
+% saveas(gcf, fileName, 'pdf') %Save figure
