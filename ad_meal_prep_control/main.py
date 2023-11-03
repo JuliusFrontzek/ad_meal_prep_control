@@ -12,6 +12,7 @@ import ad_meal_prep_control.visualization as vis
 import state_estimator
 import substrates
 import time
+from uncertainties import ufloat
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -42,13 +43,11 @@ model = do_mpc.model.Model(model_type)
 
 compile_nlp = False
 
-subs = [
-    substrates.CORN_SILAGE,
-    substrates.SWINE_MANURE,
-    substrates.CHICKEN_DRY_MANURE,
-]
+subs = [substrates.CORN]
 xi = [sub.xi for sub in subs]
 uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in subs]
+
+uncertain_xis[0] = (ufloat(xi[0][5], 0.0), ufloat(xi[0][7], 0.0), ufloat(xi[0][8], 0.0))
 
 # Simulation
 n_days_steady_state = 300
@@ -84,24 +83,42 @@ disturbances = utils.Disturbances(
 # Set the initial state of mpc and simulator
 x0 = np.array(
     [
-        0.0959467827166042,
-        0.0125956088566735,
-        4.64551507877156,
-        0.850445630702126,
-        957.771504116945,
-        5.17942682112536,
-        1.61926162860691e-09,
-        1.49423713467601,
-        0.627629518798448,
-        1.96096023576704,
-        0.535229147950488,
-        13.9999999999977,
-        0.0487500000000000,
-        0.0956777093602567,
-        4.22707761131655,
-        0.0188914691525065,
-        0.355199814936346,
-        0.640296031589364,
+        0.359929804372718,
+        0.913939781925039,
+        1.03665052114464,
+        1.01371477909830,
+        0.998995860722854,
+        0.570334698617142,
+        0.182910519287767,
+        0.649693346416822,
+        0.660136440997950,
+        1.32558963691943,
+        1.23668412192124,
+        0.0714285712796926,
+        1.00000000000000,
+        0.359848053019220,
+        1.02646934861607,
+        0.752154184995984,
+        0.941601080374357,
+        1.15992264269655,
+        # 0.0959467827166042,
+        # 0.0125956088566735,
+        # 4.64551507877156,
+        # 0.850445630702126,
+        # 957.771504116945,
+        # 5.17942682112536,
+        # 1.61926162860691e-09,
+        # 1.49423713467601,
+        # 0.627629518798448,
+        # 1.96096023576704,
+        # 0.535229147950488,
+        # 13.9999999999977,
+        # 0.0487500000000000,
+        # 0.0956777093602567,
+        # 4.22707761131655,
+        # 0.0188914691525065,
+        # 0.355199814936346,
+        # 0.640296031589364,
         39.0 * 1.7 / params_R3.SCALEDOWN,  # m^3
         36.0 * 1.7 / params_R3.SCALEDOWN,  # m^3
     ]
@@ -134,9 +151,33 @@ meas_names = ["V´_g", "p_CH4", "p_CO2", "pH", "S_IN", "TS", "VS", "S_ac"]
 
 # Normalisation
 # Define numeric values for normalization with steady state
-Tx = x0.copy()
+# Tx = x0.copy()
+Tx = np.array(
+    [
+        0.137434457537417,
+        0.0127484119685527,
+        4.79932043710544,
+        0.950816195802454,
+        958.064331770733,
+        2.59654516843011,
+        8.09630748329204,
+        1.46003537123105,
+        0.624174795213073,
+        1.45262583426474,
+        0.421713306327953,
+        14.0000000291803,
+        0.0487500000000000,
+        0.137097486806281,
+        4.42830805698549,
+        0.0297771563953578,
+        0.380487873826158,
+        0.569429468392225,
+        x0[-2],
+        x0[-1],
+    ]
+)
 
-Tx[-2:] = 1.0
+# Tx[-2:] = 1.0
 
 u_max = {
     "solid": 80_000.0 / params_R3.SCALEDOWN,
@@ -166,7 +207,7 @@ x0_norm[:-2] /= Tx[:-2]
 # Set model
 model = adm1_r3_frac_norm(xi_norm, Tu, Tx, Ty)
 
-num_std_devs = 0.000000000000000000001  # Lower and upper bound of uncertainties is determined by the number of standard deviations that we consider
+num_std_devs = 0.0  # 0.000000000000000000001  # Lower and upper bound of uncertainties is determined by the number of standard deviations that we consider
 
 x_ch_nom = np.array([un_xi[0].nominal_value for un_xi in uncertain_xis])
 x_pr_nom = np.array([un_xi[1].nominal_value for un_xi in uncertain_xis])
@@ -300,13 +341,17 @@ u_norm_computed = None
 for k in range(n_days_steady_state):
     screen.fill("white")
 
-    u_norm_steady_state = np.array([[0.03 for _ in range(len(subs))]]).T
+    u_norm_steady_state = np.array(
+        [[8.0 / Tu[0] for _ in range(len(subs))]]
+    ).T  # 1.0 / 1e4
 
     y_next = simulator.make_step(u_norm_steady_state)
     x0_norm = estimator.make_step(y_next)
 
-    simulator._x0.master[-2] = 50.0 / params_R3.SCALEDOWN
-    simulator._x0.master[-1] = 50.0 / params_R3.SCALEDOWN
+    # simulator._x0.master[-2] = 50.0 / params_R3.SCALEDOWN
+    # simulator._x0.master[-1] = 50.0 / params_R3.SCALEDOWN
+
+np.savetxt("results.csv", simulator.data._x, delimiter=",")
 
 x0_ss = simulator._x0.master
 

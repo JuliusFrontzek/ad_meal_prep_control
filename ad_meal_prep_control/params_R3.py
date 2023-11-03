@@ -4,7 +4,9 @@ kchS = kchF / 10.0
 kpr = 0.2
 kli = 0.1
 kdec = 0.02
-fracChFast = 0.75  # fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
+fracChFast = (
+    0.5  # fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
+)
 mu_m_ac = 0.4  # 1/d
 K_S_ac = 0.14  # g/l
 K_I_nh3 = 0.0306  # g/l
@@ -38,6 +40,10 @@ k_AB_IN = 1.0 * 10**10  # l/mol/d
 K_a_ac = 1.737800828749374 * 10 ** (-5.0)  # mol/l
 K_a_co2 = 4.937073397534361 * 10 ** (-7.0)  # mol/l
 K_a_IN = 1.110286652708067 * 10 ** (-9.0)  # mol/l
+
+K_a_IN = 1.3809e-9
+K_a_ac = 1.7378e-5
+K_a_co2 = 5.0981e-7
 
 # Parameters introduced by Julius
 p_gas_storage = p0 * 1.001  # slightly larger than atmospheric pressure [bar]
