@@ -102,24 +102,6 @@ x0 = np.array(
         0.0223970128000483,
         0.358267793064052,
         0.660494133806800,
-        # 0.0959467827166042,
-        # 0.0125956088566735,
-        # 4.64551507877156,
-        # 0.850445630702126,
-        # 957.771504116945,
-        # 5.17942682112536,
-        # 1.61926162860691e-09,
-        # 1.49423713467601,
-        # 0.627629518798448,
-        # 1.96096023576704,
-        # 0.535229147950488,
-        # 13.9999999999977,
-        # 0.0487500000000000,
-        # 0.0956777093602567,
-        # 4.22707761131655,
-        # 0.0188914691525065,
-        # 0.355199814936346,
-        # 0.640296031589364,
         39.0 * 1.7 / params_R3.SCALEDOWN,  # m^3
         36.0 * 1.7 / params_R3.SCALEDOWN,  # m^3
     ]
@@ -173,8 +155,8 @@ Tx = np.array(
         0.0297771563953578,
         0.380487873826158,
         0.569429468392225,
-        x0[-2],
-        x0[-1],
+        params_R3.V_GAS_STORAGE_MAX,
+        params_R3.V_GAS_STORAGE_MAX,
     ]
 )
 
@@ -203,7 +185,7 @@ Ty = np.array(
 xi_norm = list(np.array([val / Tx[:-2] for val in xi]).T)
 
 x0_norm = np.copy(x0)
-x0_norm[:-2] /= Tx[:-2]
+x0_norm /= Tx
 
 # Set model
 model = adm1_r3_frac_norm(xi_norm, Tu, Tx, Ty)
@@ -321,7 +303,7 @@ timer = Timer()
 
 def visualize(bga, data, state_names, meas_names, Tx, Ty, x0_norm, simulator, u_actual):
     x0 = np.copy(x0_norm)
-    x0[:-2] *= np.array([Tx[:-2]]).T
+    x0 *= np.array([Tx]).T
     y = np.array([simulator.data._aux[-1, idx + 1] * Ty for idx, Ty in enumerate(Ty)])
     bga.draw(
         params_R3.V_GAS_STORAGE_MAX,
@@ -339,7 +321,7 @@ def visualize(bga, data, state_names, meas_names, Tx, Ty, x0_norm, simulator, u_
 u_norm_computed = None
 
 # Simulate until steady state
-for k in range(n_days_steady_state):
+for k in range(n_steps_steady_state):
     screen.fill("white")
 
     u_norm_steady_state = np.array(
@@ -462,8 +444,6 @@ timer.info()
 timer.hist()
 
 pygame.quit()
-
-# input("Press any key to exit.")
 
 # Store results:
 if store_results:
