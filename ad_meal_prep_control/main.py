@@ -4,6 +4,7 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
+sys.path.append(os.getcwd())
 import ad_meal_prep_control.utils as utils
 import params_R3
 import copy
