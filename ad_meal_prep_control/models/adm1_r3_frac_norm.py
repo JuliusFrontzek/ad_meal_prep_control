@@ -644,15 +644,19 @@ def adm1_r3_frac_norm(
     )
     model.set_rhs(
         "x_19",
-        v_dot_in_total * y_norm[1] * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out,
+        (v_dot_in_total * y_norm[1] * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out)
+        / Tx[18],
     )  # V_CH4
     model.set_rhs(
         "x_20",
-        v_dot_in_total * y_norm[2] * Ty[2] / p_gas_total_fermenter
-        - y_co2
-        / (1.0 - y_co2)
-        / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
-        * (v_ch4_dot_out * (1.0 + y_h2o / (1.0 - y_h2o))),
+        (
+            v_dot_in_total * y_norm[2] * Ty[2] / p_gas_total_fermenter
+            - y_co2
+            / (1.0 - y_co2)
+            / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
+            * (v_ch4_dot_out * (1.0 + y_h2o / (1.0 - y_h2o)))
+        )
+        / Tx[18],
     )  # V_CO2
 
     # Build the model
