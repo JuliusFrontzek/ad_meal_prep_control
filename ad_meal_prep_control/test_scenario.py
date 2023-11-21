@@ -99,7 +99,7 @@ test_scenario = scenario.Scenario(
     ],
     mterm=mterm,
     lterm=lterm,
-    uncertainty=True,
+    consider_uncertainty=True,
     simulate_steady_state=True,
     simulate_mpc=True,
     mpc_live_vis=True,

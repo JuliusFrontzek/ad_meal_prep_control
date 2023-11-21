@@ -34,7 +34,7 @@ class Scenario:
     plot_vars: list[str]
     mterm: Union[str, None] = None
     lterm: Union[str, None] = None
-    uncertainty: bool = True
+    consider_uncertainty: bool = True
     simulate_steady_state: bool = True
     simulate_mpc: bool = True
     mpc_live_vis: bool = True
@@ -152,7 +152,7 @@ class Scenario:
 
         uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in self._subs]
 
-        if not self.uncertainty:
+        if not self.consider_uncertainty:
             uncertain_xis[0] = (
                 ufloat(xi[0][5], 0.0),
                 ufloat(xi[0][7], 0.0),
@@ -167,27 +167,29 @@ class Scenario:
         x_pr_std_dev = np.array([un_xi[1].std_dev for un_xi in uncertain_xis])
         x_li_std_dev = np.array([un_xi[2].std_dev for un_xi in uncertain_xis])
 
-        self._x_ch_in = np.array(
-            [
-                x_ch_nom - self.num_std_devs * x_ch_std_dev,
-                x_ch_nom,
-                x_ch_nom + self.num_std_devs * x_ch_std_dev,
-            ]
-        )
-        self._x_pr_in = np.array(
-            [
-                x_pr_nom - self.num_std_devs * x_pr_std_dev,
-                x_pr_nom,
-                x_pr_nom + self.num_std_devs * x_pr_std_dev,
-            ]
-        )
-        self._x_li_in = np.array(
-            [
-                x_li_nom - self.num_std_devs * x_li_std_dev,
-                x_li_nom,
-                x_li_nom + self.num_std_devs * x_li_std_dev,
-            ]
-        )
+        if self.consider_uncertainty:
+            self._x_ch_in = np.array(
+                [
+                    x_ch_nom - self.num_std_devs * x_ch_std_dev,
+                    x_ch_nom + self.num_std_devs * x_ch_std_dev,
+                ]
+            )
+            self._x_pr_in = np.array(
+                [
+                    x_pr_nom - self.num_std_devs * x_pr_std_dev,
+                    x_pr_nom + self.num_std_devs * x_pr_std_dev,
+                ]
+            )
+            self._x_li_in = np.array(
+                [
+                    x_li_nom - self.num_std_devs * x_li_std_dev,
+                    x_li_nom + self.num_std_devs * x_li_std_dev,
+                ]
+            )
+        else:
+            self._x_ch_in = np.array([x_ch_nom])
+            self._x_pr_in = np.array([x_pr_nom])
+            self._x_li_in = np.array([x_li_nom])
 
         # Normalize uncertain xi's
         self._x_ch_in /= self.Tx[5]
