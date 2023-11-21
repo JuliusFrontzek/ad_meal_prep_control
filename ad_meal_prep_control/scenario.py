@@ -198,7 +198,6 @@ class Scenario:
 
     def model_setup(self):
         # Model
-        model_type = "continuous"  # either 'discrete' or 'continuous'
         self.model = adm1_r3_frac_norm(self._xi_norm, self.Tu, self.Tx, self.Ty)
 
     def run_steady_state_sim(self):
@@ -319,16 +318,10 @@ class Scenario:
                     params_R3.V_GAS_STORAGE_MAX,
                 )
 
-        # if self.store_results:
-        #     self.mpc.data.save_results(
-        #         self.mpc.data.data_fields.keys(),
-        #         result_name=f"{self.name}_mpc_controller_results",
-        #         result_path="./results/",
-        #         overwrite=True,
-        #     )
-        #     mpc_simulator.data.save_results(
-        #         mpc_simulator.data.data_fields.keys(),
-        #         result_name=f"{self.name}_mpc_sim_results",
-        #         result_path="./results/",
-        #         overwrite=True,
-        #     )
+        if self.store_results:
+            do_mpc.data.save_results(
+                save_list=[self.mpc, mpc_simulator],
+                result_name=f"{self.name}_mpc_results",
+                result_path="./results/",
+                overwrite=True,
+            )
