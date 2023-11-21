@@ -1,0 +1,67 @@
+@startuml packages
+set namespaceSeparator none
+package "ad_meal_prep_control" as ad_meal_prep_control {
+}
+package "ad_meal_prep_control.antoine_water" as ad_meal_prep_control.antoine_water {
+}
+package "ad_meal_prep_control.main" as ad_meal_prep_control.main {
+}
+package "ad_meal_prep_control.models" as ad_meal_prep_control.models {
+}
+package "ad_meal_prep_control.models.adm1_r3_frac" as ad_meal_prep_control.models.adm1_r3_frac {
+}
+package "ad_meal_prep_control.models.adm1_r3_frac_norm" as ad_meal_prep_control.models.adm1_r3_frac_norm {
+}
+package "ad_meal_prep_control.models.adm1_r4_frac" as ad_meal_prep_control.models.adm1_r4_frac {
+}
+package "ad_meal_prep_control.models.gas_storage" as ad_meal_prep_control.models.gas_storage {
+}
+package "ad_meal_prep_control.mpc" as ad_meal_prep_control.mpc {
+}
+package "ad_meal_prep_control.params_R3" as ad_meal_prep_control.params_R3 {
+}
+package "ad_meal_prep_control.params_R4" as ad_meal_prep_control.params_R4 {
+}
+package "ad_meal_prep_control.scenario" as ad_meal_prep_control.scenario {
+}
+package "ad_meal_prep_control.simulator" as ad_meal_prep_control.simulator {
+}
+package "ad_meal_prep_control.state_estimator" as ad_meal_prep_control.state_estimator {
+}
+package "ad_meal_prep_control.substrate_uncertainties" as ad_meal_prep_control.substrate_uncertainties {
+}
+package "ad_meal_prep_control.substrates" as ad_meal_prep_control.substrates {
+}
+package "ad_meal_prep_control.test_scenario" as ad_meal_prep_control.test_scenario {
+}
+package "ad_meal_prep_control.utils" as ad_meal_prep_control.utils {
+}
+package "ad_meal_prep_control.visualization" as ad_meal_prep_control.visualization {
+}
+ad_meal_prep_control.main --> ad_meal_prep_control.models
+ad_meal_prep_control.main --> ad_meal_prep_control.models.adm1_r3_frac_norm
+ad_meal_prep_control.main --> ad_meal_prep_control.mpc
+ad_meal_prep_control.main --> ad_meal_prep_control.params_R3
+ad_meal_prep_control.main --> ad_meal_prep_control.simulator
+ad_meal_prep_control.main --> ad_meal_prep_control.state_estimator
+ad_meal_prep_control.main --> ad_meal_prep_control.substrates
+ad_meal_prep_control.main --> ad_meal_prep_control.utils
+ad_meal_prep_control.main --> ad_meal_prep_control.visualization
+ad_meal_prep_control.models --> ad_meal_prep_control.models.adm1_r3_frac
+ad_meal_prep_control.models --> ad_meal_prep_control.models.adm1_r3_frac_norm
+ad_meal_prep_control.models --> ad_meal_prep_control.models.adm1_r4_frac
+ad_meal_prep_control.mpc --> ad_meal_prep_control.params_R3
+ad_meal_prep_control.scenario --> ad_meal_prep_control.models
+ad_meal_prep_control.scenario --> ad_meal_prep_control.models.adm1_r3_frac_norm
+ad_meal_prep_control.scenario --> ad_meal_prep_control.mpc
+ad_meal_prep_control.scenario --> ad_meal_prep_control.params_R3
+ad_meal_prep_control.scenario --> ad_meal_prep_control.simulator
+ad_meal_prep_control.scenario --> ad_meal_prep_control.state_estimator
+ad_meal_prep_control.scenario --> ad_meal_prep_control.substrates
+ad_meal_prep_control.scenario --> ad_meal_prep_control.utils
+ad_meal_prep_control.scenario --> ad_meal_prep_control.visualization
+ad_meal_prep_control.substrates --> ad_meal_prep_control.substrate_uncertainties
+ad_meal_prep_control.test_scenario --> ad_meal_prep_control.params_R3
+ad_meal_prep_control.test_scenario --> ad_meal_prep_control.scenario
+ad_meal_prep_control.test_scenario --> ad_meal_prep_control.utils
+@enduml
