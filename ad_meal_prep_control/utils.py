@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
+from casadi import SX
 
 
 @dataclass
@@ -94,3 +95,9 @@ class Disturbances:
     max_feeding_error: tuple[float] = None
     feed_computation_stuck: tuple[int, int] = None
     clogged_feeding: dict[int, tuple[int, int]] = None
+
+
+@dataclass(kw_only=True)
+class CostFunction:
+    mterm: SX
+    lterm: SX
