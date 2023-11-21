@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 from casadi import SX
+from enum import Enum, auto
 
 
 @dataclass
@@ -101,3 +102,8 @@ class Disturbances:
 class CostFunction:
     mterm: SX
     lterm: SX
+
+
+class ScenarioType(Enum):
+    METHANATION = auto()
+    COGENERATION = auto()

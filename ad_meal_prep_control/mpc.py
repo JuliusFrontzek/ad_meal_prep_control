@@ -49,19 +49,34 @@ def mpc_setup(
 
     mpc.set_param(store_full_solution=True)
 
-    tvp_template = mpc.get_tvp_template()
+    if num_states == 20:  # i.e. if we consider the gas storage
+        # tvp
+        tvp_template = mpc.get_tvp_template()
 
-    def tvp_fun(t_now):
-        t_now_idx = int(t_now / t_step)
-        for k in range(n_horizon + 1):
-            if vol_flow_rate is not None:
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[t_now_idx + k]
-            else:
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = 0.0
+        def tvp_fun(t_now):
+            t_now_idx = int(t_now / t_step)
+            for k in range(n_horizon + 1):
+                if vol_flow_rate is not None:
+                    tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[
+                        t_now_idx + k
+                    ]
+                else:
+                    tvp_template["_tvp", k, "v_ch4_dot_out"] = 0.0
 
-        return tvp_template
+            return tvp_template
 
-    mpc.set_tvp_fun(tvp_fun)
+        mpc.set_tvp_fun(tvp_fun)
+
+        # constraints
+        mpc.set_nl_cons(
+            "max_vol_gas_storage",
+            model._aux_expression["v_gas_storage"],
+            ub=V_GAS_STORAGE_MAX,
+            soft_constraint=True,
+            penalty_term_cons=1e7,
+        )
+        mpc.bounds["lower", "_x", "x_19"] = 0.0
+        mpc.bounds["lower", "_x", "x_20"] = 0.0
 
     # Scaling of units for better conditioning of optimization problem
     # mpc.scaling["_u", "u"] = 100
@@ -80,21 +95,9 @@ def mpc_setup(
     # mpc.bounds["lower", "_u", "u"] = 0.0
     # mpc.bounds["upper", "_u", "u"] = 10.0
 
-    # NL constraints
-    mpc.set_nl_cons(
-        "max_vol_gas_storage",
-        model._aux_expression["v_gas_storage"],
-        ub=V_GAS_STORAGE_MAX,
-        soft_constraint=True,
-        penalty_term_cons=1e7,
-    )
-
     # Bounds for states
     # for i in range(num_states):
     #     mpc.bounds["lower", "_x", f"x_{i+1}"] = 0.0
-
-    mpc.bounds["lower", "_x", "x_19"] = 0.0
-    mpc.bounds["lower", "_x", "x_20"] = 0.0
 
     # # Soft constraints with slack variables
     # mpc.set_nl_cons(

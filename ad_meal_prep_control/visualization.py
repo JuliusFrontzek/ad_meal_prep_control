@@ -1,10 +1,12 @@
 import pygame
 from dataclasses import dataclass
 import numpy as np
+from utils import ScenarioType
+import do_mpc
 
 
 @dataclass
-class BioGasPlant:
+class BioGasPlantVis:
     max_volume: float
     _screen: pygame.surface.Surface
 
@@ -121,7 +123,7 @@ class BioGasPlant:
 
 
 @dataclass
-class Data:
+class DataVis:
     _screen: pygame.surface.Surface
 
     _color = "black"
@@ -202,27 +204,29 @@ class Data:
 
 
 def visualize(
-    bga,
-    data,
-    state_names,
-    meas_names,
-    Tx,
-    Ty,
-    x0_norm,
-    simulator,
-    u_actual,
-    V_GAS_STORAGE_MAX,
+    bga: BioGasPlantVis,
+    data: DataVis,
+    state_names: list[str],
+    meas_names: list[str],
+    Tx: np.ndarray,
+    Ty: np.ndarray,
+    x0_norm: np.ndarray,
+    simulator: do_mpc.simulator.Simulator,
+    u_actual: np.ndarray,
+    V_GAS_STORAGE_MAX: float,
+    scenario_type: ScenarioType,
 ):
     x0 = np.copy(x0_norm)
     x0 *= np.array([Tx]).T
     y = np.array([simulator.data._aux[-1, idx + 1] * Ty for idx, Ty in enumerate(Ty)])
-    bga.draw(
-        V_GAS_STORAGE_MAX,
-        x0[-2][0],
-        x0[-1][0],
-        simulator.data._aux[-1, 9],
-        u_actual.flatten(),
-    )
+    if scenario_type == ScenarioType.COGENERATION:
+        bga.draw(
+            V_GAS_STORAGE_MAX,
+            x0[-2][0],
+            x0[-1][0],
+            simulator.data._aux[-1, 9],
+            u_actual.flatten(),
+        )
     data.draw(x0, state_names, y, meas_names)
 
     # flip() the display to put your work on screen

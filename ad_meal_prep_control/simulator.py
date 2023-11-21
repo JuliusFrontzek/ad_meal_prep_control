@@ -19,6 +19,7 @@ def simulator_setup(
     x_li_in: np.ndarray,
     vol_flow_rate: Union[np.ndarray, None] = None,
 ):
+    num_states = model._x.size
     simulator = do_mpc.simulator.Simulator(model)
 
     params_simulator = {
@@ -30,17 +31,18 @@ def simulator_setup(
 
     simulator.set_param(**params_simulator)
 
-    tvp_num = simulator.get_tvp_template()
+    if num_states == 20:  # i.e. if we consider the gas storage
+        tvp_num = simulator.get_tvp_template()
 
-    def tvp_fun(t_now):
-        t_now_idx = int(t_now / t_step)
-        if vol_flow_rate is not None:
-            tvp_num["v_ch4_dot_out", 0] = vol_flow_rate[t_now_idx]
-        else:
-            tvp_num["v_ch4_dot_out", 0] = 0.0
-        return tvp_num
+        def tvp_fun(t_now):
+            t_now_idx = int(t_now / t_step)
+            if vol_flow_rate is not None:
+                tvp_num["v_ch4_dot_out", 0] = vol_flow_rate[t_now_idx]
+            else:
+                tvp_num["v_ch4_dot_out", 0] = 0.0
+            return tvp_num
 
-    simulator.set_tvp_fun(tvp_fun)
+        simulator.set_tvp_fun(tvp_fun)
 
     # uncertain parameter realization in simulator -> drawn from uniform distribution
     # in between min and max values of uncertainties

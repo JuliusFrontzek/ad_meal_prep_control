@@ -6,6 +6,7 @@ import os
 from params_R3 import *
 import substrates
 from antoine_water import vapour_pressure_h2o
+from utils import ScenarioType
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -17,6 +18,7 @@ def adm1_r3_frac_norm(
     Tu: np.ndarray,
     Tx: np.ndarray,
     Ty: np.ndarray,
+    scenario_type: ScenarioType,
 ):
     """
     Normalized ADM1-R3-frac model.
@@ -24,11 +26,7 @@ def adm1_r3_frac_norm(
     model_type = "continuous"
     model = do_mpc.model.Model(model_type, "SX")
 
-    p_h2o = vapour_pressure_h2o(T)
-
     num_inputs = xi_norm[0].shape[0]
-
-    v_ch4_dot_out = model.set_variable(var_type="_tvp", var_name="v_ch4_dot_out")
 
     xi_norm[5] = model.set_variable(
         var_type="_p", var_name="x_ch_in", shape=(len(xi_norm[0]), 1)
@@ -329,13 +327,18 @@ def adm1_r3_frac_norm(
     # Input
     u_norm = model.set_variable(var_type="_u", var_name="u_norm", shape=(num_inputs, 1))
 
-    # Time-variant parameters
+    # Time-variant parameters (time-invariant for now -> making them invariant and estimating them: TODO for Simon)
     theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
+
+    if scenario_type == ScenarioType.COGENERATION:
+        num_states = 20
+    else:
+        num_states = 18
 
     # States
     x_norm = [
         model.set_variable(var_type="_x", var_name=f"x_{i+1}", shape=(1, 1))
-        for i in range(20)
+        for i in range(num_states)
     ]
 
     # Aux
@@ -412,53 +415,52 @@ def adm1_r3_frac_norm(
     for i in range(8):
         y.append(model.set_expression(f"y_{i+1}", Ty[i] * y_norm[i]))
 
-    model.set_expression("y_4_test", y[3])
+    if scenario_type == ScenarioType.COGENERATION:
+        p_h2o = vapour_pressure_h2o(T)
+        v_ch4_dot_out = model.set_variable(var_type="_tvp", var_name="v_ch4_dot_out")
+        v_h2o = model.set_expression(
+            "V_H2O",
+            1.0
+            / (1.0 - p_h2o / p_gas_storage)
+            * p_h2o
+            / p_gas_storage
+            * (Tx[18] * x_norm[18] + Tx[19] * x_norm[19]),
+        )
 
-    v_h2o = model.set_expression(
-        "V_H2O",
-        1.0
-        / (1.0 - p_h2o / p_gas_storage)
-        * p_h2o
-        / p_gas_storage
-        * (Tx[18] * x_norm[18] + Tx[19] * x_norm[19]),
-    )
+        v_gas_storage = model.set_expression(
+            "v_gas_storage", Tx[18] * x_norm[18] + Tx[19] * x_norm[19] + v_h2o
+        )
 
-    v_gas_storage = model.set_expression(
-        "v_gas_storage", Tx[18] * x_norm[18] + Tx[19] * x_norm[19] + v_h2o
-    )
+        y_h2o = model.set_expression(
+            "y_h2o",
+            v_h2o / (v_gas_storage),
+        )
+        y_co2 = model.set_expression(
+            "y_co2",
+            Tx[19] * x_norm[19] / (v_gas_storage),
+        )
 
-    y_h2o = model.set_expression(
-        "y_h2o",
-        v_h2o / (v_gas_storage),
-    )
-    y_co2 = model.set_expression(
-        "y_co2",
-        Tx[19] * x_norm[19] / (v_gas_storage),
-    )
+        p_gas_total_fermenter = model.set_expression(
+            "p_gas_total_fermenter", y_norm[1] * Ty[1] + y_norm[2] * Ty[2] + p_h2o
+        )
 
-    p_gas_total_fermenter = model.set_expression(
-        "p_gas_total_fermenter", y_norm[1] * Ty[1] + y_norm[2] * Ty[2] + p_h2o
-    )
-
-    v_dot_in_total = model.set_expression(
-        "v_dot_in_total",
-        y_norm[0]
-        * Ty[0]
-        / 1000.0
-        * p_gas_total_fermenter
-        / p_gas_storage
-        * T_gas_storage
-        / T,
-    )
+        v_dot_in_total = model.set_expression(
+            "v_dot_in_total",
+            y_norm[0]
+            * Ty[0]
+            / 1000.0
+            * p_gas_total_fermenter
+            / p_gas_storage
+            * T_gas_storage
+            / T,
+        )
 
     if num_inputs > 1:
-        # sum_u = cumsum(Tu * u_norm)[1]
         sum_u = cumsum((SX(Tu).T * u_norm.T).T)[len(xi_norm[0]) - 1]
     else:
         sum_u = Tu * u_norm
 
     # Differential equations
-
     model.set_rhs(
         "x_1",
         c[0] * (SX(xi_norm[0]).T @ (SX(Tu).T * u_norm.T).T - sum_u * x_norm[0])
@@ -642,22 +644,24 @@ def adm1_r3_frac_norm(
         - c[11] * Tx[14] / Tx[17] * x_norm[14]
         + c[27] * x_norm[17],
     )
-    model.set_rhs(
-        "x_19",
-        (v_dot_in_total * y_norm[1] * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out)
-        / Tx[18],
-    )  # V_CH4
-    model.set_rhs(
-        "x_20",
-        (
-            v_dot_in_total * y_norm[2] * Ty[2] / p_gas_total_fermenter
-            - y_co2
-            / (1.0 - y_co2)
-            / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
-            * (v_ch4_dot_out * (1.0 + y_h2o / (1.0 - y_h2o)))
-        )
-        / Tx[18],
-    )  # V_CO2
+    
+    if scenario_type == ScenarioType.COGENERATION:    
+        model.set_rhs(
+            "x_19",
+            (v_dot_in_total * y_norm[1] * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out)
+            / Tx[18],
+        )  # V_CH4
+        model.set_rhs(
+            "x_20",
+            (
+                v_dot_in_total * y_norm[2] * Ty[2] / p_gas_total_fermenter
+                - y_co2
+                / (1.0 - y_co2)
+                / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
+                * (v_ch4_dot_out * (1.0 + y_h2o / (1.0 - y_h2o)))
+            )
+            / Tx[18],
+        )  # V_CO2
 
     # Build the model
     model.setup()

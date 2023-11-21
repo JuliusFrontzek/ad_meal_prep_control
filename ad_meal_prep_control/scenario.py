@@ -72,11 +72,7 @@ class Scenario:
 
     def setup(self):
         self._substrate_setup()
-
-        self.x0_norm = np.copy(self.x0)
-        self.x0_norm /= self.Tx
-        self.Tu = np.array([self.u_max[sub.state] for sub in self._subs])
-
+        self._setup_state_and_normalization_vectors()
         self._model_setup()
 
         if self.pygame_vis:
@@ -141,8 +137,8 @@ class Scenario:
         self._screen = pygame.display.set_mode(screen_size)
         pygame.time.Clock()
 
-        self._bga = vis.BioGasPlant(150.0, self._screen)
-        self._data = vis.Data(self._screen)
+        self._bga = vis.BioGasPlantVis(150.0, self._screen)
+        self._data = vis.DataVis(self._screen)
 
     def _substrate_setup(self):
         self._subs = []
@@ -197,6 +193,19 @@ class Scenario:
         self._x_ch_in /= self.Tx[5]
         self._x_pr_in /= self.Tx[7]
         self._x_li_in /= self.Tx[8]
+
+    def _setup_state_and_normalization_vectors(self):
+        """
+        Shortens the state and normalization vectors if they've been handed too long if the gas storage had been considered in a previous simulation but not anymore.
+        Also normalizes the state vector and sets up the normalization vector for the inputs.
+        """
+        if self.scenario_type == ScenarioType.METHANATION:
+            self.x0 = self.x0[:18]
+            self.Tx = self.Tx[:18]
+
+        self.x0_norm = np.copy(self.x0)
+        self.x0_norm /= self.Tx
+        self.Tu = np.array([self.u_max[sub.state] for sub in self._subs])
 
     def _model_setup(self):
         # Model
@@ -320,6 +329,7 @@ class Scenario:
                     mpc_simulator,
                     u_norm_actual,
                     params_R3.V_GAS_STORAGE_MAX,
+                    scenario_type=self.scenario_type,
                 )
 
         if self.store_results:

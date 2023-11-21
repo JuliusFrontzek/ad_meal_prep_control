@@ -36,8 +36,8 @@ screen_size = (1280, 720)
 screen = pygame.display.set_mode(screen_size)
 clock = pygame.time.Clock()
 
-bga = vis.BioGasPlant(150.0, screen)
-data = vis.Data(screen)
+bga = vis.BioGasPlantVis(150.0, screen)
+data = vis.DataVis(screen)
 
 # Model
 model_type = "continuous"  # either 'discrete' or 'continuous'

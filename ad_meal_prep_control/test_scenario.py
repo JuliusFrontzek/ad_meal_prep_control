@@ -2,6 +2,7 @@ import scenario
 from utils import Disturbances
 import numpy as np
 import params_R3
+from utils import ScenarioType
 
 disturbances = Disturbances()
 
@@ -77,12 +78,13 @@ mterm = lterm = "(self.model.aux['y_4'] - 7.5) ** 2"
 
 test_scenario = scenario.Scenario(
     name="test_scenario",
+    scenario_type=ScenarioType.METHANATION,
     n_horizon=5,
-    n_robust=1,
+    n_robust=0,
     t_step=0.5 / 24,
     n_days_steady_state=2,
-    n_days_mpc=2,
-    sub_names=["CORN"],
+    n_days_mpc=1,
+    sub_names=["CORN_SILAGE"],
     disturbances=disturbances,
     x0=x0,
     Tx=Tx,
@@ -94,8 +96,6 @@ test_scenario = scenario.Scenario(
         "x_13",
         "x_14",
         "x_8",
-        "x_19",
-        "x_20",
     ],
     mterm=mterm,
     lterm=lterm,
