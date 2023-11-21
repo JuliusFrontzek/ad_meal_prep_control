@@ -199,3 +199,31 @@ class Data:
                     + (idx + 2) * round(self._screen_size[1] / 30),
                 ),
             )
+
+
+def visualize(
+    bga,
+    data,
+    state_names,
+    meas_names,
+    Tx,
+    Ty,
+    x0_norm,
+    simulator,
+    u_actual,
+    V_GAS_STORAGE_MAX,
+):
+    x0 = np.copy(x0_norm)
+    x0 *= np.array([Tx]).T
+    y = np.array([simulator.data._aux[-1, idx + 1] * Ty for idx, Ty in enumerate(Ty)])
+    bga.draw(
+        V_GAS_STORAGE_MAX,
+        x0[-2][0],
+        x0[-1][0],
+        simulator.data._aux[-1, 9],
+        u_actual.flatten(),
+    )
+    data.draw(x0, state_names, y, meas_names)
+
+    # flip() the display to put your work on screen
+    pygame.display.flip()
