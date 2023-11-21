@@ -10,6 +10,6 @@ class StateEstimator(do_mpc.estimator.Estimator):
     def __init__(self, model):
         super().__init__(model)
 
-    def make_step(self, y0):
-        """Return the measurement ``y0``."""
-        return y0
+    def estimate_x(self, y):
+        """Return the measurement ``y`` because this is a state estimator."""
+        return y
