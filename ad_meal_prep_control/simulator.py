@@ -4,6 +4,7 @@ from casadi.tools import *
 import sys
 import os
 import random
+from typing import Union
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -16,7 +17,7 @@ def simulator_setup(
     x_ch_in: np.ndarray,
     x_pr_in: np.ndarray,
     x_li_in: np.ndarray,
-    vol_flow_rate: np.ndarray,
+    vol_flow_rate: Union[np.ndarray, None] = None,
 ):
     simulator = do_mpc.simulator.Simulator(model)
 
@@ -33,7 +34,10 @@ def simulator_setup(
 
     def tvp_fun(t_now):
         t_now_idx = int(t_now / t_step)
-        tvp_num["v_ch4_dot_out", 0] = vol_flow_rate[t_now_idx]
+        if vol_flow_rate is not None:
+            tvp_num["v_ch4_dot_out", 0] = vol_flow_rate[t_now_idx]
+        else:
+            tvp_num["v_ch4_dot_out", 0] = 0.0
         return tvp_num
 
     simulator.set_tvp_fun(tvp_fun)

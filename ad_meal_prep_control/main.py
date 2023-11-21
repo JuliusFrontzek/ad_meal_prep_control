@@ -160,8 +160,6 @@ Tx = np.array(
     ]
 )
 
-# Tx[-2:] = 1.0
-
 u_max = {
     "solid": 80_000.0 / params_R3.SCALEDOWN,
     "liquid": 450_000.0 / params_R3.SCALEDOWN,
@@ -190,7 +188,7 @@ x0_norm /= Tx
 # Set model
 model = adm1_r3_frac_norm(xi_norm, Tu, Tx, Ty)
 
-num_std_devs = 0.0  # 0.000000000000000000001  # Lower and upper bound of uncertainties is determined by the number of standard deviations that we consider
+num_std_devs = 0.0  # Lower and upper bound of uncertainties is determined by the number of standard deviations that we consider
 
 x_ch_nom = np.array([un_xi[0].nominal_value for un_xi in uncertain_xis])
 x_pr_nom = np.array([un_xi[1].nominal_value for un_xi in uncertain_xis])
@@ -231,11 +229,12 @@ mpc = mpc_setup(
     model=model,
     t_step=t_step,
     n_horizon=n_horizon,
+    n_robust=0,
     x_ch_in=x_ch_in,
     x_pr_in=x_pr_in,
     x_li_in=x_li_in,
-    vol_flow_rate=vol_flow_rate,
     compile_nlp=compile_nlp,
+    vol_flow_rate=vol_flow_rate,
 )
 
 simulator = simulator_setup(
@@ -253,7 +252,7 @@ estimator = state_estimator.StateEstimator(model)
 # Feeding
 constant_feeding = False
 
-# Set x0
+# Set x0 and u0
 mpc.x0 = x0_norm
 mpc.u0 = np.ones(len(subs)) * 0.5
 simulator.x0 = x0_norm
@@ -301,23 +300,6 @@ else:
 timer = Timer()
 
 
-def visualize(bga, data, state_names, meas_names, Tx, Ty, x0_norm, simulator, u_actual):
-    x0 = np.copy(x0_norm)
-    x0 *= np.array([Tx]).T
-    y = np.array([simulator.data._aux[-1, idx + 1] * Ty for idx, Ty in enumerate(Ty)])
-    bga.draw(
-        params_R3.V_GAS_STORAGE_MAX,
-        x0[-2][0],
-        x0[-1][0],
-        simulator.data._aux[-1, 9],
-        u_actual.flatten(),
-    )
-    data.draw(x0, state_names, y, meas_names)
-
-    # flip() the display to put your work on screen
-    pygame.display.flip()
-
-
 u_norm_computed = None
 
 # Simulate until steady state
@@ -329,7 +311,7 @@ for k in range(n_steps_steady_state):
     ).T  # 1.0 / 1e4
 
     y_next = simulator.make_step(u_norm_steady_state)
-    x0_norm = estimator.make_step(y_next)
+    x0_norm = estimator.estimate_x(y_next)
 
     # simulator._x0.master[-2] = 50.0 / params_R3.SCALEDOWN
     # simulator._x0.master[-1] = 50.0 / params_R3.SCALEDOWN
@@ -395,7 +377,7 @@ for k in range(n_steps):
     timer.toc()
 
     y_next = simulator.make_step(u_norm_actual)
-    x0_norm = estimator.make_step(y_next)
+    x0_norm = estimator.estimate_x(y_next)
 
     if not disturbances.state_jumps is None:
         for x_idx, val in disturbances.state_jumps.items():
@@ -420,7 +402,7 @@ for k in range(n_steps):
         plt.show()
         plt.pause(0.01)
 
-        visualize(
+        vis.visualize(
             bga,
             data,
             state_names,
@@ -430,6 +412,7 @@ for k in range(n_steps):
             x0_norm,
             simulator,
             u_norm_actual,
+            params_R3.V_GAS_STORAGE_MAX,
         )
 
 if constant_feeding:
