@@ -14,11 +14,13 @@ from typing import Union
 import copy
 import matplotlib.pyplot as plt
 import params_R3
+from utils import ScenarioType
 
 
 @dataclass(kw_only=True)
 class Scenario:
     name: str
+    scenario_type: ScenarioType
     n_horizon: int
     n_robust: int
     t_step: float  # Time in days
@@ -69,16 +71,16 @@ class Scenario:
     _meas_names = ["V´_g", "p_CH4", "p_CO2", "pH", "S_IN", "TS", "VS", "S_ac"]
 
     def setup(self):
-        self.substrate_setup()
+        self._substrate_setup()
 
         self.x0_norm = np.copy(self.x0)
         self.x0_norm /= self.Tx
         self.Tu = np.array([self.u_max[sub.state] for sub in self._subs])
 
-        self.model_setup()
+        self._model_setup()
 
         if self.pygame_vis:
-            self.pygame_setup()
+            self._pygame_setup()
 
         # Estimator setup
         self._estimator = state_estimator.StateEstimator(self.model)
@@ -128,21 +130,21 @@ class Scenario:
 
     def run(self):
         if self.simulate_steady_state:
-            self.run_steady_state_sim()
+            self._run_steady_state_sim()
 
         if self.simulate_mpc:
-            self.run_mpc()
+            self._run_mpc()
 
-    def pygame_setup(self):
+    def _pygame_setup(self):
         pygame.init()
         screen_size = (1280, 720)
         self._screen = pygame.display.set_mode(screen_size)
-        clock = pygame.time.Clock()
+        pygame.time.Clock()
 
         self._bga = vis.BioGasPlant(150.0, self._screen)
         self._data = vis.Data(self._screen)
 
-    def substrate_setup(self):
+    def _substrate_setup(self):
         self._subs = []
         for sub_name in self.sub_names:
             self._subs.append(getattr(substrates, sub_name))
@@ -196,11 +198,13 @@ class Scenario:
         self._x_pr_in /= self.Tx[7]
         self._x_li_in /= self.Tx[8]
 
-    def model_setup(self):
+    def _model_setup(self):
         # Model
-        self.model = adm1_r3_frac_norm(self._xi_norm, self.Tu, self.Tx, self.Ty)
+        self.model = adm1_r3_frac_norm(
+            self._xi_norm, self.Tu, self.Tx, self.Ty, self.scenario_type
+        )
 
-    def run_steady_state_sim(self):
+    def _run_steady_state_sim(self):
         # Setup the simulator
         steady_state_simulator = simulator_setup(
             model=self.model,
@@ -232,7 +236,7 @@ class Scenario:
             delimiter=",",
         )
 
-    def run_mpc(self):
+    def _run_mpc(self):
         mpc_simulator = simulator_setup(
             model=self.model,
             t_step=self.t_step,
