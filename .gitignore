@@ -10,6 +10,5 @@ coinhsl
 *.c
 *.asv
 *.png
-*.pkl
 *.DS_Store
-.DS_Store
+*.so
