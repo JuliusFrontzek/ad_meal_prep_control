@@ -4,6 +4,7 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
+
 sys.path.append(os.getcwd())
 import ad_meal_prep_control.utils as utils
 import params_R3
@@ -44,7 +45,7 @@ model = do_mpc.model.Model(model_type)
 
 compile_nlp = False
 
-subs = [substrates.CORN]
+subs = [substrates.STANDARD_SUBSTRATE]
 xi = [sub.xi for sub in subs]
 uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in subs]
 
