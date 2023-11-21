@@ -27,7 +27,7 @@
 % -------------------------------------------------------------------------
 
 close all
-clear all
+% clear all
 clc
 
 % add folders to search path: 
@@ -43,9 +43,11 @@ model = 'ADM1_R3';
 
 %% Run selected model 
 systemParameters = system.Variables; 
+systemParameters(3) = 1.0133; % XY: Sören had a typo for the atmospheric pressure
 systemInput = input.ADM1_R3.Variables;
 systemInputSS = systemInput(2,:);   % only take the second feeding, which perturbes the system out of its steady state
 systemInputSS(1) = 0;   % set initial feeding time to zero
+% systemInputSS(2) = 21.65; % liefert Raumbelasung B_R = 4
 modelParameters = parameters.ADM1_R3.Variables; 
 
 % Solve ODE of mass-based ADM1-R3

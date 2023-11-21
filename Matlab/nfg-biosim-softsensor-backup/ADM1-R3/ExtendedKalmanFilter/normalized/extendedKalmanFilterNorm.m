@@ -60,7 +60,7 @@ if isempty(tRelEvents)
 % Case b: feeding changes during measurement interval:
 else 
     % create time grid of currently relevant feeding events and measurements:
-    tOverall = unique(sort([tSpan, tRelEvents]));
+    tOverall = unique(sort([tSpan; tRelEvents]));
     nIntervals = length(tOverall) - 1; 
     xP0Norm = xPOldNorm;    % initial value for first interval
     % integrate across each interval sequentially to ensure constant feedings:

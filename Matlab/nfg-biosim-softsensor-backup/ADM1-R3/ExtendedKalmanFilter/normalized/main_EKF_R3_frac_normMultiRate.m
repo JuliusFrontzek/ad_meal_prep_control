@@ -1,14 +1,14 @@
 %% Version
-% (R2022b) Update 5
+% (R2022b) Update 6
 % Erstelldatum: 25.09.2023
-% last modified: 25.09.2023
+% last modified: 21.11.2023
 % Autor: Simon Hellmann
 
 %% DAS Kalman Filter fürs ADM1-R3-frac-norm mit Online/Offline Messwerten
 
 close all
-% clear all
-% clc
+clear all
+clc
 
 global counter
 counter = 0; 
@@ -48,60 +48,45 @@ x0 = x0Init;            % x0 will be replaced in every iteration later
 nStates = numel(x0); 
 nTheta = numel(params.th); % number of time-variant parameters
 rng('default');     % fix seed for random number generation (for replicable results)
-xHat = x0Init.*abs(randn(nStates,1)); 
+xHat = x0Init.*(ones(nStates,1) + 0.1*abs(randn(nStates,1))); 
 xMinus = xHat;      % to be overwritten
 % xMinus = x0Init;    % XY Rania
 
 % initial state in normalized coordinates: 
-x0InitNorm = MESS.x0Norm'; 
-% x0Norm = x0InitNorm; 
 xHatNorm = xHat./TxNum; 
 xMinusNorm = xHatNorm;      % to be overwritten
 
 % include parametric plant-model mismatch: 
 paramsOfSyntheticMeasData = params.th; 
 perturbedParams = paramsOfSyntheticMeasData.*(1 + 0.1*abs(randn(size(params.th))));
-% perturbedParams(6:7) = paramsOfSyntheticMeasData(6:7).*(1 + 0.05.*abs(randn(2,1))); 
-% perturbedParams(end) = 0.55;     % make sure fracChFast is not too far off
 params.th = perturbedParams; 
 
 % set up raw matrices. all matrices which require initialization have 1 
 % column more than the number of measurement instances:
-STATES = MESS.xSolOn; 
-% ESTIMATES = zeros(nSamplesMinor + 1,nStates);
-% COVARIANCE = zeros(nStates,nStates,nSamplesMinor + 1);
-% same for normalized coordinates: 
-STATESNorm = MESS.xSolOnNorm; 
 ESTIMATESNorm = zeros(nMinor + 1,nStates);
 COVARIANCENorm = zeros(nStates,nStates,nMinor + 1); 
 
-% Initialize Kalman Filter:
-% ESTIMATES(1,:) = xHatNorm;
-P0 = eye(nStates); % XY: sicher besseres Tuning möglich
-% COVARIANCE(:,:,1) = P0; 
-% PMinus = P0;      % to overwrite
-% same for normalized coordinates: 
+%% Tuning of EKF: 
+P0 = diag((xHat-x0).^2);    % Schneider und Georgakis 
 P0Norm = P0./(TxNum.^2);    % for comparison with non-normalized case
 PMinusNorm = P0Norm;        % to overwrite
 COVARIANCENorm(:,:,1) = P0Norm; 
 
-%% Tuning of EKF: 
+% measurement uncertainty:
 buffer = 1.5;   % conservative safety margin of 50% for measurement noise covariance
 R = buffer * MESS.C; 
 RNorm = R./(TyNum.^2);  % normalized measurement noise tuning matrix
-% fine-tuning:
-RNorm(4,4) = RNorm(4,4)*2E2;    % pH
-% RNorm(5,5) = RNorm(5,5)*1E2;    % SIN
-% RNorm(6,6) = RNorm(6,6)*1E1;    % TS
-RNorm(7,7) = RNorm(6,6);        % VS as high as TS
-RNorm(8,8) = RNorm(8,8)*1E1;    % Sac
+% fine-tuning: decrease faith in certain measurements
+RNorm(4,4) = RNorm(4,4)*1E2;    % pH
+% RNorm(5,5) = RNorm(5,5)*1E1;    % SIN -> better adjust Q for S_IN, not R!
+RNorm(6,6) = RNorm(6,6)*1E1;    % TS
+RNorm(8,8) = RNorm(8,8)*1E1;    % S_ac
 
-% QNorm = Q./(TxNum.^2);
+% process uncertainty: 
 QNorm = eye(nStates);   % normalized process noise tuning matrix
 % fine-tuning:
-QNorm(13:16,13:16) = 1E-1*eye(4);   % Ionen tendentiell vertrauenswürdig (für pH-Schätzung)
-QNorm(4,4) = 1E-2;                  % increase model confidence in S_IN
-% QNorm(1,1) = 1E-2;                  % increase model confidence in acetic acid
+QNorm(13:16,13:16) = 1E-2*eye(4); % Ionen tendentiell vertrauenswürdig
+QNorm(4,4) = 1E-2;     % increase model confidence in S_IN
 
 % obtain feeding information:
 inputMat = MESS.inputMat;   % [tEvents,feed vol flow,inlet concentrations]
@@ -120,30 +105,19 @@ inputMatNorm = inputMat;    % copy
 inputMatNorm(:,2) = inputMatNorm(:,2)./TuNum; % normalized inputs
 inputMatNorm(:,3:end) = inputMatNorm(:,3:end)./repmat(TxNum',nIntervals,1); % normalize inlet concentrations with state normalization
 
-% %% derive all function handles for EKF from symbolic model equations
-% % define symbolic variables ("S") (all vectors are column vectors):
-% xS = sym('x', [nStates,1]);         % states as col. vector
+%% derive all function handles for EKF from symbolic model equations (abs. coordinates)
+% define symbolic variables ("S") (all vectors are column vectors):
+xS = sym('x', [nStates,1]);         % states as col. vector
 % syms uS real                        % input
 % xiS = sym('xi', [nStates,1]);       % inlet concentrations (assumed known) 
 thS = sym('th', size(params.th));   % time-variant parameters (theta)
 cS = sym('c', size(params.c));      % time-invariant parameters (known & constant)
 aS = sym('a', size(params.a));      % petersen matrix with stoichiometric constants
-% 
-% % obtain symbolic objects of model equations:
-% dynamics = ADM1_R3_frac_ode_sym(xS, uS, xiS, thS, cS, aS); 
-% outputs = ADM1_R3_frac_mgl_sym(xS,cS);
-% 
-% % derive function handles of ODEs and output equation: 
-% f = matlabFunction(dynamics, 'Vars', {xS, uS, xiS, thS, cS, aS}); 
-% g = matlabFunction(outputs, 'Vars', {xS, cS}); 
-% 
-% % partial derivatives for EKF (symbolic): 
-% dfdxSym = jacobian(dynamics,xS); 
-% dhdxSym = jacobian(outputs,xS); 
-% 
-% % convert to numeric function handles: 
-% dfdx = matlabFunction(dfdxSym, 'Vars', {xS, uS, thS, cS, aS}); 
-% dhdx = matlabFunction(dhdxSym, 'Vars', {xS, cS}); 
+
+% get extended output function with CH4/CO2 volFlows as numeric function: 
+outputsExt = ADM1_R3_frac_mgl_gasVolFlows_sym(xS,cS);
+% transform into numeric function handle: 
+gExt = matlabFunction(outputsExt, 'Vars', {xS, cS}); 
 
 %% derive all function handles in normalized coordinates from symbolilc expressions:
 xNormS = sym('xNorm', [nStates 1]);  % normalized states as col. vector
@@ -173,24 +147,19 @@ flagDelayPeriod = 0; % 0: not in delay period; 1: in delay period
 
 % integrate over all (online) measurement intervals (like in reality):
 for k = 1:nMinor 
-%     % Mind: for now I work with parallel structure involving both absolute 
-%     % and normalized coordinates: 
-    tSpan = [tKF(k) tKF(k+1)]; % measurement interval. In reality, this is the 
+
+    tSpan = [tKF(k); tKF(k+1)]; % measurement interval. In reality, this is the 
     tk = tSpan(1);      % t_k
     tkp1 = tSpan(2);    % t_k+1
-        
+    
+    disp(tk); 
+
     % check if you're AT primary sampling (k==s): 
     if ismember(tk,tOfflineSampleShift)
         flagAugmented = 1; 
         flagDelayPeriod = 1; 
         disp('sampling'); 
         % augment and initialize state x & state err. cov. matrix P
-%         xAugMinus = [xMinus;xMinus]; 
-%         PAugMinus = repmat(PMinus,2,2); 
-        % overwrite old (unaugmented) entities: 
-%         xMinus = xAugMinus; 
-%         PMinus = PAugMinus; 
-        % same for normalized coordinates: 
         xAugMinusNorm = [xMinusNorm;xMinusNorm]; 
         PAugMinusNorm = repmat(PMinusNorm,2,2); 
         xMinusNorm = xAugMinusNorm; 
@@ -223,38 +192,26 @@ for k = 1:nMinor
 
     % Case a: constant feeding during measurement interval:
     if isempty(tRelEvents) 
-%         feedInfo = inputMat(idxLastEvent,:);        % abs. coordinates
-        feedInfoNorm = inputMatNorm(idxLastEvent,:);% rel. coordinates
+        feedInfoNorm = inputMatNorm(idxLastEvent,:);
     % Case b: feeding changes during measurement interval:
     else
         % use all relevant feeding events during measurement interval and 
         % the critical last one before:
-%         feedInfo = inputMat([idxLastEvent,idxRelEvents],:);         % abs. coordinates
-        feedInfoNorm = inputMatNorm([idxLastEvent,idxRelEvents],:); % rel. coordinates
+        feedInfoNorm = inputMatNorm([idxLastEvent;idxRelEvents],:);
     end
 
     %% execute multirate EKF
-%     % absolute coordinates: 
-%     [xPlus,PPlus] = extendedKalmanFilterMultiRate(xMinus,PMinus, ...
-%         feedInfo,yMeas,params,Q,R,f,g,dfdx,dhdx,tSpan, ...
-%         nStates,qOn,qOff,flagAugmented,flagMajor); 
-    
+ 
     % normalized coordinates:  
     [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRate(xMinusNorm,PMinusNorm, ...
         feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
         TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,flagAugmented,flagDelayPeriod,flagMajor); 
     
-    % save results, abs. coordinates:
-%     ESTIMATES(k+1,:) = xPlus(1:nStates)';   % only keep the "real" states, not the sample state in case of augmentation
-%     COVARIANCE(:,:,k+1) = PPlus(1:nStates,1:nStates);   % same for P-matrix
-    % same for normalized coordinates:
+    % save results:
     ESTIMATESNorm(k+1,:) = xPlusNorm(1:nStates); 
     COVARIANCENorm(:,:,k+1) = PPlusNorm(1:nStates,1:nStates);
     
-    % Update for next iteration, abs. coordinates:  
-%     xMinus = xPlus;     % estimated state from Kalman Filter
-%     PMinus = PPlus;     % state error covariance matrix
-    % same for normalized coordinates:
+    % Update for next iteration:
     xMinusNorm = xPlusNorm; 
     PMinusNorm = PPlusNorm; 
 
@@ -264,13 +221,7 @@ for k = 1:nMinor
 %         flagDelayPeriod = 0;
         disp(['primary measurement over', newline, ...
               'remove augmentation']); 
-        % remove augmentation of state and state err. cov. matrix P, abs. coordinates:
-%         xMinusUnAug = xMinus(1:nStates); 
-%         PMinusUnAug = PMinus(1:nStates,1:nStates); 
-        % overwrite old (augmented) enteties: 
-%         xMinus = xMinusUnAug; 
-%         PMinus = PMinusUnAug;  
-        % same for normalized coordinates: 
+        % remove augmentation of state and state err. cov. matrix P:
         xMinusUnAugNorm = xMinusNorm(1:nStates); 
         PMinusUnAugNorm = PMinusNorm(1:nStates,1:nStates); 
         % overwrite old (augmented) enteties: 
@@ -283,10 +234,8 @@ end
 toc
 
 %% compute system outputs (both absolute and normalized):
-% EKFOutput = nan(nSamplesMinor + 1,q);    % allocate memory
-EKFOutputNorm = nan(nMinor + 1,q);% allocate memory
+EKFOutputNorm = nan(nMinor + 1,q);  % allocate memory
 for k = 1:nMinor + 1 % also consider the initial value at t = t0
-%     EKFOutput(k,:) = g(ESTIMATES(k,:)',params.c);
     EKFOutputNorm(k,:) = gNorm(ESTIMATESNorm(k,:)',params.c,TxNum,TyNum);
 end
 
@@ -294,16 +243,19 @@ end
 xEKFDeNorm = repmat(TxNum',nMinor+1,1).*ESTIMATESNorm;
 yEKFDeNorm = repmat(TyNum',nMinor+1,1).*EKFOutputNorm;
 
-% % normalize state estimates which were formerly in abs. coordinates (for comparison): 
-% xEKFNorm = ESTIMATES./repmat(TxNum',nSamplesMinor+1,1);
-% % states and outputs computed through both ways (absolute/normalized 
-% % coordinates) are numerically identical (except for roundoff errors)
+% additionally compute estimated gasVolFlows of CH4/CO2:
+yEKFDeNormExt = nan(nMinor+1,q + 2);  % allocate memory for two additional outputs
+for k = 1:nMinor + 1
+    yEKFDeNormExt(k,:) = gExt(xEKFDeNorm(k,:)',params.c);
+end 
 
 %% compute goodness of fit for all measurements
 RMSSE = zeros(q,1);         % allocate memory
 yClean = MESS.yClean; 
 yCleanOn = MESS.yCleanOn; 
 yCleanOff = MESS.yCleanOff; % clean model outputs without delay (use with tOfflineSampleShift) 
+yCleanExt = MESS.yCleanExt; 
+yMeasExt = MESS.yMeasExt; 
 
 % compute RMSSE for each measurement signal:
 for kk = 1:q
@@ -318,13 +270,27 @@ end
 
 RMSSE_mean = mean(RMSSE); 
 
+%% compute filter efficiency for selected variables: 
+% pH:
+[NSE_pH,eNSE_pH] = compute_NSE(MESS.yMeasOn(:,4), yEKFDeNorm(2:end,4)); 
+
+% acetic acid:
+% compute interpolated measurements first (without EKF, you would only have
+% access to them): 
+acMeasInterp = interp1(tOfflineArrivalShift,MESS.yMeasOff(:,4),tMinor,'previous');
+% reduce all vectors to time period for which there are measurements available: 
+idxMeasAvailable = ~isnan(acMeasInterp); 
+acMeasInterpAvail = acMeasInterp(idxMeasAvailable); 
+acEKF = yEKFDeNorm(2:end,8);  % leave out time t0
+acEKFAvail = acEKF(idxMeasAvailable);
+[NSE_ac,eNSE_ac] = compute_NSE(acMeasInterpAvail,acEKFAvail); 
+
 %% Plot results
 
 % hier ggf. noch was anpassen! 
 
 % plot model output based on EKF estimates, compare with real measurements:
 feedVolFlow = inputMat(:,2);% [l/d]
-% yMeas = MESS.yMeas;
 yMeasOn = MESS.yMeasOn; 
 yMeasOff = MESS.yMeasOff; 
 yMeasOffEff = MESS.yMeasOffEff;
@@ -332,7 +298,11 @@ yMeasOffEff = MESS.yMeasOffEff;
 colorPaletteHex = ["#fe9f6d","#de4968","#8c2981","#3b0f70","#000004"]; 
 colorPaletteHexMagma = ["#fcfdbf","#fc8961","#b73779","#51127c","#000004"];
 
-figOutput = figure; 
+figOutputs = figure;
+% % set text appearance to latex rendering: 
+% set(figOutputs,'defaultAxesTickLabelInterpreter','latex');  
+% set(figOutputs,'defaulttextinterpreter','latex');
+% set(figOutputs,'defaultLegendInterpreter','latex');
 
 % gas volume flow: 
 subplot(4,2,1)
@@ -343,36 +313,56 @@ plot(tMinor,yCleanOn(:,1)/24,'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 plot(tKF,yEKFDeNorm(:,1)/24,'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
-ylim([0,12])
-ylabel('gas vol flow [l/h]')
+ylim([0,15])
+ylabel('gas vol flow [m^3/d]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 axis tight  % draw axis only as long as time vectors
 % xlabel('time [d]')
 legend('Location','NorthEast'); 
 
-% pch4: 
+% % pch4: 
+% subplot(4,2,2)
+% scatter(tMinor, yMeasOn(:,2),'DisplayName','noisy measurements',...
+%         'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
+% hold on
+% plot(tMinor,yCleanOn(:,2),'DisplayName','clean output',...
+%      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
+% plot(tKF,yEKFDeNorm(:,2),'DisplayName','EKF-Output',...
+%      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
+% ylim([0.4,1])
+% ylabel('p_{ch4} [bar]')
+% yyaxis right
+% stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
+%        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
+% ylabel('feed vol flow [m^3/d]')
+% set(gca, "YColor", 'k')     % make right y-axis black 
+% % xlabel('time [d]')
+% % legend('Location','NorthEast'); 
+% axis tight % draw axis only as long as time vectors
+
+% V_ch4: 
 subplot(4,2,2)
-scatter(tMinor, yMeasOn(:,2),'DisplayName','noisy measurements',...
+scatter(tMinor, yMeasExt(:,4),'DisplayName','noisy measurements',...
         'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on
-plot(tMinor,yCleanOn(:,2),'DisplayName','clean output',...
+plot(tMinor,yCleanExt(:,4),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
-plot(tKF,yEKFDeNorm(:,2),'DisplayName','EKF-Output',...
+plot(tKF,yEKFDeNormExt(:,4),'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
-ylim([0.4,1])
-ylabel('p_{ch4} [bar]')
+ylim([0,200])
+ylabel("$\dot V_{ch4} \, \mathrm{[m^3\,d^{-1}]}$", 'Interpreter', 'latex')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d/h]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
 % legend('Location','NorthEast'); 
-axis tight % draw axis only as long as time vectors
+axis tight % draw axis only as long as time vecto
 
 % pco2:
 subplot(4,2,3)
@@ -388,7 +378,7 @@ ylabel('p_{co2} [bar]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 axis tight % draw axis only as long as time vectors
 % xlabel('time [d]')
@@ -408,7 +398,7 @@ ylabel('pH [-]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 axis tight % draw axis only as long as time vectors
 
@@ -423,11 +413,11 @@ scatter(tOfflineArrivalShift,yMeasOffEff(:,1),'DisplayName','noisy arrival',...
         'Marker','*', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1);
 plot(tKF,yEKFDeNorm(:,5),'DisplayName','EKF-Output deNorm',...
      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8)
-ylabel('inorg. nitrogen [g/L]')
+ylabel('inorg. nitrogen [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 axis tight % draw axis only as long as time vectors
 % xlabel('time [d]')
@@ -449,7 +439,7 @@ ylabel('total solids [-]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
 axis tight % draw axis only as long as time vectors
@@ -471,7 +461,7 @@ ylabel('volatile solids [-]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
 axis tight % draw axis only as long as time vectors
@@ -488,19 +478,19 @@ scatter(tOfflineArrivalShift,yMeasOffEff(:,4),'DisplayName','noisy arrival',...
         'Marker','*', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1);
 plot(tKF,yEKFDeNorm(:,8),'DisplayName','EKF-Output deNorm',...
      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8)
-ylim([0,4])
-ylabel('acetic acid [g/l]')
+ylim([0,0.7])
+ylabel('acetic acid [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
 axis tight % draw axis only as long as time vectors
 % legend('Location','NorthEast'); 
 
 sgtitle('Comparison of EKF and clean model output')
-fontsize(figOutput,14,'points')
+fontsize(figOutputs,14,'points')
 
 %% Biomass X_bac:
 covarianceBac = reshape(COVARIANCENorm(10,10,:),nMinor+1,1); 
@@ -516,11 +506,12 @@ plot(tKF,xEKFDeNorm(:,10),'DisplayName','estimate',...
 plot(tKF,xEKFDeNorm(:,10)+sigmaBac,'--b','DisplayName','+1 \sigma boundary')
 plot(tKF,xEKFDeNorm(:,10)-sigmaBac,':b','DisplayName','-1 \sigma boundary')
 hold off
-ylabel('biomass X_{bac} [g/L]')
+ylabel('biomass X_{bac} [kg/m^3]')
 title('Estimated and true biomass concentration')
 legend()
 
 %% Plot trajectories of relevant states: 
+STATES = MESS.xSolOn; 
 
 figStates = figure;
 
@@ -532,11 +523,11 @@ hold on;
 plot(tKF,xEKFDeNorm(:,4),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
-ylabel('S_{IN} [g/L]')
+ylabel('S_{IN} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
 % legend('Location','NorthEast'); 
@@ -550,11 +541,11 @@ hold on;
 plot(tKF,xEKFDeNorm(:,5),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 ylim([600,1200])
-ylabel('S_{h2o} [g/L]')
+ylabel('S_{h2o} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
 legend('Location','NorthEast'); 
@@ -568,11 +559,11 @@ hold on;
 plot(tKF,xEKFDeNorm(:,6),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
-ylabel('X_{ch,fast} [g/L]')
+ylabel('X_{ch,fast} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
 % legend('Location','NorthEast'); 
@@ -586,11 +577,11 @@ hold on;
 plot(tKF,xEKFDeNorm(:,7),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
-ylabel('X_{ch,slow} [g/L]')
+ylabel('X_{ch,slow} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
 % legend('Location','NorthEast'); 
@@ -604,11 +595,11 @@ hold on;
 plot(tKF,xEKFDeNorm(:,10),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.4,0.7])
-ylabel('X_{bac} [g/L]')
+ylabel('X_{bac} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
 % legend('Location','NorthEast'); 
@@ -622,11 +613,11 @@ hold on;
 plot(tKF,xEKFDeNorm(:,12),'DisplayName','estimate',...
      'LineStyle','-', 'Color', colorPaletteHex(3), 'LineWidth',0.8); 
 % ylim([0.015,0.025])
-ylabel('X_{ash} [g/L]')
+ylabel('X_{ash} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow/24,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHex(4), 'LineWidth',1.5); 
-ylabel('feed vol flow [l/h]')
+ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
 % legend('Location','NorthEast'); 
@@ -634,3 +625,22 @@ axis tight % draw axis only as long as time vectors
 
 sgtitle('Comparison of true and EKF-estimates of states')
 fontsize(figStates, 14,'points')
+
+%% export data for plotting in matplotlib: 
+targetPath = '\\dbfz-user.leipzig.dbfz.de\user$\shellmann\GIT\testFiles\plotting'; 
+
+% tMinor und cleane/Messwerte yCleanExt/yMeasExt: 
+trueValuesTabOn = array2table([tMinor, yCleanOn(:,4), yMeasOn(:,4), yClean(:,8)], 'VariableNames',{'tMinor','pHClean','pHMeas','acClean'});
+trueValuesTabOff = array2table([tOfflineSampleShift, tOfflineArrivalShift, yMeasOffEff(:,4)], 'VariableNames',{'tOffSampleShift','tOffArrShift','acMeas'});
+fileNameTrueValuesOn = 'trueOnlineValuesR3'; 
+fileNameTrueValuesOff = 'trueOfflineValuesR3'; 
+pathAndFileNameTrueOn = fullfile(targetPath,fileNameTrueValuesOn); 
+pathAndFileNameTrueOff = fullfile(targetPath,fileNameTrueValuesOff); 
+writetable(trueValuesTabOn,pathAndFileNameTrueOn)
+writetable(trueValuesTabOff,pathAndFileNameTrueOff)
+
+% tKF und Schätzwerte yEKFDeNormExt: 
+estValuesTab = array2table([tKF,yEKFDeNorm(:,4),yEKFDeNorm(:,8)], 'VariableNames',{'tKF','pHEst','acEst'});
+fileNameEstValues = 'estValuesR3'; 
+pathAndFileNameEst = fullfile(targetPath,fileNameEstValues); 
+writetable(estValuesTab,pathAndFileNameEst) 

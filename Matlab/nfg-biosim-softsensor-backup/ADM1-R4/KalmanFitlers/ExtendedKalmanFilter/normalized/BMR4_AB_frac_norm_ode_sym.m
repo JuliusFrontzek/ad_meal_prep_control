@@ -1,35 +1,13 @@
 %% Version
-% (R2022b) Update 5
+% (R2022b) Update 6
 % Erstelldatum: 21.4.2023
+% last updated: 1.11.2023
 % Autor: Simon Hellmann
 
 function f = BMR4_AB_frac_norm_ode_sym(xNorm, uNorm, xiNorm, th, c, a, Tx, Tu)
 % delivers a symbolic expression (f) of the normalized right-hand side of the 
 % homogeneous ODE system of the BMR4+AB-frac (incl. balancing of ash and 2
 % CH fractions) with constant values for u and xin 
-
-% % 12 states
-% x = sym('x', [1,12]); 
-% 
-% % 1 input (feed flow rate)
-% syms u;
-% 
-% % 6 unknown parameters (rate constants)
-% th = sym('th', [1,6]); 
-% 
-% % known & constant parameters...: 
-% c = sym('c', [1,21]); 
-% % ... + 18 stoichiometric constants:
-% syms a11 a12 a13 a14 a21 a22 a23 a24 a31 a32 a33 a34 a41 a42 a43 a44 a55 a75 a85 a91 a92 a93 a94
-% % 10 (assumed) known inlet concentrations: 
-% xi = sym('xi', [1,10]);  
-% 
-% % define petersen matrix symbolically:
-% a = [a11, a21, a31, a41, -1, 0, 0, 0, a91; 
-%      a12, a22, a32, a42, 0, -1, 0, 0, a92; 
-%      a13, a23, a33, a43, 0, 0, -1, 0, a93; 
-%      a14, a24, a34, a44, 0, 0, 0, -1, a94;
-%      0,     0,  0,  0, a55, 0 a75,a85, -1].'; % transpose is necessary for correct indexing in definition of f
 
 % dynamic equations
 f = [c(1)*(xiNorm(1) - xNorm(1))*Tu*uNorm + a(1,1)*th(1)*Tx(5)/Tx(1)*xNorm(5) + a(1,2)*th(2)*Tx(6)/Tx(1)*xNorm(6) + a(1,3)*th(3)*Tx(7)/Tx(1)*xNorm(7) + a(1,4)*th(4)*Tx(8)/Tx(1)*xNorm(8) - c(2)*xNorm(1) + c(3)*Tx(11)/Tx(1)*xNorm(11);     

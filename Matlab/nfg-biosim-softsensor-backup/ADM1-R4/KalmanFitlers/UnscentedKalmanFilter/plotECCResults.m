@@ -3,10 +3,6 @@
 % Erstelldatum: 18.10.2023
 % Autor: Simon Hellmann
 
-close all 
-clear 
-clc
-
 % create summarizing plots for ECC-2024 paper
 
 %% create a bar plot with the improvements in computation time
@@ -36,18 +32,18 @@ legend('NLP', 'NLP-grad', 'NLP-grad-hess', 'QP','Position',[0.18 0.6 0.2 0.2],'I
 fontsize(figBarPlot,14,"point")
 
 % prepare plot to be saved as pdf:
-set(gcf, 'PaperPosition', [0 0 16 16*heightFactor]); % Position plot at left hand corner with specified width and height.
-set(gcf, 'PaperSize', [16 16*heightFactor]); % Set the paper to have specified width and height (excess is cut off)
+set(gcf, 'PaperPosition', [0 0 16 16*heightFactor]); %Position plot at left hand corner with width 5 and height 5.
+set(gcf, 'PaperSize', [16 16*heightFactor]); %Set the paper to have width 5 and height 5.
 
-% % create sub-folder (if non-existent yet) and save plot there:
-% currPath = pwd; 
-% pathToResults = fullfile(currPath,'generatedPlots');
-% if ~exist(pathToResults, 'dir')
-%     mkdir(pathToResults)
-% end
-% plotName = 'barPlotcUKF'; 
-% fileName = fullfile(pathToResults,plotName); 
-% saveas(gcf, fileName, 'pdf') %Save figure
+% create sub-folder (if non-existent yet) and save plot there:
+currPath = pwd; 
+pathToResults = fullfile(currPath,'generatedPlots');
+if ~exist(pathToResults, 'dir')
+    mkdir(pathToResults)
+end
+plotName = 'barPlotcUKF'; 
+fileName = fullfile(pathToResults,plotName); 
+saveas(gcf, fileName, 'pdf') %Save figure
 
 
 %% create a plot of nRMSE over tCalc
@@ -69,15 +65,10 @@ nRMSE = [0.0118,0.0118, 0.0116, 0.0125, 0.0158, 0.0105, 0.0206, 0.0194];
 x      = 100;   % Screen position
 y      = 200;   % Screen position
 width  = 700;   % Width of figure (by default in pixels)
-heightFactor2 = 0.6;
-height = width*heightFactor2; % Height of figure
+heightFactor = 0.3;
+height = width*heightFactor; % Height of figure
 figure_t_RMSE = figure('Position', [x y width height]);
-% create an additional (empty) subplot window with just for the legend: 
-h1 = subplot(2,1,1); 
-plot(1, nan, 1, nan, 'r'); % just plot anything for fun (will be invisible later)
-set(h1, 'OuterPosition', [0,0.5, 1, .21]); % [x0, y0, width, height]
-set(h1, 'Visible', 'off'); % make plot invisible
-h2 = subplot(2,1,2); 
+
 % scatter(tCalc(1),nRMSE(1),stdSz,markerShapes{1},'filled','MarkerFaceColor',eccColorPaletteRMSE(1),...
 %     'MarkerEdgeColor',eccColorPaletteRMSE(1),'DisplayName',myLabels{1})
 plot(tCalc(1),nRMSE(1),'w','DisplayName',myLabels{1},'Marker',markerShapes{1},...
@@ -102,13 +93,12 @@ xlim([0,20]);
 ylabel('NRMSE','Interpreter','latex')
 ylim([0,0.025])
 fontsize(figure_t_RMSE,15,'points')
-leg = legend('Interpreter','latex','Position',[0.38 0.47 0.5 0.2]); 
+leg = legend('Interpreter','latex','Position',[0.37 0.42 0.5 0.2]); 
 leg.NumColumns = 2; %   2 column legend
-
 % prepare plot to be saved as pdf:
-heightFactorExport = 0.42; 
-set(gcf, 'PaperPosition', [0 0 18 18*heightFactor2]); % Position plot at left hand corner with specified width and height
-set(gcf, 'PaperSize', [18 18*heightFactorExport]); % Set the paper to have specified width and height (excess is cut off).
+set(gcf, 'PaperPosition', [0 0 18 18*heightFactor]); %Position plot at left hand corner with width 5 and height 5.
+set(gcf, 'PaperSize', [18 18*heightFactor]); %Set the paper to have width 5 and height 5.
+
 % create sub-folder (if non-existent yet) and save plot there:
 currPath = pwd; 
 pathToResults = fullfile(currPath,'generatedPlots');
