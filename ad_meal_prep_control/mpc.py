@@ -4,7 +4,6 @@ from casadi.tools import *
 import sys
 import os
 from params_R3 import *
-from typing import Union
 from ad_meal_prep_control.utils import CostFunction
 
 rel_do_mpc_path = os.path.join("..", "..")
@@ -22,7 +21,7 @@ def mpc_setup(
     x_pr_in: np.ndarray,
     x_li_in: np.ndarray,
     compile_nlp: bool,
-    vol_flow_rate: Union[np.ndarray, None] = None,
+    vol_flow_rate: np.ndarray,
     cost_func: CostFunction
 ) -> do_mpc.controller.MPC:
     num_states = model._x.size
@@ -53,14 +52,9 @@ def mpc_setup(
         tvp_template = mpc.get_tvp_template()
 
         def tvp_fun(t_now):
-            t_now_idx = np.round(t_now / t_step)
+            t_now_idx = int(np.round(t_now / t_step))
             for k in range(n_horizon + 1):
-                if vol_flow_rate is not None:
-                    tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[
-                        t_now_idx + k
-                    ]
-                else:
-                    tvp_template["_tvp", k, "v_ch4_dot_out"] = 0.0
+                tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[t_now_idx + k]
 
             return tvp_template
 

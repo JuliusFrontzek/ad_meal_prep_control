@@ -1,7 +1,7 @@
 import pygame
 from dataclasses import dataclass
 import numpy as np
-from utils import ScenarioType
+from utils import ScenarioType, ScenarioData
 import do_mpc
 
 
@@ -204,22 +204,23 @@ class DataVis:
 
 
 def visualize(
+    scenario_data: ScenarioData,
     bga: BioGasPlantVis,
     data: DataVis,
-    state_names: list[str],
-    meas_names: list[str],
-    Tx: np.ndarray,
-    Ty: np.ndarray,
     x0_norm: np.ndarray,
     simulator: do_mpc.simulator.Simulator,
     u_actual: np.ndarray,
     V_GAS_STORAGE_MAX: float,
-    scenario_type: ScenarioType,
 ):
     x0 = np.copy(x0_norm)
-    x0 *= np.array([Tx]).T
-    y = np.array([simulator.data._aux[-1, idx + 1] * Ty for idx, Ty in enumerate(Ty)])
-    if scenario_type == ScenarioType.COGENERATION:
+    x0 *= np.array([scenario_data.Tx]).T
+    y = np.array(
+        [
+            simulator.data._aux[-1, idx + 1] * Ty
+            for idx, Ty in enumerate(scenario_data.Ty)
+        ]
+    )
+    if scenario_data.scenario_type == ScenarioType.COGENERATION:
         bga.draw(
             V_GAS_STORAGE_MAX,
             x0[-2][0],
@@ -227,7 +228,7 @@ def visualize(
             simulator.data._aux[-1, 9],
             u_actual.flatten(),
         )
-    data.draw(x0, state_names, y, meas_names)
+    data.draw(x0, scenario_data._state_names, y, scenario_data._meas_names)
 
     # flip() the display to put your work on screen
     pygame.display.flip()

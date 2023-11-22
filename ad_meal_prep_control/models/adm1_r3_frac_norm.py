@@ -460,6 +460,12 @@ def adm1_r3_frac_norm(
     else:
         sum_u = Tu * u_norm
 
+    # Measurements
+    u_meas = model.set_meas("u_meas", Tu * u_norm, meas_noise=False)
+    y_meas = []
+    for idx, y in enumerate(y):
+        y_meas.append(model.set_meas(f"y_meas_{idx+1}", y, meas_noise=True))
+
     # Differential equations
     model.set_rhs(
         "x_1",

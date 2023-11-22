@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from typing import Union
 import numpy as np
 from casadi import SX
 from enum import Enum, auto
+import utils
 
 
 @dataclass
@@ -107,3 +109,64 @@ class CostFunction:
 class ScenarioType(Enum):
     METHANATION = auto()
     COGENERATION = auto()
+
+
+class StateObserver(Enum):
+    MHE = auto()
+    STATEFEEDBACK = auto()
+
+
+@dataclass(kw_only=True)
+class ScenarioData:
+    name: str
+    scenario_type: ScenarioType
+    mpc_n_horizon: int
+    mpc_n_robust: int
+    t_step: float  # Time in days
+    n_days_steady_state: float
+    n_days_mpc: float
+    sub_names: list[str]
+    disturbances: utils.Disturbances
+    x0: np.ndarray
+    Tx: np.ndarray
+    Ty: np.ndarray
+    u_max: dict[str, float]
+    num_std_devs: float  # Lower and upper bound of uncertainties is determined by the number of standard deviations that we consider
+    plot_vars: list[str]
+    state_observer: StateObserver
+    mhe_n_horizon: int = 5
+    mterm: Union[str, None] = None
+    lterm: Union[str, None] = None
+    consider_uncertainty: bool = True
+    simulate_steady_state: bool = True
+    simulate_mpc: bool = True
+    mpc_live_vis: bool = True
+    pygame_vis: bool = False
+    store_results: bool = True
+    compile_nlp: bool = False
+    vol_flow_rate: Union[np.ndarray, None] = None
+
+    _state_names = [
+        "S_ac",
+        "S_ch4",
+        "S_IC",
+        "S_IN",
+        "S_h2o",
+        "X_ch_f",
+        "X_ch_s",
+        "X_pr",
+        "X_li",
+        "X_bac",
+        "X_ac",
+        "X_ash",
+        "S_ion",
+        "S_ac−",
+        "S_hco3−",
+        "S_nh3",
+        "S_ch4_gas",
+        "S_co2_gas",
+        "V_CH4",
+        "V_CO2",
+    ]
+
+    _meas_names = ["V´_g", "p_CH4", "p_CO2", "pH", "S_IN", "TS", "VS", "S_ac"]

@@ -1,15 +1,95 @@
 import do_mpc
+import numpy as np
 
 
-class StateEstimator(do_mpc.estimator.Estimator):
+class StateFeedback(do_mpc.estimator.Estimator):
     """
     For now this functions as a state-feedback but will facilitate the EKF
     as well as add some noise to the measured variables.
     """
 
-    def __init__(self, model):
+    def __init__(self, model, simulator):
         super().__init__(model)
+        self._simulator = simulator
 
-    def estimate_x(self, y):
+    def make_step(self, y):
         """Return the measurement ``y`` because this is a state estimator."""
-        return y
+        return self._simulator.data._x[-1, :].reshape(-1, 1)
+
+
+def mhe_setup(
+    model: do_mpc.model.Model,
+    t_step: float,
+    n_horizon: int,
+    x_ch_in: np.ndarray,
+    x_pr_in: np.ndarray,
+    x_li_in: np.ndarray,
+    P_x: np.ndarray,
+    P_v: np.ndarray,
+    vol_flow_rate: np.ndarray,
+) -> do_mpc.estimator.MHE:
+    """
+    MHE setup
+    """
+    num_states = model._x.size
+    mhe = do_mpc.estimator.MHE(
+        model, p_est_list=[f"x_{i+1}" for i in range(num_states)]
+    )
+    setup_mhe = {
+        "t_step": t_step,
+        "n_horizon": n_horizon,
+        "store_full_solution": True,
+        "meas_from_data": True,
+    }
+    mhe.set_param(**setup_mhe)
+
+    mhe.set_default_objective(P_x=P_x, P_v=P_v)
+
+    if num_states == 20:
+        tvp_template = mhe.get_tvp_template()
+
+        def tvp_fun(t_now):
+            t_now_idx = int(np.round(t_now / t_step))
+            n_steps = min(t_now_idx, n_horizon)
+
+            for k in range(n_steps):
+                tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[t_now_idx + k]
+
+            return tvp_template
+
+        mhe.set_tvp_fun(tvp_fun)
+
+    p_num = mhe.get_p_template()
+    p_num["x_ch_in"] = np.array(
+        [np.mean(x_ch_in[:, i]) for i in range(x_ch_in.shape[1])]
+    )
+    p_num["x_pr_in"] = np.array(
+        [np.mean(x_pr_in[:, i]) for i in range(x_pr_in.shape[1])]
+    )
+    p_num["x_li_in"] = np.array(
+        [np.mean(x_li_in[:, i]) for i in range(x_li_in.shape[1])]
+    )
+
+    def p_fun(t_now):
+        return p_num
+
+    mhe.set_p_fun(p_fun)
+
+    mhe.prepare_nlp()
+
+    # mhe.bounds["lower", "_x", "m_x"] = 0.0
+    # mhe.bounds["lower", "_x", "m_s"] = 0.0
+    # mhe.bounds["lower", "_x", "v"] = 0.0
+
+    mhe_options = {
+        "nlpsol_opts": {
+            "ipopt.linear_solver": "MA27",
+            "ipopt.hsllib": "/home/julius/Documents/coinhsl-2023.05.26/builddir/libcoinhsl.so",
+            "ipopt.hessian_approximation": "limited-memory",
+        },
+    }
+
+    mhe.set_param(**mhe_options)
+    mhe.create_nlp()
+
+    return mhe
