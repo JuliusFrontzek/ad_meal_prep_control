@@ -63,10 +63,10 @@ u_max = {
 
 Ty = np.array(
     [
-        140.300279906936,
+        350.0,  # 140.300279906936
         0.574083930894918,
         0.376314347120225,
-        7.31094007321728,
+        5.5,
         0.850445630702126,
         0.0422284958830547,
         0.668470313534998,
@@ -74,17 +74,19 @@ Ty = np.array(
     ]
 )
 
-mterm = lterm = "(self.model.aux['y_4'] - 7.5) ** 2"
+mterm = (
+    lterm
+) = "(self.model.aux['y_4_norm'] - 1.) ** 2"  # (self.model.aux["y_1_norm"] - 1.0) ** 2
 
 test_scenario = scenario.Scenario(
     name="test_scenario",
     scenario_type=ScenarioType.METHANATION,
-    n_horizon=5,
+    n_horizon=10,
     n_robust=0,
     t_step=0.5 / 24,
-    n_days_steady_state=2,
-    n_days_mpc=1,
-    sub_names=["CORN_SILAGE"],
+    n_days_steady_state=20,
+    n_days_mpc=3,
+    sub_names=["CORN_SILAGE", "GRASS_SILAGE", "CATTLE_MANURE"],
     disturbances=disturbances,
     x0=x0,
     Tx=Tx,

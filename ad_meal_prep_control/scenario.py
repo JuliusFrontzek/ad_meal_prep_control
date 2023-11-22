@@ -231,9 +231,10 @@ class Scenario:
         for _ in range(self._n_steps_steady_state):
             self._screen.fill("white")
 
-            u_norm_steady_state = np.array(
-                [[8.0 / self.Tu[0] for _ in range(len(self._subs))]]
-            ).T  # 1.0 / 1e4
+            u_norm_steady_state = np.array([[0.1 for _ in self._subs]]).T
+            # np.array(
+            #     [[8.0 / self.Tu[0] for _ in range(len(self._subs))]]
+            # ).T  # 1.0 / 1e4
 
             y_next = steady_state_simulator.make_step(u_norm_steady_state)
             self.x0_norm = self._estimator.estimate_x(y_next)

@@ -644,8 +644,8 @@ def adm1_r3_frac_norm(
         - c[11] * Tx[14] / Tx[17] * x_norm[14]
         + c[27] * x_norm[17],
     )
-    
-    if scenario_type == ScenarioType.COGENERATION:    
+
+    if scenario_type == ScenarioType.COGENERATION:
         model.set_rhs(
             "x_19",
             (v_dot_in_total * y_norm[1] * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out)

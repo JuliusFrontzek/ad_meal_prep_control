@@ -35,7 +35,7 @@ def simulator_setup(
         tvp_num = simulator.get_tvp_template()
 
         def tvp_fun(t_now):
-            t_now_idx = int(t_now / t_step)
+            t_now_idx = np.round(t_now / t_step)
             if vol_flow_rate is not None:
                 tvp_num["v_ch4_dot_out", 0] = vol_flow_rate[t_now_idx]
             else:
