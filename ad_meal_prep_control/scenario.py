@@ -57,6 +57,13 @@ class Scenario:
                 self.scenario_data.n_days_mpc / self.scenario_data.t_step
             )
 
+            self._t_mpc = np.linspace(
+                0,
+                self.scenario_data.n_days_mpc,
+                num=round(self.scenario_data.n_days_mpc / self.scenario_data.t_step),
+                endpoint=True,
+            )
+
         self._sim_setup()
 
         # Estimator setup
@@ -93,15 +100,17 @@ class Scenario:
                 )
 
             # Configure plot:
-            fig, ax = plt.subplots(len(self.scenario_data.plot_vars), sharex=True)
-            ax[-1].set_xlabel("Time [d]")
             plt.rcParams["axes.grid"] = True
+            self._fig, self._ax = plt.subplots(
+                len(self.scenario_data.plot_vars), sharex=True
+            )
+            self._ax[-1].set_xlabel("Time [d]")
             for idx, var in enumerate(self.scenario_data.plot_vars):
                 if var[0] == "u":
                     self._graphics["mpc_graphics"].add_line(
-                        var_type=f"_{var[0]}", var_name=var, axis=ax[idx]
+                        var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
                     )
-                    ax[idx].legend(
+                    self._ax[idx].legend(
                         labels=[
                             sub.lower().replace("_", " ")
                             for sub in self.scenario_data.sub_names
@@ -110,22 +119,20 @@ class Scenario:
                     )
                 elif var[0] == "x":
                     self._graphics["mpc_graphics"].add_line(
-                        var_type=f"_{var[0]}", var_name=var, axis=ax[idx]
+                        var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
                     )
-                    ax[idx].legend(
+                    self._ax[idx].legend(
                         labels=list(self._graphics.keys()),
                         title="Whatever",
                     )
-                elif var[0] == "y":
-                    ax[idx].legend(labels=["Measurements", "Denoised measurements"])
-                ax[idx].set_ylabel(var)
+                self._ax[idx].set_ylabel(var)
 
             # Update properties for all prediction lines:
             for line_i in self._graphics["mpc_graphics"].pred_lines.full:
                 line_i.set_linewidth(1)
 
-            fig.align_ylabels()
-            fig.tight_layout()
+            self._fig.align_ylabels()
+            self._fig.tight_layout()
             plt.ion()
 
     def run(self):
@@ -322,6 +329,15 @@ class Scenario:
                     g.plot_results(t_ind=k)
                 self._graphics["mpc_graphics"].plot_predictions(t_ind=k)
                 self._graphics["mpc_graphics"].reset_axes()
+                for idx, var in enumerate(self.scenario_data.plot_vars):
+                    if var[0] == "y":
+                        y_num = int(var.split("_")[-1])
+
+                        self._ax[idx].scatter(
+                            self._t_mpc[: k + 1],
+                            self._simulator.data._y[:, self.model.u.size + y_num - 1],
+                            color="red",
+                        )
                 plt.show()
                 plt.pause(0.01)
 
