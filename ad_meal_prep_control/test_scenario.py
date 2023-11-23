@@ -63,7 +63,7 @@ u_max = {
 
 Ty = np.array(
     [
-        350.0,  # 140.300279906936
+        250.0,  # 140.300279906936
         0.574083930894918,
         0.376314347120225,
         5.5,
@@ -80,7 +80,7 @@ t_step = 0.5 / 24
 
 mpc_n_horizon = 5
 mpc_n_robust = 0
-mhe_n_horizon = 5
+mhe_n_horizon = 10
 
 total_steps = round((n_days_steady_state + n_days_mpc) / t_step)
 
@@ -120,12 +120,10 @@ test_scenario_data = ScenarioData(
     num_std_devs=0.5,
     plot_vars=[
         "u_norm",
-        "x_13",
-        "x_14",
-        "x_8",
         "y_meas_1",
         "y_meas_4",
-    ],
+    ]
+    + [f"x_{i+1}" for i in range(18)],
     state_observer=StateObserver.MHE,
     mhe_n_horizon=mhe_n_horizon,
     cost_func=cost_func,

@@ -37,8 +37,8 @@ class Scenario:
         )
 
     def setup(self):
-        self._substrate_setup()
         self._setup_state_and_normalization_vectors()
+        self._substrate_setup()
         self._model_setup()
 
         if self.scenario_data.pygame_vis:
@@ -65,6 +65,9 @@ class Scenario:
 
         # Estimator setup
         if self.scenario_data.state_observer == StateObserver.MHE:
+            x_0_mhe = self.x0_norm * (
+                1.0 + 0.1 * np.random.randn(self.scenario_data.x0.shape[0])
+            )
             self._estimator = mhe_setup(
                 model=self.model,
                 t_step=self.scenario_data.t_step,
@@ -72,13 +75,11 @@ class Scenario:
                 x_ch_in=self._x_ch_in,
                 x_pr_in=self._x_pr_in,
                 x_li_in=self._x_li_in,
-                P_x=np.eye(self.model._x.size),
+                P_x=np.diag((x_0_mhe - self.x0_norm) ** 2),
                 P_v=np.zeros((8, 8)),
                 vol_flow_rate=self.scenario_data.vol_flow_rate,
             )
-            x_0_mhe = self.x0_norm * (
-                1.0 + 0.1 * np.random.randn(self.scenario_data.x0.shape[0])
-            )
+
             self._estimator.x0 = x_0_mhe
             self._estimator.set_initial_guess()
         elif self.scenario_data.state_observer == StateObserver.STATEFEEDBACK:
@@ -185,6 +186,19 @@ class Scenario:
         self._bga = vis.BioGasPlantVis(150.0, self._screen)
         self._data = vis.DataVis(self._screen)
 
+    def _setup_state_and_normalization_vectors(self):
+        """
+        Shortens the state and normalization vectors if they've been handed too long if the gas storage had been considered in a previous simulation but not anymore.
+        Also normalizes the state vector and sets up the normalization vector for the inputs.
+        """
+        if self.scenario_data.scenario_type == ScenarioType.METHANATION:
+            self.scenario_data.x0 = self.scenario_data.x0[:18]
+            self.scenario_data.Tx = self.scenario_data.Tx[:18]
+
+        self.x0_norm = np.copy(self.scenario_data.x0)
+        self.x0_norm /= self.scenario_data.Tx
+        self.Tu = np.array([self.scenario_data.u_max[sub.state] for sub in self._subs])
+
     def _substrate_setup(self):
         self._subs = []
         for sub_name in self.scenario_data.sub_names:
@@ -240,19 +254,6 @@ class Scenario:
         self._x_ch_in /= self.scenario_data.Tx[5]
         self._x_pr_in /= self.scenario_data.Tx[7]
         self._x_li_in /= self.scenario_data.Tx[8]
-
-    def _setup_state_and_normalization_vectors(self):
-        """
-        Shortens the state and normalization vectors if they've been handed too long if the gas storage had been considered in a previous simulation but not anymore.
-        Also normalizes the state vector and sets up the normalization vector for the inputs.
-        """
-        if self.scenario_data.scenario_type == ScenarioType.METHANATION:
-            self.scenario_data.x0 = self.scenario_data.x0[:18]
-            self.scenario_data.Tx = self.scenario_data.Tx[:18]
-
-        self.x0_norm = np.copy(self.scenario_data.x0)
-        self.x0_norm /= self.scenario_data.Tx
-        self.Tu = np.array([self.scenario_data.u_max[sub.state] for sub in self._subs])
 
     def _model_setup(self):
         # Model
