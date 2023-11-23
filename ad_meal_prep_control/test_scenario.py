@@ -2,7 +2,7 @@ import scenario
 from utils import Disturbances
 import numpy as np
 import params_R3
-from utils import ScenarioType, StateObserver, CHP, ScenarioData
+from utils import ScenarioType, StateObserver, CHP, ScenarioData, CostFunction
 
 disturbances = Disturbances()
 
@@ -99,11 +99,13 @@ vol_flow_rate = chp.ch4_vol_flow_rate(
 
 mterm = (
     lterm
-) = "(self.model.aux['y_4_norm'] - 1.) ** 2"  # (self.model.aux["y_1_norm"] - 1.0) ** 2
+) = "(model.aux['y_1_norm'] - 1.) ** 2"  # (self.model.aux["y_1_norm"] - 1.0) ** 2
+
+cost_func = CostFunction(mterm=mterm, lterm=lterm)
 
 test_scenario_data = ScenarioData(
     name="test_scenario",
-    scenario_type=ScenarioType.COGENERATION,
+    scenario_type=ScenarioType.METHANATION,
     mpc_n_horizon=mpc_n_horizon,
     mpc_n_robust=mpc_n_robust,
     t_step=t_step,
@@ -124,10 +126,9 @@ test_scenario_data = ScenarioData(
         "y_meas_1",
         "y_meas_4",
     ],
-    state_observer=StateObserver.STATEFEEDBACK,
+    state_observer=StateObserver.MHE,
     mhe_n_horizon=mhe_n_horizon,
-    mterm=mterm,
-    lterm=lterm,
+    cost_func=cost_func,
     consider_uncertainty=True,
     simulate_steady_state=False,
     simulate_mpc=True,

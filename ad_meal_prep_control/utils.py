@@ -102,8 +102,37 @@ class Disturbances:
 
 @dataclass(kw_only=True)
 class CostFunction:
-    mterm: SX
-    lterm: SX
+    mterm: str
+    lterm: str
+
+
+@dataclass(kw_only=True)
+class Bound:
+    lower: bool
+    variable: str
+    value: float
+
+    def __post_init__(self):
+        assert (
+            self.variable[0] in ["u", "x"] and self.variable[1] == "_"
+        ), f"Variable {self.variable} currently not supported for bounds."
+        self.variable_type = f"_{self.variable[0]}"
+
+    @property
+    def direction(self):
+        if self.lower:
+            return "lower"
+        else:
+            return "upper"
+
+
+@dataclass(kw_only=True)
+class NlConstraint:
+    expression: str
+    ub: float
+    soft_constraint: bool
+    penalty_term_cons: float
+    maximum_violation: float = np.inf
 
 
 class ScenarioType(Enum):
@@ -135,8 +164,10 @@ class ScenarioData:
     plot_vars: list[str]
     state_observer: StateObserver
     mhe_n_horizon: int = 5
-    mterm: Union[str, None] = None
-    lterm: Union[str, None] = None
+    cost_func: CostFunction
+    bounds: list[Bound] = None
+    nl_cons: list[NlConstraint] = None
+    rterm: str = None
     consider_uncertainty: bool = True
     simulate_steady_state: bool = True
     simulate_mpc: bool = True

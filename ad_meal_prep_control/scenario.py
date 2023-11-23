@@ -35,11 +35,6 @@ class Scenario:
             )
 
         if self.scenario_data.simulate_mpc:
-            cost_func = utils.CostFunction(
-                mterm=eval(self.scenario_data.mterm),
-                lterm=eval(self.scenario_data.mterm),
-            )
-
             self._mpc = mpc_setup(
                 model=self.model,
                 t_step=self.scenario_data.t_step,
@@ -50,7 +45,10 @@ class Scenario:
                 x_li_in=self._x_li_in,
                 compile_nlp=self.scenario_data.compile_nlp,
                 vol_flow_rate=self.scenario_data.vol_flow_rate,
-                cost_func=cost_func,
+                cost_func=self.scenario_data.cost_func,
+                bounds=self.scenario_data.bounds,
+                nl_cons=self.scenario_data.nl_cons,
+                rterm=self.scenario_data.rterm,
             )
 
             self._n_steps_mpc = round(
@@ -76,7 +74,7 @@ class Scenario:
                 x_pr_in=self._x_pr_in,
                 x_li_in=self._x_li_in,
                 P_x=np.eye(self.model._x.size),
-                P_v=np.eye(8),
+                P_v=np.zeros((8, 8)),
                 vol_flow_rate=self.scenario_data.vol_flow_rate,
             )
             x_0_mhe = self.x0_norm * (
@@ -104,7 +102,7 @@ class Scenario:
             self._fig, self._ax = plt.subplots(
                 len(self.scenario_data.plot_vars), sharex=True
             )
-            self._ax[-1].set_xlabel("Time [d]")
+
             for idx, var in enumerate(self.scenario_data.plot_vars):
                 if var[0] == "u":
                     self._graphics["mpc_graphics"].add_line(
@@ -118,15 +116,51 @@ class Scenario:
                         title="Substrates",
                     )
                 elif var[0] == "x":
-                    self._graphics["mpc_graphics"].add_line(
+                    self._graphics["sim_graphics"].add_line(
                         var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
                     )
                     self._ax[idx].legend(
-                        labels=list(self._graphics.keys()),
-                        title="Whatever",
+                        self._graphics["sim_graphics"].result_lines[var],
+                        labels=["Actual state"],
+                        loc="center right",
                     )
-                self._ax[idx].set_ylabel(var)
 
+                    self._graphics["mpc_graphics"].add_line(
+                        var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
+                    )
+
+                    if self.scenario_data.state_observer == StateObserver.MHE:
+                        self._graphics["mhe_graphics"].add_line(
+                            var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
+                        )
+
+                        self._ax[idx].legend(
+                            labels=[
+                                "Actual state",
+                                "MPC",
+                                "MPC prediction",
+                                "MHE estimation",
+                            ],
+                            loc="center right",
+                        )
+                    else:
+                        self._ax[idx].legend(
+                            labels=[
+                                "Actual state",
+                                "MPC",
+                                "MPC prediction",
+                            ],
+                            loc="center right",
+                        )
+                        # self._graphics["mhe_graphics"].result_lines()
+
+                self._ax[idx].set_ylabel(var)
+            self._ax[-1].set_xlabel("Time [d]")
+
+            if self.scenario_data.state_observer == StateObserver.MHE:
+                for line_i in self._graphics["mhe_graphics"].result_lines.full:
+                    line_i.set_alpha(0.4)
+                    line_i.set_linewidth(6)
             # Update properties for all prediction lines:
             for line_i in self._graphics["mpc_graphics"].pred_lines.full:
                 line_i.set_linewidth(1)
@@ -329,6 +363,7 @@ class Scenario:
                     g.plot_results(t_ind=k)
                 self._graphics["mpc_graphics"].plot_predictions(t_ind=k)
                 self._graphics["mpc_graphics"].reset_axes()
+                self._graphics["sim_graphics"].reset_axes()
                 for idx, var in enumerate(self.scenario_data.plot_vars):
                     if var[0] == "y":
                         y_num = int(var.split("_")[-1])
