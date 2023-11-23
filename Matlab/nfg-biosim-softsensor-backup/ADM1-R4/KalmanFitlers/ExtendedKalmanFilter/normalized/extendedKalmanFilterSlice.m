@@ -1,12 +1,14 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 30.08.2023
+% last modified: 23.11.2023
 % Autor: Simon Hellmann
 
-function [xPlus,PPlus] = extendedKalmanFilterMultiRateNoDelay(xOld,POld,feedInfo,yMeas,params,Q,R,f,g,dfdx,dhdx,tSpan,nStates)
+function [xPlus,PPlus] = extendedKalmanFilterSlice(xOld,POld,feedInfo,yMeas,params,Q,R,f,g,dfdx,dhdx,tSpan,nStates)
 
 % compute time & measurement update with Joseph-version of EKF for
-% multirate measurements without delay (Intensiv-Beprobung offline)
+% multirate measurements WITHOUT delay, but only some offline measurements 
+% available at major instances (Intensiv-Beprobung)
 
 % xPlus - new state estimate
 % PPlus - new state error covariance matrix
@@ -84,8 +86,8 @@ H = dhdx(xMinus,params.c);  % partial derivative of output, evaluated at xMinus
 % figure out which measurements are available and reduce h, yMeas, H and R
 % accordingly: 
 idxMeas = ~isnan(yMeas);    % 1 where measurement, 0 where NaN
-h = h(idxMeas);         % still col vector
-yMeas = yMeas(idxMeas); % still row vector
+h = h(idxMeas);             % still col vector
+yMeas = yMeas(idxMeas);     % still row vector
 H = H(idxMeas,:); 
 R = R(idxMeas,idxMeas); 
 
@@ -93,7 +95,7 @@ S = H*PMinus*H' + R;    % auxiliary matrix
 SInv = S\eye(size(R));  % efficient least squares (numerically more efficient alternative for inverse)
 K = PMinus*H'*SInv;     % Kalman Gain matrix
 Kv = K*(yMeas' - h);    % effective correction of Kalman Gain on state estimate (n,1); 
-% Kv = zeros(nStates,1);  % XY Rania
+% Kv = zeros(nStates,1);% XY Rania
 
 xPlus = xMinus + Kv;    % updated state estimation
 % Joseph-Algorithm for measurement update of P: 

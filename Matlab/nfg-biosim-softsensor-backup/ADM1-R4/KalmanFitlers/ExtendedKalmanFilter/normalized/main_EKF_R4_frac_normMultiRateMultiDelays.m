@@ -1,10 +1,11 @@
 %% Version
 % (R2022b) Update 6
-% Erstelldatum: 31.07.2023
-% last modified: 21.11.2023
+% Erstelldatum: 23.11.2023
+% last modified: 23.11.2023
 % Autor: Simon Hellmann
 
 %% DAS Kalman Filter fürs ADM1-R4-frac-norm mit Online/Offline Messwerten
+% with multiple samples during delay period
 
 close all
 clear all
@@ -151,21 +152,35 @@ gNorm = matlabFunction(outputsNorm, 'Vars', {xNormS, cS, TxS, TyS});
 dfdxNorm = matlabFunction(dfdxNormSym, 'Vars', {xNormS, uNorm, thS, cS, aS, TxS, Tu}); 
 dhdxNorm = matlabFunction(dhdxNormSym, 'Vars', {xNormS, cS, TxS, TyS}); 
 
-%% call EKF iteratively
+%% call MR-EKF iteratively
 tic
-flagAugmented = 0;  % 0: non-augmented; 1: augmented
-flagDelayPeriod = 0; % 0: not in delay period; 1: in delay period
+% flagAugmented = 0;      % 0: non-augmented; 1: augmented
+flagDelayPeriod = 0;    % 0: not in delay period; 1: in delay period
+nAug = 0;   % number of augmentations
+tActiveSamples = nan;    % allocate memory
+tActiveArrivals = nan;   % allocate memory
+currKnownMeasurements = nan(1,(qOn+qOff)); % allocate memory
 
 % integrate over all (online) measurement intervals (like in reality):
 for k = 1:nSamplesMinor 
 
-    tSpan = [tKF(k);tKF(k+1)]; % measurement interval. In reality, this is the 
-    tk = tSpan(1);      % t_k
-    tkp1 = tSpan(2);    % t_k+1
-        
-    % check if you're AT primary sampling (k==s): 
+    tSpan = [tKF(k);tKF(k+1)]; % measurement interval (starts with t0)
+    tkm1 = tSpan(1);    % t_k-1 (m for minus)
+    tk = tSpan(2);      % t_k. We do the time and measurement update for this time instance!
+
+    % XY: check, wie viele Arrivals das EKF schon kennt: 
+    tKnownArrivals = tOfflineArrivalShift(tOfflineArrivalShift <= tk); 
+
+    % check if you're AT a primary sampling (k==s): 
+    % XY: im Zweifel mehrfache augmentation!
     if ismember(tk,tOfflineSampleShift)
-        flagAugmented = 1; 
+        nAug = nAug + 1; % increase level of augmentation
+        % add new active sampling time: 
+        if isnan(tActiveSamples)
+            tActiveSamples = tk;   
+        else
+            tActiveSamples = unique([tActiveSamples;tk]);   
+        end
         flagDelayPeriod = 1; 
         disp('sampling'); 
         % augment and initialize state x & state err. cov. matrix P
@@ -176,28 +191,41 @@ for k = 1:nSamplesMinor
     end
     
     if flagDelayPeriod == 1
-        disp(['in delay period... at time ', num2str(tk)]);
+        disp(['in delay period... at time ', num2str(tkm1)]);
     end
+    
+    % XY: checke, OB offline-Messwerte zurückkommen; und wenn JA, zu
+    % welcher sampling time diese gehören! 
 
     % get most recent measurement:
     yMeas = MEASUnite(k,:);    % simulated measurement
     % check if you're at minor or major instance: 
-    flagMajor = all(~isnan(yMeas)); % 0: minor instance, 1: major instance
+    flagArrival = all(~isnan(yMeas)); % 0: minor instance, 1: major instance
     
-    if flagMajor == 1
+    if flagArrival == 1
         disp(['now major instance!', newline,...
         'Delay period over.'])
-        flagDelayPeriod = 0;
-    end      
+        
+%         flagDelayPeriod = 0;
+    end
+
+    % create body of active samples matrix:
+    nActSamples = numel(tActiveSamples); 
+    actSamplesMat = zeros(nActSamples,2+qOn+qOff); 
+    % fill relevant values: 
+    actSamplesMat(:,1) = tActiveSamples; 
+    % XY think how you can add the available measurement information!
+
+%     [tActiveSamples,tActiveArrivals,currKnownMeasurements];
 
     %% get feeding information:
-    % pass only relevant feedings during the measurement interval, because
-    % only those would be known in reality:
-    idxRelEvents = find(tEvents >= tk & tEvents <= tkp1);
+    % pass on only relevant feedings during the measurement interval, 
+    % because only those would be known in reality:
+    idxRelEvents = find(tEvents >= tkm1 & tEvents <= tk);
     tRelEvents = tEvents(idxRelEvents); % Auswertung anhand Index
     
     % find the critcal last feeding event before current measurement interval:
-    idxLastEvent = find(tEvents < tk,1,'last');
+    idxLastEvent = find(tEvents < tkm1,1,'last');
 
     % Case a: constant feeding during measurement interval:
     if isempty(tRelEvents) 
@@ -212,10 +240,13 @@ for k = 1:nSamplesMinor
     %% execute multirate EKF
     
     % normalized coordinates:  
-    [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRate(xMinusNorm,PMinusNorm, ...
-        feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
-        TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,flagAugmented,flagDelayPeriod,flagMajor); 
-    
+%     [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateMultiDelay(xMinusNorm,PMinusNorm, ...
+%         feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
+%         TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,nAug,flagDelayPeriod,flagArrival); 
+    % XY: wieder löschen, wenn dummy nicht mehr gebraucht:
+    xPlusNorm = xMinusNorm; 
+    PPlusNorm = PMinusNorm; 
+
     % save results in normalized coordinates:
     ESTIMATESNorm(k+1,:) = xPlusNorm(1:nStates); 
     COVARIANCENorm(:,:,k+1) = PPlusNorm(1:nStates,1:nStates);
@@ -225,7 +256,7 @@ for k = 1:nSamplesMinor
     PMinusNorm = PPlusNorm; 
 
     % remove state augmentation once primary measurement (& delay period) is over:
-    if ismember(tk,tOfflineArrivalShift)
+    if ismember(tkm1,tOfflineArrivalShift)
         flagAugmented = 0; 
 %         flagDelayPeriod = 0;
         disp(['primary measurement over', newline, ...
@@ -458,6 +489,8 @@ sgtitle('Comparison of EKF and clean model output')
 fontsize(figOutputs, 14, 'points')
 
 %% Biomass X_bac:
+STATES = MESS.xSolOn; 
+
 covarianceBac = reshape(COVARIANCENorm(9,9,:),nSamplesMinor+1,1); 
 covarianceBacDeNorm = covarianceBac*TxNum(9)^2;  
 sigmaBac = sqrt(abs(covarianceBacDeNorm)); % exclude negative values because of numerical issues
@@ -476,7 +509,6 @@ title('Estimated and true biomass concentration')
 legend()
 
 %% Plot trajectories of relevant states: 
-STATES = MESS.xSolOn; 
 
 figStates = figure; 
 

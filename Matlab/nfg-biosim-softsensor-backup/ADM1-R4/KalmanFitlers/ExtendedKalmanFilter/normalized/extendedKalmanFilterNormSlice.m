@@ -1,14 +1,16 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 30.08.2023
+% last modified: 23.11.2023
 % Autor: Simon Hellmann
 
-function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateNoDelay(xOldNorm,POldNorm, ...
+function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormSlice(xOldNorm,POldNorm, ...
     feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
     TxNum,TyNum,TuNum,tSpan,nStates)
 
-% compute time & measurement update with normalized multirate measurements
-% (without delay) in normalized (norm.) coordinates
+% compute time & measurement update with Joseph-version of EKF for
+% multirate measurements WITHOUT delay, but only some offline measurements 
+% available at major instances (Intensiv-Beprobung), normalized coordinates
 
 % xPlusNorm - new norm. state estimate
 % PPlusNorm - new norm. state error covariance matrix

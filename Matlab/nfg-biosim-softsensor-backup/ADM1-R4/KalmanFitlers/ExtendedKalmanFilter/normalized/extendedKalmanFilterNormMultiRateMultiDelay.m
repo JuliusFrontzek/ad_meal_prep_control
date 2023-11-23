@@ -1,15 +1,18 @@
 %% Version
-% (R2022b) Update 2
-% Erstelldatum: 01.08.2023
-% last modified: 24.09.2023
+% (R2022b) Update 6
+% Erstelldatum: 23.11.2023
+% last modified: 23.11.2023
 % Autor: Simon Hellmann
 
-function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRate(xOldNorm,POldNorm, ...
+function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateMultiDelay(xOldNorm,POldNorm, ...
     feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
-    TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,flagAugmented,flagDelayPeriod,flagMajor)
+    TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,nAug,flagDelayPeriod,flagArrival)
 
 % compute time & measurement update with normalized multirate measurements
+% with multiple augmentation before return of measurement for samples
 % in normalized (norm.) coordinates
+
+% XY: change flagAugmentation to counter nAug everywhere!
 
 % xPlusNorm - new norm. state estimate
 % PPlusNorm - new norm. state error covariance matrix
@@ -31,7 +34,7 @@ function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRate(xOldNorm,POld
 % qOn, qOff - # online and offline signals
 % flagAugmented -   0: non-augmented,   1: augmented
 % flagDelayPeriod - 0: NOT waiting for lab measurement to return. 1: waiting
-% flagMajor -       0: minor instance,  1: major instance
+% flagArrival -     0: minor instance,  1: major instance
 
 global counter
 
@@ -86,7 +89,7 @@ else
 end
 
 % separate states x and covariance matrix P:
-% differentiate between augmented and non-augmented case:
+% differentiate between different augmented and non-augmented case:
 if flagAugmented == 1
     xAugMinusNorm = xPMinusNorm(1:2*nStates);
     PAugMinusNorm = reshape(xPMinusNorm(2*nStates+1:end),[2*nStates,2*nStates]);
@@ -112,7 +115,7 @@ else % non-augmented case:
 end
 
 % Slicing. During minor instance...
-if flagMajor == 0
+if flagArrival == 0
     % ... reduce H and R to # of measurement signals during minor instance:
     HNorm = HNorm(1:qOn,:); 
     RNorm = RNorm(1:qOn,1:qOn); 
@@ -132,6 +135,7 @@ KNorm = PMinusNorm*HNorm'*SNormInv; % Kalman Gain matrix
 KvNorm = KNorm*(yMeasNorm - hNorm);    % effective correction of Kalman Gain on state estimate (n,1); 
 % KvNorm = zeros(nStates,1);  % XY Rania
 
+% XY: passe die indicator matrix an!
 if flagDelayPeriod == 1
     M = blkdiag(eye(nStates),zeros(nStates)); % indicator matrix
     xPlusNorm = xMinusNorm + M*KvNorm;    % updated normalized state estimation

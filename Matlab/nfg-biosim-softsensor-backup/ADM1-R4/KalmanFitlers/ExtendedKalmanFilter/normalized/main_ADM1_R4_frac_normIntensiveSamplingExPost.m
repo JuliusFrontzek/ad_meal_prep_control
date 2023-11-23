@@ -1,9 +1,11 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 17.08.2023
+% last modified: 23.11.2023
 % Autor: Simon Hellmann
 
-% create synthetic measurement data for Kalman Filtering
+% create synthetic measurement data comparable to Intensivbeprobung, but
+% without delays (for ex-post-simulation)
 % scenario: no delays, online + offline rates (Std.-Analyses)
 % model: ADM1-R4-frac-norm (including ash and 2 carbohydrate fractions) 
 

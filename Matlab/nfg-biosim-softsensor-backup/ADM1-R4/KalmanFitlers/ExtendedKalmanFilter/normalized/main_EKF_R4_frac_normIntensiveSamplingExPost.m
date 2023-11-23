@@ -1,10 +1,11 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 29.08.2023
+% last modified: 23.11.2023
 % Autor: Simon Hellmann
 
-%% DAS Kalman Filter fürs ADM1-R4-frac-norm mit Online/Offline Messwerten 
-% wir bei der Intensiv-Beprobung
+%% DAS EKF fürs ADM1-R4-frac-norm mit Online/Offline Messwerten gemäß Intensivbeprobung
+% but without delay and augmentation
 
 close all
 clear all
@@ -45,7 +46,7 @@ MEASUnite(:,1:qOn) = MEASOn;
 [Lia,idxTStd] = ismember(tStdSample,tMinor); % determine correct row positioning of major instances in MEASUnite (right timing)
 MEASUnite(idxTStd,qOn+1:qOn+qStd) = MEASStd; 
 
-%% Initialization and Tuning of EKF 
+%% Initialization of EKF 
 % initial state values:
 x0Init = MESS.x0;       % intitial value from createMess-file 
 x0 = x0Init;            % x0 will be replaced in every iteration later
@@ -74,27 +75,30 @@ ESTIMATESNorm = zeros(nSamplesMinor + 1,nStates);
 COVARIANCENorm = zeros(nStates,nStates,nSamplesMinor + 1); 
 
 % Initialize Kalman Filter:
-ESTIMATES(1,:) = xHatNorm;
-P0 = eye(nStates); % XY: sicher besseres Tuning möglich
+ESTIMATES(1,:) = xHat;
+ESTIMATESNorm(1,:) = xHatNorm; 
+
+%% tuning of EKF: 
+P0 = diag((xHat-x0).^2);    % Schneider und Georgakis
+PMinus = P0;                % to overwrite
 COVARIANCE(:,:,1) = P0; 
-PMinus = P0;      % to overwrite
 % same for normalized coordinates: 
 P0Norm = P0./(TxNum.^2);    % for comparison with non-normalized case
 PMinusNorm = P0Norm;        % to overwrite
 COVARIANCENorm(:,:,1) = P0Norm; 
 
-% tune EKF: 
+% measurement uncertainty: 
 buffer = 1.5;   % conservative safety margin of 50% for measurement noise covariance
 R = buffer * MESS.C; 
-% Hand-Tune Kalman Filter: measurement uncertainty: 
+% fine tuning: 
 R(4,4) = 5E3*R(4,4);    % SIN
 R(5,5) = 5E2*R(5,5);    % TS
-% Tune Kalman Filter: process uncertainty: 
+RNorm = R./(TyNum.^2); 
+
+% process uncertainty: 
 Q = diag([0.016, 0.555, 0.563, 958.4, 1.263, 2.816, 2.654, 0.972, 2.894, 10, 0.374, 0.948]);
 Q(4,4) = 1E-3*Q(4,4);       % unit change for h2o [g/l] --> [kg/l]
 Q(10,10) = 1E-3*Q(10,10);   % unit change for ash [g/l] --> [kg/l]  
-% normalize tuning matrices: 
-RNorm = R./(TyNum.^2); 
 QNorm = Q./(TxNum.^2);
 
 % obtain feeding information:
@@ -173,12 +177,12 @@ for k = 1:nSamplesMinor
     
     % get most recent measurement:
     yMeas = MEASUnite(k,:);    % simulated measurement
-    % check if you're at minor or major instance: 
-    flagMajor = all(~isnan(yMeas)); % 0: minor instance, 1: major instance
-    
-    if flagMajor == 1
-        disp('now major instance!')
-    end    
+%     % check if you're at minor or major instance: 
+%     flagMajor = all(~isnan(yMeas)); % 0: minor instance, 1: major instance
+%     
+%     if flagMajor == 1
+%         disp('now major instance!')
+%     end    
 
     %% get feeding information:
     % pass only relevant feedings during the measurement interval, because
@@ -203,11 +207,11 @@ for k = 1:nSamplesMinor
 
     %% execute multirate EKF
     % absolute coordinates: 
-    [xPlus,PPlus] = extendedKalmanFilterMultiRateNoDelay(xMinus,PMinus, ...
+    [xPlus,PPlus] = extendedKalmanFilterSlice(xMinus,PMinus, ...
         feedInfo,yMeas,params,Q,R,f,g,dfdx,dhdx,tSpan,nStates); 
     
     % normalized coordinates:  
-    [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateNoDelay(xMinusNorm,PMinusNorm, ...
+    [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormSlice(xMinusNorm,PMinusNorm, ...
         feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
         TxNum,TyNum,TuNum,tSpan,nStates); 
     
