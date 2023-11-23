@@ -124,11 +124,11 @@ test_scenario_data = ScenarioData(
         "y_meas_4",
     ]
     + [f"x_{i+1}" for i in range(18)],
-    state_observer=StateObserver.MHE,
+    state_observer=StateObserver.STATEFEEDBACK,
     mhe_n_horizon=mhe_n_horizon,
     cost_func=cost_func,
     consider_uncertainty=True,
-    simulate_steady_state=False,
+    simulate_steady_state=True,
     simulate_mpc=True,
     mpc_live_vis=True,
     pygame_vis=True,

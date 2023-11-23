@@ -37,12 +37,27 @@ class Scenario:
         )
 
     def setup(self):
-        self._setup_state_and_normalization_vectors()
         self._substrate_setup()
+        self._setup_state_and_normalization_vectors()
         self._model_setup()
 
         if self.scenario_data.pygame_vis:
             self._pygame_setup()
+
+        self._sim_setup()
+
+        # Estimator setup
+        self._estimator_setup()
+
+    def run(self):
+        if self.scenario_data.simulate_steady_state:
+            self._run_steady_state_sim()
+
+            self._set_new_Tx_x0()
+            self._substrate_setup()
+            self._model_setup()
+            self._sim_setup()
+            self._estimator_setup()
 
         if self.scenario_data.simulate_mpc:
             self._mpc = mpc_setup(
@@ -61,120 +76,9 @@ class Scenario:
                 rterm=self.scenario_data.rterm,
             )
 
-        self._sim_setup()
+            if self.scenario_data.mpc_live_vis:
+                self._graphics_setup()
 
-        # Estimator setup
-        if self.scenario_data.state_observer == StateObserver.MHE:
-            x_0_mhe = self.x0_norm * (
-                1.0 + 0.1 * np.random.randn(self.scenario_data.x0.shape[0])
-            )
-            self._estimator = mhe_setup(
-                model=self.model,
-                t_step=self.scenario_data.t_step,
-                n_horizon=self.scenario_data.mhe_n_horizon,
-                x_ch_in=self._x_ch_in,
-                x_pr_in=self._x_pr_in,
-                x_li_in=self._x_li_in,
-                P_x=np.diag((x_0_mhe - self.x0_norm) ** 2),
-                P_v=np.zeros((8, 8)),
-                vol_flow_rate=self.scenario_data.vol_flow_rate,
-            )
-
-            self._estimator.x0 = x_0_mhe
-            self._estimator.set_initial_guess()
-        elif self.scenario_data.state_observer == StateObserver.STATEFEEDBACK:
-            self._estimator = StateFeedback(self.model, self._simulator)
-
-        if self.scenario_data.mpc_live_vis:
-            # Initialize graphic:
-            self._graphics = {}
-            self._graphics["mpc_graphics"] = do_mpc.graphics.Graphics(self._mpc.data)
-            self._graphics["sim_graphics"] = do_mpc.graphics.Graphics(
-                self._simulator.data
-            )
-            if self.scenario_data.state_observer == StateObserver.MHE:
-                self._graphics["mhe_graphics"] = do_mpc.graphics.Graphics(
-                    self._estimator.data
-                )
-
-            # Configure plot:
-            plt.rcParams["axes.grid"] = True
-            self._fig, self._ax = plt.subplots(
-                len(self.scenario_data.plot_vars), sharex=True
-            )
-
-            for idx, var in enumerate(self.scenario_data.plot_vars):
-                if var[0] == "u":
-                    self._graphics["mpc_graphics"].add_line(
-                        var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
-                    )
-                    self._ax[idx].legend(
-                        labels=[
-                            sub.lower().replace("_", " ")
-                            for sub in self.scenario_data.sub_names
-                        ],
-                        title="Substrates",
-                        loc="center right",
-                    )
-                elif var[0] == "x":
-                    self._graphics["sim_graphics"].add_line(
-                        var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
-                    )
-                    self._ax[idx].legend(
-                        self._graphics["sim_graphics"].result_lines[var],
-                        labels=["Actual state"],
-                        loc="center right",
-                    )
-
-                    self._graphics["mpc_graphics"].add_line(
-                        var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
-                    )
-
-                    if self.scenario_data.state_observer == StateObserver.MHE:
-                        self._graphics["mhe_graphics"].add_line(
-                            var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
-                        )
-
-                        self._ax[idx].legend(
-                            labels=[
-                                "Actual state",
-                                "MPC",
-                                "MPC prediction",
-                                "MHE estimation",
-                            ],
-                            loc="center right",
-                        )
-                    else:
-                        self._ax[idx].legend(
-                            labels=[
-                                "Actual state",
-                                "MPC",
-                                "MPC prediction",
-                            ],
-                            loc="center right",
-                        )
-                        # self._graphics["mhe_graphics"].result_lines()
-
-                self._ax[idx].set_ylabel(var)
-            self._ax[-1].set_xlabel("Time [d]")
-
-            if self.scenario_data.state_observer == StateObserver.MHE:
-                for line_i in self._graphics["mhe_graphics"].result_lines.full:
-                    line_i.set_alpha(0.4)
-                    line_i.set_linewidth(6)
-            # Update properties for all prediction lines:
-            for line_i in self._graphics["mpc_graphics"].pred_lines.full:
-                line_i.set_linewidth(1)
-
-            self._fig.align_ylabels()
-            # self._fig.tight_layout()
-            plt.ion()
-
-    def run(self):
-        if self.scenario_data.simulate_steady_state:
-            self._run_steady_state_sim()
-
-        if self.scenario_data.simulate_mpc:
             self._run_mpc()
 
     def _pygame_setup(self):
@@ -186,19 +90,6 @@ class Scenario:
         self._bga = vis.BioGasPlantVis(150.0, self._screen)
         self._data = vis.DataVis(self._screen)
 
-    def _setup_state_and_normalization_vectors(self):
-        """
-        Shortens the state and normalization vectors if they've been handed too long if the gas storage had been considered in a previous simulation but not anymore.
-        Also normalizes the state vector and sets up the normalization vector for the inputs.
-        """
-        if self.scenario_data.scenario_type == ScenarioType.METHANATION:
-            self.scenario_data.x0 = self.scenario_data.x0[:18]
-            self.scenario_data.Tx = self.scenario_data.Tx[:18]
-
-        self.x0_norm = np.copy(self.scenario_data.x0)
-        self.x0_norm /= self.scenario_data.Tx
-        self.Tu = np.array([self.scenario_data.u_max[sub.state] for sub in self._subs])
-
     def _substrate_setup(self):
         self._subs = []
         for sub_name in self.scenario_data.sub_names:
@@ -206,7 +97,7 @@ class Scenario:
         xi = [sub.xi for sub in self._subs]
 
         self._xi_norm = list(
-            np.array([val / self.scenario_data.Tx[:-2] for val in xi]).T
+            np.array([val / self.scenario_data.Tx[:18] for val in xi]).T
         )
 
         uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in self._subs]
@@ -255,6 +146,41 @@ class Scenario:
         self._x_pr_in /= self.scenario_data.Tx[7]
         self._x_li_in /= self.scenario_data.Tx[8]
 
+    def _estimator_setup(self):
+        if self.scenario_data.state_observer == StateObserver.MHE:
+            x_0_mhe = self.x0_norm * (
+                1.0 + 0.1 * np.random.randn(self.scenario_data.x0.shape[0])
+            )
+            self._estimator = mhe_setup(
+                model=self.model,
+                t_step=self.scenario_data.t_step,
+                n_horizon=self.scenario_data.mhe_n_horizon,
+                x_ch_in=self._x_ch_in,
+                x_pr_in=self._x_pr_in,
+                x_li_in=self._x_li_in,
+                P_x=np.diag((x_0_mhe - self.x0_norm) ** 2),
+                P_v=np.zeros((8, 8)),
+                vol_flow_rate=self.scenario_data.vol_flow_rate,
+            )
+
+            self._estimator.x0 = x_0_mhe
+            self._estimator.set_initial_guess()
+        elif self.scenario_data.state_observer == StateObserver.STATEFEEDBACK:
+            self._estimator = StateFeedback(self.model, self._simulator)
+
+    def _setup_state_and_normalization_vectors(self):
+        """
+        Shortens the state and normalization vectors if they've been handed too long if the gas storage had been considered in a previous simulation but not anymore.
+        Also normalizes the state vector and sets up the normalization vector for the inputs.
+        """
+        if self.scenario_data.scenario_type == ScenarioType.METHANATION:
+            self.scenario_data.x0 = self.scenario_data.x0[:18]
+            self.scenario_data.Tx = self.scenario_data.Tx[:18]
+
+        self.x0_norm = np.copy(self.scenario_data.x0)
+        self.x0_norm /= self.scenario_data.Tx
+        self.Tu = np.array([self.scenario_data.u_max[sub.state] for sub in self._subs])
+
     def _model_setup(self):
         # Model
         self.model = adm1_r3_frac_norm(
@@ -277,6 +203,89 @@ class Scenario:
 
         # Set normalized x0
         self._simulator.x0 = self.x0_norm
+        self._simulator.set_initial_guess()
+
+    def _graphics_setup(self):
+        # Initialize graphic:
+        self._graphics = {}
+        self._graphics["mpc_graphics"] = do_mpc.graphics.Graphics(self._mpc.data)
+        self._graphics["sim_graphics"] = do_mpc.graphics.Graphics(self._simulator.data)
+        if self.scenario_data.state_observer == StateObserver.MHE:
+            self._graphics["mhe_graphics"] = do_mpc.graphics.Graphics(
+                self._estimator.data
+            )
+
+        # Configure plot:
+        plt.rcParams["axes.grid"] = True
+        self._fig, self._ax = plt.subplots(
+            len(self.scenario_data.plot_vars), sharex=True
+        )
+
+        for idx, var in enumerate(self.scenario_data.plot_vars):
+            if var[0] == "u":
+                self._graphics["mpc_graphics"].add_line(
+                    var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
+                )
+                self._ax[idx].legend(
+                    labels=[
+                        sub.lower().replace("_", " ")
+                        for sub in self.scenario_data.sub_names
+                    ],
+                    title="Substrates",
+                    loc="center right",
+                )
+            elif var[0] == "x":
+                self._graphics["sim_graphics"].add_line(
+                    var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
+                )
+                self._ax[idx].legend(
+                    self._graphics["sim_graphics"].result_lines[var],
+                    labels=["Actual state"],
+                    loc="center right",
+                )
+
+                self._graphics["mpc_graphics"].add_line(
+                    var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
+                )
+
+                if self.scenario_data.state_observer == StateObserver.MHE:
+                    self._graphics["mhe_graphics"].add_line(
+                        var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
+                    )
+
+                    self._ax[idx].legend(
+                        labels=[
+                            "Actual state",
+                            "MPC",
+                            "MPC prediction",
+                            "MHE estimation",
+                        ],
+                        loc="center right",
+                    )
+                else:
+                    self._ax[idx].legend(
+                        labels=[
+                            "Actual state",
+                            "MPC",
+                            "MPC prediction",
+                        ],
+                        loc="center right",
+                    )
+
+            self._ax[idx].set_ylabel(var)
+        self._ax[-1].set_xlabel("Time [d]")
+
+        if self.scenario_data.state_observer == StateObserver.MHE:
+            for line_i in self._graphics["mhe_graphics"].result_lines.full:
+                line_i.set_alpha(0.4)
+                line_i.set_linewidth(6)
+        # Update properties for all prediction lines:
+        for line_i in self._graphics["mpc_graphics"].pred_lines.full:
+            line_i.set_linewidth(1)
+
+        self._fig.align_ylabels()
+        # self._fig.tight_layout()
+        plt.ion()
 
     def _run_steady_state_sim(self):
         # Run steady state simulation
@@ -398,3 +407,18 @@ class Scenario:
             result_path="./results/",
             overwrite=True,
         )
+
+    def _set_new_Tx_x0(self):
+        """
+        Sets the new Tx normalization vector based on the simulation results from the initial steady state simulation as well as the new x0 value.
+        """
+        # Get denormalized steady state state-vector
+        x_steady_state = np.copy(
+            self._simulator.x0.master * self.scenario_data.Tx
+        ).flatten()
+
+        # Set new Tx based on max absolute values of states during steady state simulation
+        self.scenario_data.Tx *= np.max(np.abs(self._simulator.data._x), axis=0)
+
+        # Set new normalized initial state (for MPC)
+        self.x0_norm = x_steady_state / self.scenario_data.Tx
