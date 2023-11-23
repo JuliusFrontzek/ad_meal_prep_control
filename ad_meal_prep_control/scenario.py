@@ -21,6 +21,21 @@ from utils import ScenarioType, StateObserver, ScenarioData
 class Scenario:
     scenario_data: ScenarioData
 
+    def __post_init__(self):
+        self._n_steps_steady_state = round(
+            self.scenario_data.n_days_steady_state / self.scenario_data.t_step
+        )
+        self._n_steps_mpc = round(
+            self.scenario_data.n_days_mpc / self.scenario_data.t_step
+        )
+
+        self._t_mpc = np.linspace(
+            0,
+            self.scenario_data.n_days_mpc,
+            num=round(self.scenario_data.n_days_mpc / self.scenario_data.t_step),
+            endpoint=True,
+        )
+
     def setup(self):
         self._substrate_setup()
         self._setup_state_and_normalization_vectors()
@@ -28,11 +43,6 @@ class Scenario:
 
         if self.scenario_data.pygame_vis:
             self._pygame_setup()
-
-        if self.scenario_data.simulate_steady_state:
-            self._n_steps_steady_state = round(
-                self.scenario_data.n_days_steady_state / self.scenario_data.t_step
-            )
 
         if self.scenario_data.simulate_mpc:
             self._mpc = mpc_setup(
@@ -49,17 +59,6 @@ class Scenario:
                 bounds=self.scenario_data.bounds,
                 nl_cons=self.scenario_data.nl_cons,
                 rterm=self.scenario_data.rterm,
-            )
-
-            self._n_steps_mpc = round(
-                self.scenario_data.n_days_mpc / self.scenario_data.t_step
-            )
-
-            self._t_mpc = np.linspace(
-                0,
-                self.scenario_data.n_days_mpc,
-                num=round(self.scenario_data.n_days_mpc / self.scenario_data.t_step),
-                endpoint=True,
             )
 
         self._sim_setup()
@@ -114,6 +113,7 @@ class Scenario:
                             for sub in self.scenario_data.sub_names
                         ],
                         title="Substrates",
+                        loc="center right",
                     )
                 elif var[0] == "x":
                     self._graphics["sim_graphics"].add_line(
@@ -166,7 +166,7 @@ class Scenario:
                 line_i.set_linewidth(1)
 
             self._fig.align_ylabels()
-            self._fig.tight_layout()
+            # self._fig.tight_layout()
             plt.ion()
 
     def run(self):
@@ -388,9 +388,12 @@ class Scenario:
                 )
 
         if self.scenario_data.store_results:
-            do_mpc.data.save_results(
-                save_list=[self._mpc, self._simulator],
-                result_name=f"{self.scenario_data.name}_mpc_results",
-                result_path="./results/",
-                overwrite=True,
-            )
+            self._save_results()
+
+    def _save_results(self):
+        do_mpc.data.save_results(
+            save_list=[self._mpc, self._simulator],
+            result_name=f"{self.scenario_data.name}_mpc_results",
+            result_path="./results/",
+            overwrite=True,
+        )
