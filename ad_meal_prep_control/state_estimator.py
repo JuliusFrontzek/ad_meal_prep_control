@@ -14,7 +14,7 @@ class StateFeedback(do_mpc.estimator.Estimator):
 
     def make_step(self, y):
         """Return the measurement ``y`` because this is a state estimator."""
-        return self._simulator.data._x[-1, :].reshape(-1, 1)
+        return self._simulator.x0.master
 
 
 def mhe_setup(
