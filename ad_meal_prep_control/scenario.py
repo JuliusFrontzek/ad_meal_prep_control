@@ -6,11 +6,9 @@ import numpy as np
 import do_mpc
 import substrates
 from uncertainties import ufloat
-import ad_meal_prep_control.utils as utils
 from models import adm1_r3_frac_norm
 from state_estimator import StateFeedback, mhe_setup
 from simulator import simulator_setup
-from typing import Union
 import copy
 import matplotlib.pyplot as plt
 import params_R3
@@ -35,6 +33,47 @@ class Scenario:
             num=round(self.scenario_data.n_days_mpc / self.scenario_data.t_step),
             endpoint=True,
         )
+
+        # Take ownership of Tx and x0 because these values are subject to change within the instances of this class
+        self.Tx = np.copy(self.scenario_data.Tx)
+        self.x0_norm_true = np.copy(self.scenario_data.x0_true) / self.Tx
+
+        # Compute estimated state vector
+        self.x0_norm_estimated = np.copy(self.x0_norm_true) * (
+            1.0 + 0.1 * np.random.randn(self.x0_norm_true.shape[0])
+        )
+
+    @property
+    def x0_norm_true(self) -> np.ndarray:
+        return self._x0_norm_true
+
+    @x0_norm_true.setter
+    def x0_norm_true(self, new_x0_norm_true: np.ndarray):
+        self._x0_norm_true = new_x0_norm_true
+
+    @property
+    def x0_norm_estimated(self) -> np.ndarray:
+        return self._x0_norm_estimated
+
+    @x0_norm_estimated.setter
+    def x0_norm_estimated(self, new_x0_norm_estimated: np.ndarray):
+        self._x0_norm_estimated = new_x0_norm_estimated
+
+    @property
+    def x0_denorm_true(self) -> np.ndarray:
+        return (self._x0_norm_true.T * self.Tx).T
+
+    @property
+    def x0_denorm_estimated(self) -> np.ndarray:
+        return (self._x0_norm_estimated.T * self.Tx).T
+
+    @property
+    def Tx(self) -> np.ndarray:
+        return self._Tx
+
+    @Tx.setter
+    def Tx(self, new_Tx: np.ndarray):
+        self._Tx = new_Tx
 
     def setup(self):
         self._substrate_setup()
@@ -71,6 +110,8 @@ class Scenario:
                 compile_nlp=self.scenario_data.compile_nlp,
                 vol_flow_rate=self.scenario_data.vol_flow_rate,
                 cost_func=self.scenario_data.cost_func,
+                substrate_costs=[sub.cost for sub in self._subs],
+                consider_substrate_costs=self.scenario_data.consider_substrate_costs,
                 bounds=self.scenario_data.bounds,
                 nl_cons=self.scenario_data.nl_cons,
                 rterm=self.scenario_data.rterm,
@@ -96,9 +137,7 @@ class Scenario:
             self._subs.append(getattr(substrates, sub_name))
         xi = [sub.xi for sub in self._subs]
 
-        self._xi_norm = list(
-            np.array([val / self.scenario_data.Tx[:18] for val in xi]).T
-        )
+        self._xi_norm = list(np.array([val / self.Tx[:18] for val in xi]).T)
 
         uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in self._subs]
 
@@ -142,15 +181,12 @@ class Scenario:
             self._x_li_in = np.array([x_li_nom])
 
         # Normalize uncertain xi's
-        self._x_ch_in /= self.scenario_data.Tx[5]
-        self._x_pr_in /= self.scenario_data.Tx[7]
-        self._x_li_in /= self.scenario_data.Tx[8]
+        self._x_ch_in /= self.Tx[5]
+        self._x_pr_in /= self.Tx[7]
+        self._x_li_in /= self.Tx[8]
 
     def _estimator_setup(self):
         if self.scenario_data.state_observer == StateObserver.MHE:
-            x_0_mhe = self.x0_norm * (
-                1.0 + 0.1 * np.random.randn(self.scenario_data.x0.shape[0])
-            )
             self._estimator = mhe_setup(
                 model=self.model,
                 t_step=self.scenario_data.t_step,
@@ -158,12 +194,12 @@ class Scenario:
                 x_ch_in=self._x_ch_in,
                 x_pr_in=self._x_pr_in,
                 x_li_in=self._x_li_in,
-                P_x=np.diag((x_0_mhe - self.x0_norm) ** 2),
-                P_v=np.zeros((8, 8)),
+                P_x=np.diag((self.x0_norm_estimated - self.x0_norm_true) ** 2),
+                P_v=0.0001 * np.ones((8, 8)),
                 vol_flow_rate=self.scenario_data.vol_flow_rate,
             )
 
-            self._estimator.x0 = x_0_mhe
+            self._estimator.x0 = np.copy(self.x0_norm_estimated)
             self._estimator.set_initial_guess()
         elif self.scenario_data.state_observer == StateObserver.STATEFEEDBACK:
             self._estimator = StateFeedback(self.model, self._simulator)
@@ -174,11 +210,10 @@ class Scenario:
         Also normalizes the state vector and sets up the normalization vector for the inputs.
         """
         if self.scenario_data.scenario_type == ScenarioType.METHANATION:
-            self.scenario_data.x0 = self.scenario_data.x0[:18]
-            self.scenario_data.Tx = self.scenario_data.Tx[:18]
+            self.x0_norm_true = self.x0_norm_true[:18]
+            self.x0_norm_estimated = self.x0_norm_estimated[:18]
+            self.Tx = self.Tx[:18]
 
-        self.x0_norm = np.copy(self.scenario_data.x0)
-        self.x0_norm /= self.scenario_data.Tx
         self.Tu = np.array([self.scenario_data.u_max[sub.state] for sub in self._subs])
 
     def _model_setup(self):
@@ -186,7 +221,7 @@ class Scenario:
         self.model = adm1_r3_frac_norm(
             xi_norm=self._xi_norm,
             Tu=self.Tu,
-            Tx=self.scenario_data.Tx,
+            Tx=self.Tx,
             Ty=self.scenario_data.Ty,
             scenario_type=self.scenario_data.scenario_type,
         )
@@ -202,7 +237,7 @@ class Scenario:
         )
 
         # Set normalized x0
-        self._simulator.x0 = self.x0_norm
+        self._simulator.x0 = np.copy(self.x0_norm_true)
         self._simulator.set_initial_guess()
 
     def _graphics_setup(self):
@@ -298,18 +333,19 @@ class Scenario:
             # ).T  # 1.0 / 1e4
 
             y_next = self._simulator.make_step(u_norm_steady_state)
-            self.x0_norm = self._estimator.make_step(y_next)
+            self.x0_norm_true = np.array(self._simulator.x0.master)
+            self.x0_norm_estimated = self._estimator.make_step(y_next)
 
         # Save normalized x values
         np.savetxt(
-            f"{self.scenario_data.name}_steady_state_x.csv",
+            f"./results/{self.scenario_data.name}_steady_state_x.csv",
             self._simulator.data._x,
             delimiter=",",
         )
 
     def _run_mpc(self):
         # Initialize simulator and controller
-        self._mpc.x0 = self.x0_norm
+        self._mpc.x0 = np.copy(self.x0_norm_estimated)
         self._mpc.u0 = np.ones(len(self._subs)) * 0.5
         self._mpc.set_initial_guess()
 
@@ -321,7 +357,7 @@ class Scenario:
             self._screen.fill("white")
 
             u_norm_computed_old = copy.copy(u_norm_computed)
-            u_norm_computed = self._mpc.make_step(self.x0_norm)
+            u_norm_computed = self._mpc.make_step(self.x0_norm_estimated)
 
             u_norm_actual = np.copy(u_norm_computed)
 
@@ -361,12 +397,13 @@ class Scenario:
                 )
 
             y_next = self._simulator.make_step(u_norm_actual)
-            self.x0_norm = self._estimator.make_step(y_next)
+            self.x0_norm_true = np.array(self._simulator.x0.master)
+            self.x0_norm_estimated = self._estimator.make_step(y_next)
 
             if not self.scenario_data.disturbances.state_jumps is None:
                 for x_idx, val in self.scenario_data.disturbances.state_jumps.items():
                     if k == val[0]:
-                        self.x0_norm[x_idx] += val[1]
+                        self.x0_norm_estimated[x_idx] += val[1]
 
             if self.scenario_data.mpc_live_vis:
                 for g in self._graphics.values():
@@ -391,7 +428,8 @@ class Scenario:
                     self.scenario_data,
                     self._bga,
                     self._data,
-                    self.x0_norm,
+                    self.x0_norm_true,
+                    self.Tx,
                     self._simulator,
                     u_norm_actual,
                     params_R3.V_GAS_STORAGE_MAX,
@@ -413,12 +451,12 @@ class Scenario:
         Sets the new Tx normalization vector based on the simulation results from the initial steady state simulation as well as the new x0 value.
         """
         # Get denormalized steady state state-vector
-        x_steady_state = np.copy(
-            self._simulator.x0.master * self.scenario_data.Tx
-        ).flatten()
+        x_steady_state_true = np.copy(self._simulator.x0.master * self.Tx)
+        x_steady_state_estimated = np.copy(self.x0_denorm_estimated)
 
         # Set new Tx based on max absolute values of states during steady state simulation
-        self.scenario_data.Tx *= np.max(np.abs(self._simulator.data._x), axis=0)
+        self.Tx *= np.max(np.abs(self._simulator.data._x), axis=0)
 
         # Set new normalized initial state (for MPC)
-        self.x0_norm = x_steady_state / self.scenario_data.Tx
+        self.x0_norm_true = (x_steady_state_true.T / self.Tx).T
+        self.x0_norm_estimated = (x_steady_state_estimated / self.Tx).T

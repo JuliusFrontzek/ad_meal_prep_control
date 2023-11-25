@@ -6,7 +6,7 @@ from utils import ScenarioType, StateObserver, CHP, ScenarioData, CostFunction
 
 disturbances = Disturbances()
 
-x0 = np.array(
+x0_true = np.array(
     [
         0.0494667574155131,
         0.0116512808544296,
@@ -78,9 +78,9 @@ n_days_steady_state = 0.5
 n_days_mpc = 3
 t_step = 0.5 / 24
 
-mpc_n_horizon = 5
+mpc_n_horizon = 10
 mpc_n_robust = 0
-mhe_n_horizon = 10
+mhe_n_horizon = 5
 
 total_steps = round((n_days_steady_state + n_days_mpc) / t_step)
 
@@ -113,7 +113,7 @@ test_scenario_data = ScenarioData(
     n_days_mpc=n_days_mpc,
     sub_names=["CORN_SILAGE", "GRASS_SILAGE", "CATTLE_MANURE"],
     disturbances=disturbances,
-    x0=x0,
+    x0_true=x0_true,
     Tx=Tx,
     Ty=Ty,
     u_max=u_max,

@@ -208,12 +208,13 @@ def visualize(
     bga: BioGasPlantVis,
     data: DataVis,
     x0_norm: np.ndarray,
+    Tx: np.ndarray,
     simulator: do_mpc.simulator.Simulator,
     u_actual: np.ndarray,
     V_GAS_STORAGE_MAX: float,
 ):
     x0 = np.copy(x0_norm)
-    x0 *= np.array([scenario_data.Tx]).T
+    x0 *= np.array([Tx]).T
     y = np.array(
         [
             simulator.data._aux[-1, idx + 1] * Ty

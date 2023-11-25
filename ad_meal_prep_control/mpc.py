@@ -23,6 +23,8 @@ def mpc_setup(
     compile_nlp: bool,
     vol_flow_rate: np.ndarray,
     cost_func: CostFunction,
+    substrate_costs: list[float],
+    consider_substrate_costs: bool,
     bounds: list[Bound] = None,
     nl_cons: list[NlConstraint] = None,
     rterm: str = None,
@@ -75,7 +77,21 @@ def mpc_setup(
 
     mpc.set_objective(lterm=eval(cost_func.lterm), mterm=eval(cost_func.mterm))
 
-    # mpc.set_rterm(u_norm=0.1)
+    if consider_substrate_costs:
+        substrate_costs = np.array(substrate_costs)
+        substrate_costs /= np.min(substrate_costs[substrate_costs > 0])
+
+        sub_cost_rterms = []
+        for idx, cost in enumerate(substrate_costs):
+            sub_cost_rterms.append(f"{cost} * model.u['u_norm'][{idx}]**2")
+
+        sub_cost_rterm = " + ".join(sub_cost_rterms)
+
+        if rterm is None:
+            rterm = sub_cost_rterm
+        else:
+            rterm += sub_cost_rterm
+
     if rterm is not None:
         mpc.set_rterm(rterm=eval(rterm))
 

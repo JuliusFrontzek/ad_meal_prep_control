@@ -156,7 +156,7 @@ class ScenarioData:
     n_days_mpc: float
     sub_names: list[str]
     disturbances: utils.Disturbances
-    x0: np.ndarray
+    x0_true: np.ndarray
     Tx: np.ndarray
     Ty: np.ndarray
     u_max: dict[str, float]
@@ -165,6 +165,7 @@ class ScenarioData:
     state_observer: StateObserver
     mhe_n_horizon: int = 5
     cost_func: CostFunction
+    consider_substrate_costs: bool = True
     bounds: list[Bound] = None
     nl_cons: list[NlConstraint] = None
     rterm: str = None
