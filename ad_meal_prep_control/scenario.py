@@ -269,6 +269,7 @@ class Scenario:
                     title="Substrates",
                     loc="center right",
                 )
+                self._ax[idx].set_ylabel(var)
             elif var[0] == "x":
                 self._graphics["sim_graphics"].add_line(
                     var_type=f"_{var[0]}", var_name=var, axis=self._ax[idx]
@@ -306,8 +307,10 @@ class Scenario:
                         ],
                         loc="center right",
                     )
+                self._ax[idx].set_ylabel(
+                    self.scenario_data._state_names[int(var.split("_")[-1]) - 1]
+                )
 
-            self._ax[idx].set_ylabel(var)
         self._ax[-1].set_xlabel("Time [d]")
 
         if self.scenario_data.state_observer == StateObserver.MHE:
@@ -420,6 +423,9 @@ class Scenario:
                             self._simulator.data._y[:, self.model.u.size + y_num - 1],
                             color="red",
                         )
+                        self._ax[idx].set_ylabel(
+                            self.scenario_data._meas_names[int(var.split("_")[-1]) - 1]
+                        )
                 plt.show()
                 plt.pause(0.01)
 
@@ -459,4 +465,4 @@ class Scenario:
 
         # Set new normalized initial state (for MPC)
         self.x0_norm_true = (x_steady_state_true.T / self.Tx).T
-        self.x0_norm_estimated = (x_steady_state_estimated / self.Tx).T
+        self.x0_norm_estimated = (x_steady_state_estimated.T / self.Tx).T
