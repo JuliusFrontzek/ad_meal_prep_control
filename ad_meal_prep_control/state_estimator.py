@@ -12,9 +12,9 @@ class StateFeedback(do_mpc.estimator.Estimator):
         super().__init__(model)
         self._simulator = simulator
 
-    def make_step(self, y):
-        """Return the measurement ``y`` because this is a state estimator."""
-        return self._simulator.x0.master
+    def make_step(self, y) -> np.ndarray:
+        """Return the actual state of the system. The parameter y is passed as a dummy but not actually used to match the signature of the MHE 'make_step' method."""
+        return np.array(self._simulator.x0.master)
 
 
 def mhe_setup(
@@ -75,11 +75,10 @@ def mhe_setup(
 
     mhe.set_p_fun(p_fun)
 
-    mhe.prepare_nlp()
-
-    # mhe.bounds["lower", "_x", "m_x"] = 0.0
-    # mhe.bounds["lower", "_x", "m_s"] = 0.0
-    # mhe.bounds["lower", "_x", "v"] = 0.0
+    # Every state but the 13th state must not be negative
+    for i in range(1, num_states + 1):
+        if i != 13:
+            mhe.bounds["lower", "_x", f"x_{i}"] = 0.0
 
     mhe_options = {
         "nlpsol_opts": {
@@ -90,6 +89,6 @@ def mhe_setup(
     }
 
     mhe.set_param(**mhe_options)
-    mhe.create_nlp()
+    mhe.setup()
 
     return mhe
