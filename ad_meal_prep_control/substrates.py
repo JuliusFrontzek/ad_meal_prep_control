@@ -28,6 +28,8 @@ class Substrate:
         state:
                                 The physical state of the substrate.
                                 Must be either solid or liquid.
+        cost:
+                                Cost of the substrate measured as €/t fresh matter.
 
     Order: XP, XL, XA, BMP, TS
     """
@@ -36,6 +38,7 @@ class Substrate:
     variation_coefficients: np.ndarray
     xi: list
     state: str
+    cost: float
 
     def __post_init__(self):
         assert self.state in [
@@ -43,6 +46,7 @@ class Substrate:
             "liquid",
         ], f"The physical state of an input must be either solid or liquid, not '{self.state}'."
 
+        assert self.cost >= 0.0, f"Substrate cost must be larger than or equal to 0"
         # Conversion of percentages to decimal numbers where appropriate
         if self.nominal_values.shape[0] == 5:
             self.nominal_values /= 100.0  # unit change [%] -> [-]
@@ -144,6 +148,7 @@ STANDARD_SUBSTRATE = Substrate(
         0,
     ],
     state="solid",
+    cost=10.0,
 )
 
 CORN_SILAGE = Substrate(
@@ -172,6 +177,7 @@ CORN_SILAGE = Substrate(
         0,
     ],
     state="solid",
+    cost=40.0,
 )
 
 GRASS_SILAGE = Substrate(
@@ -200,6 +206,7 @@ GRASS_SILAGE = Substrate(
         0,
     ],
     state="solid",
+    cost=40.0,
 )
 
 
@@ -229,4 +236,5 @@ CATTLE_MANURE = Substrate(
         0,
     ],
     state="liquid",
+    cost=1.0,
 )
