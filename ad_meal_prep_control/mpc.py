@@ -5,6 +5,7 @@ import sys
 import os
 from params_R3 import *
 from ad_meal_prep_control.utils import CostFunction, Bound, NlConstraint
+from pathlib import Path
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -28,6 +29,7 @@ def mpc_setup(
     bounds: list[Bound] = None,
     nl_cons: list[NlConstraint] = None,
     rterm: str = None,
+    hsllib: Path = None,
 ) -> do_mpc.controller.MPC:
     num_states = model._x.size
 
@@ -42,12 +44,14 @@ def mpc_setup(
         "collocation_type": "radau",
         "collocation_deg": 2,
         "collocation_ni": 1,
-        # Use MA27 linear solver in ipopt for faster calculations:
-        "nlpsol_opts": {
-            "ipopt.linear_solver": "MA27",
-            "ipopt.hsllib": "/home/julius/Documents/coinhsl-2023.05.26/builddir/libcoinhsl.so",
-        },
     }
+
+    if hsllib is not None:
+        # Use MA27 linear solver in ipopt for faster calculations:
+        setup_mpc["nlpsol_opts"] = {
+            "ipopt.linear_solver": "MA27",
+            "ipopt.hsllib": str(hsllib),  # "./coinhsl*/builddir/libcoinhsl.so",
+        }
 
     mpc.set_param(**setup_mpc)
 

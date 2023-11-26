@@ -13,6 +13,8 @@ import copy
 import matplotlib.pyplot as plt
 import params_R3
 from utils import ScenarioType, StateObserver, ScenarioData
+import os
+from pathlib import Path
 
 
 @dataclass(kw_only=True)
@@ -42,6 +44,15 @@ class Scenario:
         self.x0_norm_estimated = np.copy(self.x0_norm_true) * (
             1.0 + 0.1 * np.random.randn(self.x0_norm_true.shape[0])
         )
+
+        # Look for HSL solver
+        self._hsllib = None
+        for x in os.listdir("./"):
+            if x.startswith("coinhsl") and os.path.isdir(x):
+                path_to_check = Path(x, "builddir", "libcoinhsl.so")
+                if path_to_check.exists():
+                    self._hsllib = path_to_check
+                    break
 
     @property
     def x0_norm_true(self) -> np.ndarray:
@@ -115,6 +126,7 @@ class Scenario:
                 bounds=self.scenario_data.bounds,
                 nl_cons=self.scenario_data.nl_cons,
                 rterm=self.scenario_data.rterm,
+                hsllib=self._hsllib,
             )
 
             if self.scenario_data.mpc_live_vis:
@@ -197,6 +209,7 @@ class Scenario:
                 P_x=np.diag((self.x0_norm_estimated - self.x0_norm_true) ** 2),
                 P_v=0.0001 * np.ones((8, 8)),
                 vol_flow_rate=self.scenario_data.vol_flow_rate,
+                hsllib=self._hsllib,
             )
 
             self._estimator.x0 = np.copy(self.x0_norm_estimated)

@@ -1,5 +1,6 @@
 import do_mpc
 import numpy as np
+from pathlib import Path
 
 
 class StateFeedback(do_mpc.estimator.Estimator):
@@ -27,6 +28,7 @@ def mhe_setup(
     P_x: np.ndarray,
     P_v: np.ndarray,
     vol_flow_rate: np.ndarray,
+    hsllib: Path = None,
 ) -> do_mpc.estimator.MHE:
     """
     MHE setup
@@ -41,6 +43,13 @@ def mhe_setup(
         "store_full_solution": True,
         "meas_from_data": True,
     }
+
+    if hsllib is not None:
+        setup_mhe["nlpsol_opts"] = {
+            "ipopt.linear_solver": "MA27",
+            "ipopt.hsllib": str(hsllib),
+        }
+
     mhe.set_param(**setup_mhe)
 
     mhe.set_default_objective(P_x=P_x, P_v=P_v)
@@ -80,15 +89,6 @@ def mhe_setup(
         if i != 13:
             mhe.bounds["lower", "_x", f"x_{i}"] = 0.0
 
-    mhe_options = {
-        "nlpsol_opts": {
-            "ipopt.linear_solver": "MA27",
-            "ipopt.hsllib": "/home/julius/Documents/coinhsl-2023.05.26/builddir/libcoinhsl.so",
-            "ipopt.hessian_approximation": "limited-memory",
-        },
-    }
-
-    mhe.set_param(**mhe_options)
     mhe.setup()
 
     return mhe

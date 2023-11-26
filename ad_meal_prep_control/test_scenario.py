@@ -99,7 +99,8 @@ vol_flow_rate = chp.ch4_vol_flow_rate(
 
 mterm = (
     lterm
-) = "(model.aux['y_1_norm'] - 1.) ** 2"  # (self.model.aux["y_1_norm"] - 1.0) ** 2
+) = "100*(model.aux['y_1_norm'] - 1.) ** 2"  # (self.model.aux["y_1_norm"] - 1.0) ** 2
+# lterm = "fabs(model.aux['y_1_norm'] - 1.) + (model.aux['y_1_norm'] - 1.) ** 2"
 
 cost_func = CostFunction(mterm=mterm, lterm=lterm)
 
@@ -122,11 +123,12 @@ test_scenario_data = ScenarioData(
         "u_norm",
         "y_meas_1",
         "y_meas_4",
-    ]
-    + [f"x_{i+1}" for i in range(18)],
+    ],
+    # + [f"x_{i+1}" for i in range(18)],
     state_observer=StateObserver.STATEFEEDBACK,
     mhe_n_horizon=mhe_n_horizon,
     cost_func=cost_func,
+    consider_substrate_costs=True,
     consider_uncertainty=True,
     simulate_steady_state=True,
     simulate_mpc=True,
