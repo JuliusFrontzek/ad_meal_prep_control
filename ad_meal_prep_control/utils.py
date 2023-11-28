@@ -135,11 +135,6 @@ class NlConstraint:
     maximum_violation: float = np.inf
 
 
-class ScenarioType(Enum):
-    METHANATION = auto()
-    COGENERATION = auto()
-
-
 class StateObserver(Enum):
     MHE = auto()
     STATEFEEDBACK = auto()
@@ -148,7 +143,7 @@ class StateObserver(Enum):
 @dataclass(kw_only=True)
 class ScenarioData:
     name: str
-    scenario_type: ScenarioType
+    external_gas_storage_model: bool
     mpc_n_horizon: int
     mpc_n_robust: int
     t_step: float  # Time in days

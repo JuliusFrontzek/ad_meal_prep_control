@@ -221,7 +221,7 @@ def visualize(
             for idx, Ty in enumerate(scenario_data.Ty)
         ]
     )
-    if scenario_data.scenario_type == ScenarioType.COGENERATION:
+    if scenario_data.external_gas_storage_model:
         bga.draw(
             x0[-2][0],
             x0[-1][0],

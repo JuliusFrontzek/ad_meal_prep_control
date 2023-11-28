@@ -4,7 +4,6 @@ from casadi.tools import *
 import sys
 import os
 from params_R3 import *
-import substrates
 from antoine_water import vapour_pressure_h2o
 from utils import ScenarioType
 
@@ -18,7 +17,7 @@ def adm1_r3_frac_norm(
     Tu: np.ndarray,
     Tx: np.ndarray,
     Ty: np.ndarray,
-    scenario_type: ScenarioType,
+    external_gas_storage_model: bool,
 ):
     """
     Normalized ADM1-R3-frac model.
@@ -330,7 +329,7 @@ def adm1_r3_frac_norm(
     # Time-variant parameters (time-invariant for now -> making them invariant and estimating them: TODO for Simon)
     theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
 
-    if scenario_type == ScenarioType.COGENERATION:
+    if external_gas_storage_model:
         num_states = 20
     else:
         num_states = 18
@@ -415,7 +414,7 @@ def adm1_r3_frac_norm(
     for i in range(8):
         y.append(model.set_expression(f"y_{i+1}", Ty[i] * y_norm[i]))
 
-    if scenario_type == ScenarioType.COGENERATION:
+    if external_gas_storage_model:
         p_h2o = vapour_pressure_h2o(T)
         v_ch4_dot_out = model.set_variable(var_type="_tvp", var_name="v_ch4_dot_out")
         v_h2o = model.set_expression(
@@ -651,7 +650,7 @@ def adm1_r3_frac_norm(
         + c[27] * x_norm[17],
     )
 
-    if scenario_type == ScenarioType.COGENERATION:
+    if external_gas_storage_model:
         model.set_rhs(
             "x_19",
             (v_dot_in_total * y_norm[1] * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out)

@@ -110,7 +110,7 @@ class Scenario:
             self._substrate_setup()
             self._model_setup()
 
-            if self.scenario_data.scenario_type == ScenarioType.COGENERATION:
+            if self.scenario_data.external_gas_storage_model:
                 self.x0_norm_true[18] = self._v_ch4_norm_true_0
                 self.x0_norm_true[19] = self._v_co2_norm_true_0
             self._sim_setup()
@@ -229,7 +229,7 @@ class Scenario:
         Shortens the state and normalization vectors if they've been handed too long if the gas storage had been considered in a previous simulation but not anymore.
         Also normalizes the state vector and sets up the normalization vector for the inputs.
         """
-        if self.scenario_data.scenario_type == ScenarioType.METHANATION:
+        if not self.scenario_data.external_gas_storage_model:
             self.x0_norm_true = self.x0_norm_true[:18]
             self.x0_norm_estimated = self.x0_norm_estimated[:18]
             self.Tx = self.Tx[:18]
@@ -243,7 +243,7 @@ class Scenario:
             Tu=self.Tu,
             Tx=self.Tx,
             Ty=self.scenario_data.Ty,
-            scenario_type=self.scenario_data.scenario_type,
+            external_gas_storage_model=self.scenario_data.external_gas_storage_model,
         )
 
     def _sim_setup(self):

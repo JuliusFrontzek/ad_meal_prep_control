@@ -26,8 +26,8 @@ x0_true = np.array(
         0.0223970128000483,
         0.358267793064052,
         0.660494133806800,
-        39.0 * 1.7 / params_R3.SCALEDOWN,  # m^3
-        36.0 * 1.7 / params_R3.SCALEDOWN,  # m^3
+        0.44 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+        0.4 * params_R3.V_GAS_STORAGE_MAX,  # m^3
     ]
 )
 
@@ -66,7 +66,7 @@ Ty = np.array(
         250.0,  # 140.300279906936
         0.574083930894918,
         0.376314347120225,
-        5.5,
+        7.0,
         0.850445630702126,
         0.0422284958830547,
         0.668470313534998,
@@ -78,7 +78,7 @@ n_days_steady_state = 0.5
 n_days_mpc = 3
 t_step = 0.5 / 24
 
-mpc_n_horizon = 10
+mpc_n_horizon = 5
 mpc_n_robust = 0
 mhe_n_horizon = 5
 
@@ -97,16 +97,15 @@ vol_flow_rate = chp.ch4_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
 )
 
-mterm = (
-    lterm
-) = "100*(model.aux['y_1_norm'] - 1.) ** 2"  # (self.model.aux["y_1_norm"] - 1.0) ** 2
+mterm = "(model.aux['y_4_norm'] - 1.)**2"  # "(model.aux['y_1_norm'] - 1.) ** 2"
+lterm = "(model.aux['y_4_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
 # lterm = "fabs(model.aux['y_1_norm'] - 1.) + (model.aux['y_1_norm'] - 1.) ** 2"
 
 cost_func = CostFunction(mterm=mterm, lterm=lterm)
 
 test_scenario_data = ScenarioData(
     name="test_scenario",
-    scenario_type=ScenarioType.METHANATION,
+    external_gas_storage_model=False,
     mpc_n_horizon=mpc_n_horizon,
     mpc_n_robust=mpc_n_robust,
     t_step=t_step,
