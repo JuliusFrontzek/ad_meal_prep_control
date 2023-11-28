@@ -45,6 +45,9 @@ class Scenario:
             1.0 + 0.1 * np.random.randn(self.x0_norm_true.shape[0])
         )
 
+        self._v_ch4_norm_true_0 = self.x0_norm_true[18]
+        self._v_co2_norm_true_0 = self.x0_norm_true[19]
+
         # Look for HSL solver
         self._hsllib = None
         for x in os.listdir("./"):
@@ -106,6 +109,10 @@ class Scenario:
             self._set_new_Tx_x0()
             self._substrate_setup()
             self._model_setup()
+
+            if self.scenario_data.scenario_type == ScenarioType.COGENERATION:
+                self.x0_norm_true[18] = self._v_ch4_norm_true_0
+                self.x0_norm_true[19] = self._v_co2_norm_true_0
             self._sim_setup()
             self._estimator_setup()
 
@@ -140,7 +147,7 @@ class Scenario:
         self._screen = pygame.display.set_mode(screen_size)
         pygame.time.Clock()
 
-        self._bga = vis.BioGasPlantVis(150.0, self._screen)
+        self._bga = vis.BioGasPlantVis(params_R3.V_GAS_STORAGE_MAX, self._screen)
         self._data = vis.DataVis(self._screen)
 
     def _substrate_setup(self):
@@ -344,9 +351,6 @@ class Scenario:
             self._screen.fill("white")
 
             u_norm_steady_state = np.array([[0.1 for _ in self._subs]]).T
-            # np.array(
-            #     [[8.0 / self.Tu[0] for _ in range(len(self._subs))]]
-            # ).T  # 1.0 / 1e4
 
             y_next = self._simulator.make_step(u_norm_steady_state)
             self.x0_norm_true = np.array(self._simulator.x0.master)
@@ -451,7 +455,6 @@ class Scenario:
                     self.Tx,
                     self._simulator,
                     u_norm_actual,
-                    params_R3.V_GAS_STORAGE_MAX,
                 )
 
         if self.scenario_data.store_results:

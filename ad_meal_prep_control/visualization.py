@@ -19,12 +19,13 @@ class BioGasPlantVis:
         self._bb_bottom_right = (self._screen_size[0] * 0.5, self._screen_size[1] * 0.9)
         self._bb_bottom_left = (self._bb_top_left[0], self._bb_bottom_right[1])
         self._bb_top_right = (self._bb_bottom_right[0], self._bb_top_left[1])
+        self._height_gas_storage = (
+            self._bb_bottom_left[1] - self._bb_top_left[1]
+        ) / 4.0
 
         self._draw_width = round(self._screen_size[0] / 400)
 
-    def draw(self, v_max, v_ch4, v_co2, v_h2o, u_actual):
-        height_gas_storage = (self._bb_bottom_left[1] - self._bb_top_left[1]) / 4.0
-
+    def draw(self, v_ch4, v_co2, v_h2o, u_actual):
         top_left_gas = list(self._bb_top_left)
         top_left_gas[1] += (self._bb_bottom_left[1] - self._bb_top_left[1]) / 3.0
 
@@ -42,7 +43,7 @@ class BioGasPlantVis:
         self._draw_fermenter(
             top_left_gas, width, height_gas, top_left_liquid, height_liquid
         )
-        self._draw_gas_storage(width, height_gas_storage, v_max, v_ch4, v_co2, v_h2o)
+        self._draw_gas_storage(width, v_ch4, v_co2, v_h2o)
         self._draw_feed(top_left_feed, width, height_feed, u_actual)
 
     def _draw_fermenter(
@@ -62,21 +63,21 @@ class BioGasPlantVis:
             width=self._draw_width,
         )
 
-    def _draw_gas_storage(self, width, height_gas_storage, v_max, v_ch4, v_co2, v_h2o):
+    def _draw_gas_storage(self, width, v_ch4, v_co2, v_h2o):
         v_total_fill = v_ch4 + v_co2 + v_h2o
 
         pygame.draw.rect(
             self._screen,
             self._color,
-            (*self._bb_top_left, width, height_gas_storage),
+            (*self._bb_top_left, width, self._height_gas_storage),
             width=self._draw_width,
         )
 
         # Draw fillings
 
         top_left = list(self._bb_top_left)
-        height_filling = v_total_fill / v_max * height_gas_storage
-        top_left[1] += height_gas_storage - height_filling
+        height_filling = v_total_fill / self.max_volume * self._height_gas_storage
+        top_left[1] += self._height_gas_storage - height_filling
 
         # Draw filling with CH4
         width_ch4 = v_ch4 / v_total_fill * width
@@ -211,10 +212,9 @@ def visualize(
     Tx: np.ndarray,
     simulator: do_mpc.simulator.Simulator,
     u_actual: np.ndarray,
-    V_GAS_STORAGE_MAX: float,
 ):
-    x0 = np.copy(x0_norm)
-    x0 *= np.array([Tx]).T
+    x0_norm = np.copy(x0_norm)
+    x0 = x0_norm * np.array([Tx]).T
     y = np.array(
         [
             simulator.data._aux[-1, idx + 1] * Ty
@@ -223,10 +223,9 @@ def visualize(
     )
     if scenario_data.scenario_type == ScenarioType.COGENERATION:
         bga.draw(
-            V_GAS_STORAGE_MAX,
             x0[-2][0],
             x0[-1][0],
-            simulator.data._aux[-1, 9],
+            simulator.data._aux[-1, 17],
             u_actual.flatten(),
         )
     data.draw(x0, scenario_data._state_names, y, scenario_data._meas_names)
