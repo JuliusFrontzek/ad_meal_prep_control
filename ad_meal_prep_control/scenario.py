@@ -12,7 +12,7 @@ from simulator import simulator_setup
 import copy
 import matplotlib.pyplot as plt
 import params_R3
-from utils import ScenarioType, StateObserver, ScenarioData
+from utils import StateObserver, ScenarioData
 import os
 from pathlib import Path
 

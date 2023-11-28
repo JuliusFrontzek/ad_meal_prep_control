@@ -2,7 +2,7 @@ import scenario
 from utils import Disturbances
 import numpy as np
 import params_R3
-from utils import ScenarioType, StateObserver, CHP, ScenarioData, CostFunction
+from utils import StateObserver, CHP, ScenarioData, CostFunction
 
 disturbances = Disturbances()
 
@@ -78,7 +78,7 @@ n_days_steady_state = 0.5
 n_days_mpc = 3
 t_step = 0.5 / 24
 
-mpc_n_horizon = 5
+mpc_n_horizon = 15
 mpc_n_robust = 0
 mhe_n_horizon = 5
 
@@ -97,8 +97,8 @@ vol_flow_rate = chp.ch4_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
 )
 
-mterm = "(model.aux['y_4_norm'] - 1.)**2"  # "(model.aux['y_1_norm'] - 1.) ** 2"
-lterm = "(model.aux['y_4_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
+mterm = "(model.aux['y_1_norm'] - 1.)**2"  # "(model.aux['y_1_norm'] - 1.) ** 2"
+lterm = "(100*model.aux['y_1_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
 # lterm = "fabs(model.aux['y_1_norm'] - 1.) + (model.aux['y_1_norm'] - 1.) ** 2"
 
 cost_func = CostFunction(mterm=mterm, lterm=lterm)

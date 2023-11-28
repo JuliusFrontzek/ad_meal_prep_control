@@ -1,7 +1,7 @@
 import pygame
 from dataclasses import dataclass
 import numpy as np
-from utils import ScenarioType, ScenarioData
+from utils import ScenarioData
 import do_mpc
 
 
