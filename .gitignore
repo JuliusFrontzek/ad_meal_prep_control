@@ -14,3 +14,4 @@ coinhsl*
 *.DS_Store
 *.so
 *.pkl
+*.csv
