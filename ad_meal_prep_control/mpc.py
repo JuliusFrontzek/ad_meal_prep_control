@@ -38,7 +38,7 @@ def mpc_setup(
     setup_mpc = {
         "n_horizon": n_horizon,
         "n_robust": n_robust,
-        "open_loop": 0,
+        "open_loop": False,
         "t_step": t_step,
         "state_discretization": "collocation",
         "collocation_type": "radau",
