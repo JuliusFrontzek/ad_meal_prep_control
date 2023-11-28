@@ -1,11 +1,12 @@
 from setuptools import setup
+import os
+
 
 setup(
     name="ad_meal_prep_control",
     version="0.1.0",
-    description="Multi-stage Model Predictive Control algorithm and simulation \
-        for a biogas plant (anaerobic digestion) with an optional external gas storage. \
-        Considers uncertainties in macronutrients of the fed substrates.",
+    description="Multi-stage Model Predictive Control for biogas plant \
+        (anaerobic digestion a.k.a. AD) to optimally control substrate feed (meal prep).",
     long_description=open("README.md").read(),
     author="Julius Frontzek",
     author_email="ju-frontzek@gmx.de",
@@ -17,5 +18,6 @@ setup(
         "uncertainties",
         "pygame",
     ],
-    data_files=[("./results", [])],
 )
+
+os.mkdir("./results/")
