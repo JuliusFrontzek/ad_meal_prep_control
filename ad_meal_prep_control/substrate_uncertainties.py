@@ -1,6 +1,5 @@
 from uncertainties import ufloat
 import numpy as np
-import pandas as pd
 
 
 def xc_(xa, xp, xl):
@@ -50,7 +49,6 @@ def f_q_qes_(bmp):
 
 
 if __name__ == "__main__":
-    df = pd.read_excel("the_document.ods", engine="odf")
     xa = 50.0
     xp = 60.0
     xl = 100.0
