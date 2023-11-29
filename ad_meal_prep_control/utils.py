@@ -53,9 +53,9 @@ class CHP:
         ), "Load values must be between 0 and 1."
 
         mass_flow_rate = self.max_power * load / (self.lhv * self.thermal_efficiency)
-        vol_flow_rate = mass_flow_rate * self.R_S * temp / (press * 1.0e5)
+        ch4_outflow_rate = mass_flow_rate * self.R_S * temp / (press * 1.0e5)
 
-        return vol_flow_rate * 60 * 60 * 24
+        return ch4_outflow_rate * 60 * 60 * 24
 
 
 @dataclass
@@ -171,7 +171,7 @@ class ScenarioData:
     pygame_vis: bool = False
     store_results: bool = True
     compile_nlp: bool = False
-    vol_flow_rate: Union[np.ndarray, None] = None
+    ch4_outflow_rate: Union[np.ndarray, None] = None
 
     _state_names = [
         "S_ac",

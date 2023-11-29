@@ -27,7 +27,7 @@ def mhe_setup(
     x_li_in: np.ndarray,
     P_x: np.ndarray,
     P_v: np.ndarray,
-    vol_flow_rate: np.ndarray,
+    ch4_outflow_rate: np.ndarray,
     hsllib: Path = None,
 ) -> do_mpc.estimator.MHE:
     """
@@ -62,7 +62,9 @@ def mhe_setup(
             n_steps = min(t_now_idx, n_horizon)
 
             for k in range(n_steps):
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[t_now_idx + k]
+                tvp_template["_tvp", k, "v_ch4_dot_out"] = ch4_outflow_rate[
+                    t_now_idx + k
+                ]
 
             return tvp_template
 

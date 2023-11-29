@@ -47,6 +47,8 @@ class Scenario:
 
         self._v_ch4_norm_true_0 = self.x0_norm_true[18]
         self._v_co2_norm_true_0 = self.x0_norm_true[19]
+        self._v_ch4_norm_estimated_0 = self.x0_norm_estimated[18]
+        self._v_co2_norm_estimated_0 = self.x0_norm_estimated[19]
 
         # Look for HSL solver
         self._hsllib = None
@@ -97,7 +99,10 @@ class Scenario:
         if self.scenario_data.pygame_vis:
             self._pygame_setup()
 
-        self._sim_setup()
+        if self.scenario_data.simulate_steady_state:
+            self._sim_setup(ch4_outflow_rate=np.zeros(self._n_steps_steady_state))
+        else:
+            self._sim_setup(self.scenario_data.ch4_outflow_rate)
 
         # Estimator setup
         self._estimator_setup()
@@ -113,7 +118,9 @@ class Scenario:
             if self.scenario_data.external_gas_storage_model:
                 self.x0_norm_true[18] = self._v_ch4_norm_true_0
                 self.x0_norm_true[19] = self._v_co2_norm_true_0
-            self._sim_setup()
+                self.x0_norm_estimated[18] = self._v_ch4_norm_estimated_0
+                self.x0_norm_estimated[19] = self._v_co2_norm_estimated_0
+            self._sim_setup(self.scenario_data.ch4_outflow_rate)
             self._estimator_setup()
 
         if self.scenario_data.simulate_mpc:
@@ -126,7 +133,7 @@ class Scenario:
                 x_pr_in=self._x_pr_in,
                 x_li_in=self._x_li_in,
                 compile_nlp=self.scenario_data.compile_nlp,
-                vol_flow_rate=self.scenario_data.vol_flow_rate,
+                ch4_outflow_rate=self.scenario_data.ch4_outflow_rate,
                 cost_func=self.scenario_data.cost_func,
                 substrate_costs=[sub.cost for sub in self._subs],
                 consider_substrate_costs=self.scenario_data.consider_substrate_costs,
@@ -215,7 +222,7 @@ class Scenario:
                 x_li_in=self._x_li_in,
                 P_x=np.diag((self.x0_norm_estimated - self.x0_norm_true) ** 2),
                 P_v=0.0001 * np.ones((8, 8)),
-                vol_flow_rate=self.scenario_data.vol_flow_rate,
+                ch4_outflow_rate=self.scenario_data.ch4_outflow_rate,
                 hsllib=self._hsllib,
             )
 
@@ -246,14 +253,14 @@ class Scenario:
             external_gas_storage_model=self.scenario_data.external_gas_storage_model,
         )
 
-    def _sim_setup(self):
+    def _sim_setup(self, ch4_outflow_rate: np.ndarray):
         self._simulator = simulator_setup(
             model=self.model,
             t_step=self.scenario_data.t_step,
             x_ch_in=self._x_ch_in,
             x_pr_in=self._x_pr_in,
             x_li_in=self._x_li_in,
-            vol_flow_rate=self.scenario_data.vol_flow_rate,
+            ch4_outflow_rate=ch4_outflow_rate,
         )
 
         # Set normalized x0
@@ -272,9 +279,12 @@ class Scenario:
 
         # Configure plot:
         plt.rcParams["axes.grid"] = True
-        self._fig, self._ax = plt.subplots(
-            len(self.scenario_data.plot_vars), sharex=True
+        num_plots = (
+            len(self.scenario_data.plot_vars) + 1
+            if self.scenario_data.external_gas_storage_model
+            else len(self.scenario_data.plot_vars)
         )
+        self._fig, self._ax = plt.subplots(num_plots, sharex=True)
 
         for idx, var in enumerate(self.scenario_data.plot_vars):
             if var[0] == "u":
@@ -443,6 +453,15 @@ class Scenario:
                         self._ax[idx].set_ylabel(
                             self.scenario_data._meas_names[int(var.split("_")[-1]) - 1]
                         )
+
+                if self.scenario_data.external_gas_storage_model:
+                    self._ax[-1].scatter(
+                        self._t_mpc[: k + 1],
+                        self.scenario_data.ch4_outflow_rate[: k + 1],
+                        color="red",
+                    )
+                    self._ax[-1].set_ylabel("CH4 outflow\nvolume flow")
+
                 plt.show()
                 plt.pause(0.01)
 

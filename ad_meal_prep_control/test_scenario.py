@@ -78,22 +78,20 @@ n_days_steady_state = 0.5
 n_days_mpc = 3
 t_step = 0.5 / 24
 
-mpc_n_horizon = 15
+mpc_n_horizon = 5
 mpc_n_robust = 0
 mhe_n_horizon = 5
 
-total_steps = round((n_days_steady_state + n_days_mpc) / t_step)
-
-n_steps_steady_state = round(n_days_steady_state / t_step)
+n_steps_mpc = round(n_days_mpc / t_step)
 
 # Set up CHP
 chp = CHP(max_power=124.0 / params_R3.SCALEDOWN)
-chp_load = np.zeros(total_steps + mpc_n_horizon)
+chp_load = np.zeros(n_steps_mpc + mpc_n_horizon)
 for i in range(6):
-    chp_load[n_steps_steady_state + i :: 48] = 1.0  # 6:00 - 12:00
-    chp_load[n_steps_steady_state + 18 + i :: 48] = 1.0  # 15:00 - 21:00
+    chp_load[i::48] = 1.0  # 6:00 - 12:00
+    chp_load[18 + i :: 48] = 1.0  # 15:00 - 21:00
 
-vol_flow_rate = chp.ch4_vol_flow_rate(
+ch4_outflow_rate = chp.ch4_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
 )
 
@@ -105,7 +103,7 @@ cost_func = CostFunction(mterm=mterm, lterm=lterm)
 
 test_scenario_data = ScenarioData(
     name="test_scenario",
-    external_gas_storage_model=False,
+    external_gas_storage_model=True,
     mpc_n_horizon=mpc_n_horizon,
     mpc_n_robust=mpc_n_robust,
     t_step=t_step,
@@ -135,7 +133,7 @@ test_scenario_data = ScenarioData(
     pygame_vis=True,
     store_results=True,
     compile_nlp=False,
-    vol_flow_rate=vol_flow_rate,
+    ch4_outflow_rate=ch4_outflow_rate,
 )
 
 test_scenario = scenario.Scenario(scenario_data=test_scenario_data)

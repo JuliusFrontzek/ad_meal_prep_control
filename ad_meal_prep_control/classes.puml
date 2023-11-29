@@ -53,7 +53,7 @@ class "Scenario" as ad_meal_prep_control.scenario.Scenario {
   t_step : float
   u_max : dict[str, float]
   uncertainty : bool
-  vol_flow_rate : Optional[Union[np.ndarray, None]]
+  ch4_outflow_rate : Optional[Union[np.ndarray, None]]
   x0 : ndarray
   x0_norm
   model_setup()

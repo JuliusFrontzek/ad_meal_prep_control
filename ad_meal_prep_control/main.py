@@ -70,7 +70,7 @@ for i in range(6):
     chp_load[i::48] = 1.0  # 6:00 - 12:00
     chp_load[18 + i :: 48] = 1.0  # 15:00 - 21:00
 
-vol_flow_rate = chp.ch4_vol_flow_rate(
+ch4_outflow_rate = chp.ch4_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
 )
 
@@ -235,7 +235,7 @@ mpc = mpc_setup(
     x_pr_in=x_pr_in,
     x_li_in=x_li_in,
     compile_nlp=compile_nlp,
-    vol_flow_rate=vol_flow_rate,
+    ch4_outflow_rate=ch4_outflow_rate,
 )
 
 simulator = simulator_setup(
@@ -244,7 +244,7 @@ simulator = simulator_setup(
     x_ch_in=x_ch_in,
     x_pr_in=x_pr_in,
     x_li_in=x_li_in,
-    vol_flow_rate=np.zeros(n_steps_steady_state),
+    ch4_outflow_rate=np.zeros(n_steps_steady_state),
 )
 
 estimator = state_estimator.StateEstimator(model)
@@ -327,7 +327,7 @@ simulator = simulator_setup(
     x_ch_in=x_ch_in,
     x_pr_in=x_pr_in,
     x_li_in=x_li_in,
-    vol_flow_rate=vol_flow_rate,
+    ch4_outflow_rate=ch4_outflow_rate,
 )
 
 simulator.x0 = x0_ss

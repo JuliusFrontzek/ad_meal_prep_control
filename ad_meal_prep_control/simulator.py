@@ -16,7 +16,7 @@ def simulator_setup(
     x_ch_in: np.ndarray,
     x_pr_in: np.ndarray,
     x_li_in: np.ndarray,
-    vol_flow_rate: np.ndarray,
+    ch4_outflow_rate: np.ndarray,
 ):
     num_states = model._x.size
     simulator = do_mpc.simulator.Simulator(model)
@@ -35,7 +35,7 @@ def simulator_setup(
 
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
-            tvp_num["v_ch4_dot_out", 0] = vol_flow_rate[t_now_idx]
+            tvp_num["v_ch4_dot_out", 0] = ch4_outflow_rate[t_now_idx]
             return tvp_num
 
         simulator.set_tvp_fun(tvp_fun)

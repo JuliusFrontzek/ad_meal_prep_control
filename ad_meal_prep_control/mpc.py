@@ -22,7 +22,7 @@ def mpc_setup(
     x_pr_in: np.ndarray,
     x_li_in: np.ndarray,
     compile_nlp: bool,
-    vol_flow_rate: np.ndarray,
+    ch4_outflow_rate: np.ndarray,
     cost_func: CostFunction,
     substrate_costs: list[float],
     consider_substrate_costs: bool,
@@ -63,7 +63,9 @@ def mpc_setup(
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
             for k in range(n_horizon + 1):
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[t_now_idx + k]
+                tvp_template["_tvp", k, "v_ch4_dot_out"] = ch4_outflow_rate[
+                    t_now_idx + k
+                ]
 
             return tvp_template
 
