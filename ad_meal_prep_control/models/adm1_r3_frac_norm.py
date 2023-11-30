@@ -28,13 +28,13 @@ def adm1_r3_frac_norm(
     num_inputs = xi_norm[0].shape[0]
 
     xi_norm[5] = model.set_variable(
-        var_type="_p", var_name="x_ch_in", shape=(len(xi_norm[0]), 1)
+        var_type="_p", var_name="xi_ch_norm", shape=(len(xi_norm[0]), 1)
     )
     xi_norm[7] = model.set_variable(
-        var_type="_p", var_name="x_pr_in", shape=(len(xi_norm[0]), 1)
+        var_type="_p", var_name="xi_pr_norm", shape=(len(xi_norm[0]), 1)
     )
     xi_norm[8] = model.set_variable(
-        var_type="_p", var_name="x_li_in", shape=(len(xi_norm[0]), 1)
+        var_type="_p", var_name="xi_li_norm", shape=(len(xi_norm[0]), 1)
     )
 
     # Time-invariant parameters

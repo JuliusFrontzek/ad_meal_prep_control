@@ -2,7 +2,7 @@ import scenario
 from utils import Disturbances
 import numpy as np
 import params_R3
-from utils import StateObserver, CHP, ScenarioData, CostFunction
+from utils import StateObserver, CHP, ScenarioData, CostFunction, ControllerParams
 
 disturbances = Disturbances()
 
@@ -74,12 +74,12 @@ Ty = np.array(
     ]
 )
 
-n_days_steady_state = 30
+n_days_steady_state = 3
 n_days_mpc = 3
 t_step = 0.5 / 24
 
-mpc_n_horizon = 20
-mpc_n_robust = 2
+mpc_n_horizon = 10
+mpc_n_robust = 0
 mhe_n_horizon = 5
 
 n_steps_mpc = round(n_days_mpc / t_step)
@@ -95,30 +95,37 @@ ch4_outflow_rate = chp.ch4_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
 )
 
-lterm = "100*(model.aux['y_4_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
-mterm = "1000*(model.aux['y_4_norm'] - 1.)**2"
+lterm = "(model.aux['y_1_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
+mterm = "100*(model.aux['y_1_norm'] - 1.)**2"
 # lterm = "fabs(model.aux['y_1_norm'] - 1.) + (model.aux['y_1_norm'] - 1.) ** 2"
 
-cost_func = CostFunction(mterm=mterm, lterm=lterm)
+cost_func = CostFunction(lterm=lterm, mterm=mterm)
+
+controller_params = ControllerParams(
+    mpc_n_horizon=mpc_n_horizon,
+    mpc_n_robust=mpc_n_robust,
+    num_std_devs=0.5,
+    cost_func=cost_func,
+    consider_substrate_costs=True,
+)
+
 
 test_scenario_data = ScenarioData(
     name="test_scenario",
     external_gas_storage_model=False,
-    mpc_n_horizon=mpc_n_horizon,
-    mpc_n_robust=mpc_n_robust,
     t_step=t_step,
     n_days_steady_state=n_days_steady_state,
     n_days_mpc=n_days_mpc,
     sub_names=[
-        "STANDARD_SUBSTRATE",
         "CORN_SILAGE",
-    ],  # "GRASS_SILAGE", "CATTLE_MANURE"],
+        "GRASS_SILAGE",
+        "CATTLE_MANURE",
+    ],  # "STANDARD_SUBSTRATE",
     disturbances=disturbances,
     x0_true=x0_true,
     Tx=Tx,
     Ty=Ty,
     u_max=u_max,
-    num_std_devs=0.5,
     plot_vars=[
         "u_norm",
         "y_meas_1",
@@ -127,12 +134,11 @@ test_scenario_data = ScenarioData(
     # + [f"x_{i+1}" for i in range(18)],
     state_observer=StateObserver.STATEFEEDBACK,
     mhe_n_horizon=mhe_n_horizon,
-    cost_func=cost_func,
-    consider_substrate_costs=True,
-    consider_uncertainty=True,
+    controller_params=controller_params,
+    num_std_devs_sim=1.0,
     simulate_steady_state=True,
     simulate_mpc=True,
-    mpc_live_vis=False,
+    mpc_live_vis=True,
     pygame_vis=True,
     save_results=True,
     compile_nlp=False,

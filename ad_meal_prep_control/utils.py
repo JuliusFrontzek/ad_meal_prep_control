@@ -205,11 +205,21 @@ class LimitedSubstrate:
 
 
 @dataclass(kw_only=True)
+class ControllerParams:
+    mpc_n_horizon: int
+    mpc_n_robust: int
+    num_std_devs: float
+    cost_func: CostFunction
+    consider_substrate_costs: bool = True
+    bounds: list[Bound] = None
+    nl_cons: list[NlConstraint] = None
+    rterm: str = None
+
+
+@dataclass(kw_only=True)
 class ScenarioData:
     name: str
     external_gas_storage_model: bool
-    mpc_n_horizon: int
-    mpc_n_robust: int
     t_step: float  # Time in days
     n_days_steady_state: float
     n_days_mpc: float
@@ -219,16 +229,11 @@ class ScenarioData:
     Tx: np.ndarray
     Ty: np.ndarray
     u_max: dict[str, float]
-    num_std_devs: float  # Lower and upper bound of uncertainties is determined by the number of standard deviations that we consider
     plot_vars: list[str]
     state_observer: StateObserver
     mhe_n_horizon: int = 5
-    cost_func: CostFunction
-    consider_substrate_costs: bool = True
-    bounds: list[Bound] = None
-    nl_cons: list[NlConstraint] = None
-    rterm: str = None
-    consider_uncertainty: bool = True
+    controller_params: ControllerParams
+    num_std_devs_sim: float
     simulate_steady_state: bool = True
     simulate_mpc: bool = True
     mpc_live_vis: bool = True

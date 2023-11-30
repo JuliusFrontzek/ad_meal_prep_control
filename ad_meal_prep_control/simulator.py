@@ -13,9 +13,9 @@ import do_mpc
 def simulator_setup(
     model: do_mpc.model.Model,
     t_step: float,
-    x_ch_in: np.ndarray,
-    x_pr_in: np.ndarray,
-    x_li_in: np.ndarray,
+    xi_ch_norm: np.ndarray,
+    xi_pr_norm: np.ndarray,
+    xi_li_norm: np.ndarray,
     ch4_outflow_rate: np.ndarray,
 ):
     num_states = model._x.size
@@ -40,27 +40,10 @@ def simulator_setup(
 
         simulator.set_tvp_fun(tvp_fun)
 
-    # uncertain parameter realization in simulator -> drawn from uniform distribution
-    # in between min and max values of uncertainties
     p_num = simulator.get_p_template()
-    p_num["x_ch_in"] = np.array(
-        [
-            random.uniform(np.min(x_ch_in[:, i]), np.max(x_ch_in[:, i]))
-            for i in range(x_ch_in.shape[1])
-        ]
-    )
-    p_num["x_pr_in"] = np.array(
-        [
-            random.uniform(np.min(x_pr_in[:, i]), np.max(x_pr_in[:, i]))
-            for i in range(x_pr_in.shape[1])
-        ]
-    )
-    p_num["x_li_in"] = np.array(
-        [
-            random.uniform(np.min(x_li_in[:, i]), np.max(x_li_in[:, i]))
-            for i in range(x_li_in.shape[1])
-        ]
-    )
+    p_num["xi_ch_norm"] = xi_ch_norm
+    p_num["xi_pr_norm"] = xi_pr_norm
+    p_num["xi_li_norm"] = xi_li_norm
 
     def p_fun(t_now):
         return p_num

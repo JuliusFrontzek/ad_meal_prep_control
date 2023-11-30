@@ -16,6 +16,8 @@ from utils import StateObserver, ScenarioData
 import os
 from pathlib import Path
 
+np.random.seed(seed=42)
+
 
 @dataclass(kw_only=True)
 class Scenario:
@@ -127,20 +129,20 @@ class Scenario:
             self._mpc = mpc_setup(
                 model=self.model,
                 t_step=self.scenario_data.t_step,
-                n_horizon=self.scenario_data.mpc_n_horizon,
-                n_robust=self.scenario_data.mpc_n_robust,
-                x_ch_in=self._x_ch_in,
-                x_pr_in=self._x_pr_in,
-                x_li_in=self._x_li_in,
+                n_horizon=self.scenario_data.controller_params.mpc_n_horizon,
+                n_robust=self.scenario_data.controller_params.mpc_n_robust,
+                xi_ch_norm=self._xi_ch_mpc_mhe_norm,
+                xi_pr_norm=self._xi_pr_mpc_mhe_norm,
+                xi_li_norm=self._xi_li_mpc_mhe_norm,
                 compile_nlp=self.scenario_data.compile_nlp,
                 ch4_outflow_rate=self.scenario_data.ch4_outflow_rate,
-                cost_func=self.scenario_data.cost_func,
+                cost_func=self.scenario_data.controller_params.cost_func,
                 substrate_costs=[sub.cost for sub in self._subs],
-                consider_substrate_costs=self.scenario_data.consider_substrate_costs,
+                consider_substrate_costs=self.scenario_data.controller_params.consider_substrate_costs,
                 store_full_solution=self.scenario_data.mpc_live_vis,
-                bounds=self.scenario_data.bounds,
-                nl_cons=self.scenario_data.nl_cons,
-                rterm=self.scenario_data.rterm,
+                bounds=self.scenario_data.controller_params.bounds,
+                nl_cons=self.scenario_data.controller_params.nl_cons,
+                rterm=self.scenario_data.controller_params.rterm,
                 hsllib=self._hsllib,
             )
 
@@ -179,53 +181,92 @@ class Scenario:
 
         xi = [sub.xi for sub in self._subs]
 
+        # Normalize xi values (also includes ch, pr and li but these are ignored in the model and later replaced with the uncertain ones)
         self._xi_norm = list(np.array([val / self.Tx[:18] for val in xi]).T)
 
+        # Compute the uncertain xis (ch, pr and li)
         uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in self._subs]
 
-        if not self.scenario_data.consider_uncertainty:
-            uncertain_xis[0] = (
-                ufloat(xi[0][5], 0.0),
-                ufloat(xi[0][7], 0.0),
-                ufloat(xi[0][8], 0.0),
-            )
+        # Get nominal values and standard deviations for uncertain xis of all substrates
+        xi_ch_nom = np.array([un_xi[0].nominal_value for un_xi in uncertain_xis])
+        xi_pr_nom = np.array([un_xi[1].nominal_value for un_xi in uncertain_xis])
+        xi_li_nom = np.array([un_xi[2].nominal_value for un_xi in uncertain_xis])
 
-        x_ch_nom = np.array([un_xi[0].nominal_value for un_xi in uncertain_xis])
-        x_pr_nom = np.array([un_xi[1].nominal_value for un_xi in uncertain_xis])
-        x_li_nom = np.array([un_xi[2].nominal_value for un_xi in uncertain_xis])
+        xi_ch_std_dev = np.array([un_xi[0].std_dev for un_xi in uncertain_xis])
+        xi_pr_std_dev = np.array([un_xi[1].std_dev for un_xi in uncertain_xis])
+        xi_li_std_dev = np.array([un_xi[2].std_dev for un_xi in uncertain_xis])
 
-        x_ch_std_dev = np.array([un_xi[0].std_dev for un_xi in uncertain_xis])
-        x_pr_std_dev = np.array([un_xi[1].std_dev for un_xi in uncertain_xis])
-        x_li_std_dev = np.array([un_xi[2].std_dev for un_xi in uncertain_xis])
-
-        if self.scenario_data.consider_uncertainty:
-            self._x_ch_in = np.array(
-                [
-                    x_ch_nom - self.scenario_data.num_std_devs * x_ch_std_dev,
-                    x_ch_nom + self.scenario_data.num_std_devs * x_ch_std_dev,
-                ]
-            )
-            self._x_pr_in = np.array(
-                [
-                    x_pr_nom - self.scenario_data.num_std_devs * x_pr_std_dev,
-                    x_pr_nom + self.scenario_data.num_std_devs * x_pr_std_dev,
-                ]
-            )
-            self._x_li_in = np.array(
-                [
-                    x_li_nom - self.scenario_data.num_std_devs * x_li_std_dev,
-                    x_li_nom + self.scenario_data.num_std_devs * x_li_std_dev,
-                ]
-            )
+        if (
+            self.scenario_data.controller_params.num_std_devs == 0.0
+            or self.scenario_data.controller_params.mpc_n_robust == 0
+        ):
+            self._xi_ch_mpc_mhe = np.array([xi_ch_nom])
+            self._xi_pr_mpc_mhe = np.array([xi_pr_nom])
+            self._xi_li_mpc_mhe = np.array([xi_li_nom])
         else:
-            self._x_ch_in = np.array([x_ch_nom])
-            self._x_pr_in = np.array([x_pr_nom])
-            self._x_li_in = np.array([x_li_nom])
+            self._xi_ch_mpc_mhe = np.array(
+                [
+                    xi_ch_nom
+                    - self.scenario_data.controller_params.num_std_devs * xi_ch_std_dev,
+                    xi_ch_nom
+                    + self.scenario_data.controller_params.num_std_devs * xi_ch_std_dev,
+                ]
+            )
+            self._xi_pr_mpc_mhe = np.array(
+                [
+                    xi_pr_nom
+                    - self.scenario_data.controller_params.num_std_devs * xi_pr_std_dev,
+                    xi_pr_nom
+                    + self.scenario_data.controller_params.num_std_devs * xi_pr_std_dev,
+                ]
+            )
+            self._xi_li_mpc_mhe = np.array(
+                [
+                    xi_li_nom
+                    - self.scenario_data.controller_params.num_std_devs * xi_li_std_dev,
+                    xi_li_nom
+                    + self.scenario_data.controller_params.num_std_devs * xi_li_std_dev,
+                ]
+            )
+
+        if self.scenario_data.num_std_devs_sim == 0.0:
+            self._x_ch_in_sim = np.array([xi_ch_nom])
+            self._x_pr_in_sim = np.array([xi_pr_nom])
+            self._x_li_in_sim = np.array([xi_li_nom])
+        else:
+            self._x_ch_in_sim = np.array(
+                [
+                    xi_ch_nom
+                    + np.random.choice([-1, 1])
+                    * self.scenario_data.num_std_devs_sim
+                    * xi_ch_std_dev
+                ]
+            )
+            self._x_pr_in_sim = np.array(
+                [
+                    xi_pr_nom
+                    + np.random.choice([-1, 1])
+                    * self.scenario_data.num_std_devs_sim
+                    * xi_pr_std_dev
+                ]
+            )
+            self._x_li_in_sim = np.array(
+                [
+                    xi_li_nom
+                    + np.random.choice([-1, 1])
+                    * self.scenario_data.num_std_devs_sim
+                    * xi_li_std_dev
+                ]
+            )
 
         # Normalize uncertain xi's
-        self._x_ch_in /= self.Tx[5]
-        self._x_pr_in /= self.Tx[7]
-        self._x_li_in /= self.Tx[8]
+        self._xi_ch_mpc_mhe_norm = self._xi_ch_mpc_mhe / self.Tx[5]
+        self._xi_pr_mpc_mhe_norm = self._xi_pr_mpc_mhe / self.Tx[7]
+        self._xi_li_mpc_mhe_norm = self._xi_li_mpc_mhe / self.Tx[8]
+
+        self._x_ch_in_sim_norm = self._x_ch_in_sim / self.Tx[5]
+        self._x_pr_in_sim_norm = self._x_pr_in_sim / self.Tx[7]
+        self._x_li_in_sim_norm = self._x_li_in_sim / self.Tx[8]
 
     def _estimator_setup(self):
         if self.scenario_data.state_observer == StateObserver.MHE:
@@ -233,9 +274,9 @@ class Scenario:
                 model=self.model,
                 t_step=self.scenario_data.t_step,
                 n_horizon=self.scenario_data.mhe_n_horizon,
-                x_ch_in=self._x_ch_in,
-                x_pr_in=self._x_pr_in,
-                x_li_in=self._x_li_in,
+                xi_ch_norm=self._xi_ch_mpc_mhe_norm,
+                xi_pr_norm=self._xi_pr_mpc_mhe_norm,
+                xi_li_norm=self._xi_li_mpc_mhe_norm,
                 P_x=np.diag((self.x0_norm_estimated - self.x0_norm_true) ** 2),
                 P_v=0.0001 * np.ones((8, 8)),
                 ch4_outflow_rate=self.scenario_data.ch4_outflow_rate,
@@ -275,9 +316,9 @@ class Scenario:
         self._simulator = simulator_setup(
             model=self.model,
             t_step=self.scenario_data.t_step,
-            x_ch_in=self._x_ch_in,
-            x_pr_in=self._x_pr_in,
-            x_li_in=self._x_li_in,
+            xi_ch_norm=self._x_ch_in_sim_norm,
+            xi_pr_norm=self._x_pr_in_sim_norm,
+            xi_li_norm=self._x_li_in_sim_norm,
             ch4_outflow_rate=ch4_outflow_rate,
         )
 

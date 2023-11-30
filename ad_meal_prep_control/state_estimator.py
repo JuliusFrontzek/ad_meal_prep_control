@@ -22,9 +22,9 @@ def mhe_setup(
     model: do_mpc.model.Model,
     t_step: float,
     n_horizon: int,
-    x_ch_in: np.ndarray,
-    x_pr_in: np.ndarray,
-    x_li_in: np.ndarray,
+    xi_ch_norm: np.ndarray,
+    xi_pr_norm: np.ndarray,
+    xi_li_norm: np.ndarray,
     P_x: np.ndarray,
     P_v: np.ndarray,
     ch4_outflow_rate: np.ndarray,
@@ -73,13 +73,13 @@ def mhe_setup(
 
     p_num = mhe.get_p_template()
     p_num["x_ch_in"] = np.array(
-        [np.mean(x_ch_in[:, i]) for i in range(x_ch_in.shape[1])]
+        [np.mean(xi_ch_norm[:, i]) for i in range(xi_ch_norm.shape[1])]
     )
     p_num["x_pr_in"] = np.array(
-        [np.mean(x_pr_in[:, i]) for i in range(x_pr_in.shape[1])]
+        [np.mean(xi_pr_norm[:, i]) for i in range(xi_pr_norm.shape[1])]
     )
     p_num["x_li_in"] = np.array(
-        [np.mean(x_li_in[:, i]) for i in range(x_li_in.shape[1])]
+        [np.mean(xi_li_norm[:, i]) for i in range(xi_li_norm.shape[1])]
     )
 
     def p_fun(t_now):

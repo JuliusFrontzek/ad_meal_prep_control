@@ -23,9 +23,9 @@ def mpc_setup(
     n_horizon: int,
     n_robust: int,
     t_step: float,
-    x_ch_in: np.ndarray,
-    x_pr_in: np.ndarray,
-    x_li_in: np.ndarray,
+    xi_ch_norm: np.ndarray,
+    xi_pr_norm: np.ndarray,
+    xi_li_norm: np.ndarray,
     compile_nlp: bool,
     ch4_outflow_rate: np.ndarray,
     cost_func: CostFunction,
@@ -129,7 +129,9 @@ def mpc_setup(
                 maximum_violation=nl_con.maximum_violation,
             )
 
-    mpc.set_uncertainty_values(x_ch_in=x_ch_in, x_pr_in=x_pr_in, x_li_in=x_li_in)
+    mpc.set_uncertainty_values(
+        xi_ch_norm=xi_ch_norm, xi_pr_norm=xi_pr_norm, xi_li_norm=xi_li_norm
+    )
 
     mpc.setup()
     if compile_nlp:
