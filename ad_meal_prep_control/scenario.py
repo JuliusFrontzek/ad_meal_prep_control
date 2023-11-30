@@ -137,6 +137,7 @@ class Scenario:
                 cost_func=self.scenario_data.cost_func,
                 substrate_costs=[sub.cost for sub in self._subs],
                 consider_substrate_costs=self.scenario_data.consider_substrate_costs,
+                store_full_solution=self.scenario_data.mpc_live_vis,
                 bounds=self.scenario_data.bounds,
                 nl_cons=self.scenario_data.nl_cons,
                 rterm=self.scenario_data.rterm,
@@ -158,9 +159,24 @@ class Scenario:
         self._data = vis.DataVis(self._screen)
 
     def _substrate_setup(self):
+        # Get the substrate objects
         self._subs = []
         for sub_name in self.scenario_data.sub_names:
             self._subs.append(getattr(substrates, sub_name))
+
+        # Set substrate feeding limits
+        self._limited_subs_indices = []
+        if isinstance(self.scenario_data.limited_substrates, list):
+            for lim_sub in self.scenario_data.limited_substrates:
+                for idx, sub in enumerate(self._subs):
+                    if sub.name == lim_sub.name:
+                        sub.set_limit(
+                            lim_sub.amount_remaining,
+                            lim_sub.days_remaining,
+                            self.scenario_data.t_step,
+                        )
+                        self._limited_subs_indices.append(idx)
+
         xi = [sub.xi for sub in self._subs]
 
         self._xi_norm = list(np.array([val / self.Tx[:18] for val in xi]).T)
@@ -223,6 +239,7 @@ class Scenario:
                 P_x=np.diag((self.x0_norm_estimated - self.x0_norm_true) ** 2),
                 P_v=0.0001 * np.ones((8, 8)),
                 ch4_outflow_rate=self.scenario_data.ch4_outflow_rate,
+                store_full_solution=self.scenario_data.mpc_live_vis,
                 hsllib=self._hsllib,
             )
 
@@ -251,6 +268,7 @@ class Scenario:
             Tx=self.Tx,
             Ty=self.scenario_data.Ty,
             external_gas_storage_model=self.scenario_data.external_gas_storage_model,
+            limited_subs_indices=self._limited_subs_indices,
         )
 
     def _sim_setup(self, ch4_outflow_rate: np.ndarray):
@@ -476,7 +494,7 @@ class Scenario:
                     u_norm_actual,
                 )
 
-        if self.scenario_data.store_results:
+        if self.scenario_data.save_results:
             self._save_results()
 
     def _save_results(self):

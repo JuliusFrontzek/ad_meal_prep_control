@@ -17,6 +17,7 @@ def adm1_r3_frac_norm(
     Tx: np.ndarray,
     Ty: np.ndarray,
     external_gas_storage_model: bool,
+    limited_subs_indices: list[int],
 ):
     """
     Normalized ADM1-R3-frac model.

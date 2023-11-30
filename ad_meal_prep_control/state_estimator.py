@@ -28,6 +28,7 @@ def mhe_setup(
     P_x: np.ndarray,
     P_v: np.ndarray,
     ch4_outflow_rate: np.ndarray,
+    store_full_solution: bool,
     hsllib: Path = None,
 ) -> do_mpc.estimator.MHE:
     """
@@ -40,7 +41,7 @@ def mhe_setup(
     setup_mhe = {
         "t_step": t_step,
         "n_horizon": n_horizon,
-        "store_full_solution": True,
+        "store_full_solution": store_full_solution,
         "meas_from_data": True,
     }
 

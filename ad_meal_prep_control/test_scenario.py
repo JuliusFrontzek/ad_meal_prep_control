@@ -74,12 +74,12 @@ Ty = np.array(
     ]
 )
 
-n_days_steady_state = 0.5
+n_days_steady_state = 30
 n_days_mpc = 3
 t_step = 0.5 / 24
 
-mpc_n_horizon = 5
-mpc_n_robust = 0
+mpc_n_horizon = 20
+mpc_n_robust = 2
 mhe_n_horizon = 5
 
 n_steps_mpc = round(n_days_mpc / t_step)
@@ -95,21 +95,24 @@ ch4_outflow_rate = chp.ch4_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
 )
 
-mterm = "(model.aux['y_1_norm'] - 1.)**2"  # "(model.aux['y_1_norm'] - 1.) ** 2"
-lterm = "(100*model.aux['y_1_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
+lterm = "100*(model.aux['y_4_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
+mterm = "1000*(model.aux['y_4_norm'] - 1.)**2"
 # lterm = "fabs(model.aux['y_1_norm'] - 1.) + (model.aux['y_1_norm'] - 1.) ** 2"
 
 cost_func = CostFunction(mterm=mterm, lterm=lterm)
 
 test_scenario_data = ScenarioData(
     name="test_scenario",
-    external_gas_storage_model=True,
+    external_gas_storage_model=False,
     mpc_n_horizon=mpc_n_horizon,
     mpc_n_robust=mpc_n_robust,
     t_step=t_step,
     n_days_steady_state=n_days_steady_state,
     n_days_mpc=n_days_mpc,
-    sub_names=["CORN_SILAGE", "GRASS_SILAGE", "CATTLE_MANURE"],
+    sub_names=[
+        "STANDARD_SUBSTRATE",
+        "CORN_SILAGE",
+    ],  # "GRASS_SILAGE", "CATTLE_MANURE"],
     disturbances=disturbances,
     x0_true=x0_true,
     Tx=Tx,
@@ -129,9 +132,9 @@ test_scenario_data = ScenarioData(
     consider_uncertainty=True,
     simulate_steady_state=True,
     simulate_mpc=True,
-    mpc_live_vis=True,
+    mpc_live_vis=False,
     pygame_vis=True,
-    store_results=True,
+    save_results=True,
     compile_nlp=False,
     ch4_outflow_rate=ch4_outflow_rate,
 )

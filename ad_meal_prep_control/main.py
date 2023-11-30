@@ -28,7 +28,7 @@ from simulator import simulator_setup
 
 """ User settings: """
 show_animation = True
-store_results = True
+save_results = True
 
 # pygame setup
 pygame.init()
@@ -430,6 +430,6 @@ timer.hist()
 pygame.quit()
 
 # Store results:
-if store_results:
+if save_results:
     # do_mpc.data.save_results([mpc, simulator], f"testing_results")
     np.savetxt("results.csv", simulator.data._x, delimiter=",")

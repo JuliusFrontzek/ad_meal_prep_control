@@ -4,7 +4,12 @@ from casadi.tools import *
 import sys
 import os
 from params_R3 import *
-from ad_meal_prep_control.utils import CostFunction, Bound, NlConstraint
+from ad_meal_prep_control.utils import (
+    CostFunction,
+    Bound,
+    NlConstraint,
+    LimitedSubstrate,
+)
 from pathlib import Path
 
 rel_do_mpc_path = os.path.join("..", "..")
@@ -26,10 +31,12 @@ def mpc_setup(
     cost_func: CostFunction,
     substrate_costs: list[float],
     consider_substrate_costs: bool,
+    store_full_solution: bool,
     bounds: list[Bound] = None,
     nl_cons: list[NlConstraint] = None,
     rterm: str = None,
     hsllib: Path = None,
+    limited_substrates: list[LimitedSubstrate] = None,
 ) -> do_mpc.controller.MPC:
     num_states = model._x.size
 
@@ -44,6 +51,7 @@ def mpc_setup(
         "collocation_type": "radau",
         "collocation_deg": 2,
         "collocation_ni": 1,
+        "store_full_solution": store_full_solution,
     }
 
     if hsllib is not None:
@@ -54,8 +62,6 @@ def mpc_setup(
         }
 
     mpc.set_param(**setup_mpc)
-
-    mpc.set_param(store_full_solution=True)
 
     if num_states == 20:  # i.e. if we consider the gas storage
         tvp_template = mpc.get_tvp_template()

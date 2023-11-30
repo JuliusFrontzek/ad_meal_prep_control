@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 import numpy as np
-from casadi import SX
 from enum import Enum, auto
-import utils
 
 
 @dataclass
@@ -13,9 +11,9 @@ class CHP:
 
     Attributes:
         max_power:
-            Maximum power of the plant in kW.
+                            Maximum power of the plant in kW.
         thermal_efficiency:
-            Thermal efficiency of the plant as a percentage.
+                            Thermal efficiency of the plant as a percentage.
     """
 
     max_power: float = 100.0
@@ -38,12 +36,12 @@ class CHP:
 
         Parameters:
             load:
-                Array consisting of the plant utilization at different time steps
-                as a decimal value between 0 and 1.
+                    Array consisting of the plant utilization at different time steps
+                    as a decimal value between 0 and 1.
             press:
-                Pressure of the gas storage in bars.
+                    Pressure of the gas storage in bars.
             temp:
-                Temperature of the gas storage in K.
+                    Temperature of the gas storage in K.
 
         Returns:
             Array of the volume flow rates in m^3/d.
@@ -65,25 +63,25 @@ class Disturbances:
 
     Attributes:
         state_jumps:
-            Dictionary describing the jump of individual states.
-            Its keys describe the respective state indices (counting from 0).
-            Its values are tuples consisting of the time index (counting from 0) at which
-            the jump shall occure as well as a fraction of its nominal value (used for
-            normalization) by which it shall jump.
+                                Dictionary describing the jump of individual states.
+                                Its keys describe the respective state indices (counting from 0).
+                                Its values are tuples consisting of the time index (counting from 0) at which
+                                the jump shall occure as well as a fraction of its nominal value (used for
+                                normalization) by which it shall jump.
         max_feeding_error:
-            Tuple listing the maximum fraction by which each substrates' (in order) actual feeding
-            may differ from the computed feeding value.
+                                Tuple listing the maximum fraction by which each substrates' (in order) actual feeding
+                                may differ from the computed feeding value.
         feed_computation_stuck:
-            Tuple describing the times at which the biogas plant is being fed with the substrates
-            last computed before the disturbance occured.
-            It consists of the starting time index (counting from 0) as well as the
-            number of time steps at which the feeding is "stuck".
+                                Tuple describing the times at which the biogas plant is being fed with the substrates
+                                last computed before the disturbance occured.
+                                It consists of the starting time index (counting from 0) as well as the
+                                number of time steps at which the feeding is "stuck".
         clogged_feeding:
-            Dictionary describing the times at which the biogas plant is not fed at all with certain
-            substrates.
-            Its key indicate the respective substrate index.
-            Its values consist of tuples that contain the start time index and the number
-            of time steps for which this particular substrate feeder is clogged.
+                                Dictionary describing the times at which the biogas plant is not fed at all with certain
+                                substrates.
+                                Its key indicate the respective substrate index.
+                                Its values consist of tuples that contain the start time index and the number
+                                of time steps for which this particular substrate feeder is clogged.
 
     Example of a 'Disturbances' object initialization:
         disturbances = Disturbances(
@@ -102,12 +100,35 @@ class Disturbances:
 
 @dataclass(kw_only=True)
 class CostFunction:
-    mterm: str
+    """
+    Stores the l-term and m-term of the cost function.
+
+    Attributes:
+        lterm:
+                Stage cost
+        mterm:
+                Terminal cost
+    """
+
     lterm: str
+    mterm: str
 
 
 @dataclass(kw_only=True)
 class Bound:
+    """
+    Stores the parameters required to set up a hard bound.
+    Refer to https://www.do-mpc.com/en/latest/api/do_mpc.controller.MPC.html#bounds for more details abound do-mpc bounds.
+
+    Attributes:
+        lower:
+                    If true, this is a lower bound. If false, this is an upper bound.
+        variable:
+                    The variable it refers to.
+        value:
+                    The value that constitues the lower/upper bound of the specified variable.
+    """
+
     lower: bool
     variable: str
     value: float
@@ -128,6 +149,24 @@ class Bound:
 
 @dataclass(kw_only=True)
 class NlConstraint:
+    """
+    Stores the parameters required to set up a nonlinear constraint.
+    Refer to https://www.do-mpc.com/en/latest/api/do_mpc.controller.MPC.html#set-nl-cons for more details about do-mpc nl_cons.
+
+    Attributes:
+        expression:
+                            The nonlinear constraint expression.
+        ub:
+                            The upper bound of the specified nonlinear expression.
+        soft_constraint:
+                            Whether or not the constraint shall be enforced as a soft or hard constraint.
+                            If true, the soft constraint is implemented using slack variables within do-mpc.
+        penalty_term_cons:
+                            Penalty term constant
+        maximum_violation:
+                            Maximum violation that is allowed.
+    """
+
     expression: str
     ub: float
     soft_constraint: bool
@@ -136,8 +175,33 @@ class NlConstraint:
 
 
 class StateObserver(Enum):
+    """
+    Enum used to setup different scenarios.
+    """
+
     MHE = auto()
     STATEFEEDBACK = auto()
+
+
+@dataclass
+class LimitedSubstrate:
+    """
+    Stores the parameters required to set up a limited substrate scenario, i.e. a scenario
+    in which a certain amount of a substrate shall be fed within a specified amount of time.
+    After that time, there is no more mass of that substrate available for feeding.
+
+    Attributes:
+        name:
+                            Name of the limited substrate.
+        amount_remaining:
+                            The amount of the substrate remaining in kilograms.
+        days_remaining:
+                            The amount of days remaining to feed that substrate.
+    """
+
+    name: str
+    amount_remaining: float
+    days_remaining: float
 
 
 @dataclass(kw_only=True)
@@ -150,7 +214,7 @@ class ScenarioData:
     n_days_steady_state: float
     n_days_mpc: float
     sub_names: list[str]
-    disturbances: utils.Disturbances
+    disturbances: Disturbances
     x0_true: np.ndarray
     Tx: np.ndarray
     Ty: np.ndarray
@@ -169,9 +233,10 @@ class ScenarioData:
     simulate_mpc: bool = True
     mpc_live_vis: bool = True
     pygame_vis: bool = False
-    store_results: bool = True
+    save_results: bool = True
     compile_nlp: bool = False
     ch4_outflow_rate: Union[np.ndarray, None] = None
+    limited_substrates: list[LimitedSubstrate] = None
 
     _state_names = [
         "S_ac",
