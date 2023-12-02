@@ -1,7 +1,7 @@
 import pygame
 from dataclasses import dataclass
 import numpy as np
-from utils import ScenarioData
+from utils import Scenario
 import do_mpc
 
 
@@ -205,7 +205,7 @@ class DataVis:
 
 
 def visualize(
-    scenario_data: ScenarioData,
+    scenario_data: Scenario,
     bga: BioGasPlantVis,
     data: DataVis,
     x0_norm: np.ndarray,

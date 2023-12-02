@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from typing import Union
 import numpy as np
 from enum import Enum, auto
-
+import params_R3
+from copy import deepcopy
 
 @dataclass
 class CHP:
@@ -55,6 +56,17 @@ class CHP:
 
         return ch4_outflow_rate * 60 * 60 * 24
 
+def typical_ch4_vol_flow_rate(max_power: float, n_steps: int):
+    # Set up CHP
+    chp = CHP(max_power=max_power)
+    chp_load = np.zeros(n_steps)
+    for i in range(6):
+        chp_load[i::48] = 1.0  # 6:00 - 12:00
+        chp_load[18 + i :: 48] = 1.0  # 15:00 - 21:00
+
+    return chp.ch4_vol_flow_rate(
+        load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
+    )
 
 @dataclass
 class Disturbances:
@@ -217,7 +229,7 @@ class ControllerParams:
 
 
 @dataclass(kw_only=True)
-class ScenarioData:
+class Scenario:
     name: str
     external_gas_storage_model: bool
     t_step: float  # Time in days
@@ -236,7 +248,7 @@ class ScenarioData:
     num_std_devs_sim: float
     simulate_steady_state: bool = True
     simulate_mpc: bool = True
-    mpc_live_vis: bool = True
+    mpc_live_vis: bool = False
     pygame_vis: bool = False
     save_results: bool = True
     compile_nlp: bool = False
@@ -267,3 +279,129 @@ class ScenarioData:
     ]
 
     _meas_names = ["V´_g", "p_CH4", "p_CO2", "pH", "S_IN", "TS", "VS", "S_ac"]
+
+
+class ScenarioFactory:
+    n_days_steady_state_default = 30
+    n_days_mpc_default = 30
+    t_step_default = 0.5/24
+    x0_true_default = np.array(
+        [
+            0.0494667574155131,
+            0.0116512808544296,
+            4.97521803226548,
+            0.963856429890969,
+            957.102301745169,
+            1.48089980608238,
+            1.48089980608238,
+            0.948575266222027,
+            0.412040527872582,
+            1.92558575222279,
+            0.521526149938689,
+            1,
+            0.0487500000000000,
+            0.0493342637010683,
+            4.54552248672517,
+            0.0223970128000483,
+            0.358267793064052,
+            0.660494133806800,
+            0.44 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+            0.4 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+        ]
+    )
+
+    Tx_default = np.array(
+        [
+            0.137434457537417,
+            0.0127484119685527,
+            4.79932043710544,
+            0.950816195802454,
+            958.064331770733,
+            2.59654516843011,
+            8.09630748329204,
+            1.46003537123105,
+            0.624174795213073,
+            1.45262583426474,
+            0.421713306327953,
+            14.0000000291803,
+            0.0487500000000000,
+            0.137097486806281,
+            4.42830805698549,
+            0.0297771563953578,
+            0.380487873826158,
+            0.569429468392225,
+            params_R3.V_GAS_STORAGE_MAX,
+            params_R3.V_GAS_STORAGE_MAX,
+        ]
+    )
+
+    u_max_default = {
+        "solid": 80_000.0 / params_R3.SCALEDOWN,
+        "liquid": 450_000.0 / params_R3.SCALEDOWN,
+    }
+
+    Ty_default = np.array(
+        [
+            350.0,
+            0.574083930894918,
+            0.376314347120225,
+            7.0,
+            0.850445630702126,
+            0.0422284958830547,
+            0.668470313534998,
+            0.0959467827166042,
+        ]
+    )
+
+    methanation_dict = {"name":"methanation",
+                        "external_gas_storage_model":False,
+                        "t_step":t_step_default, 
+    "n_days_steady_state": n_days_steady_state_default,
+    "n_days_mpc": n_days_mpc_default,
+    "sub_names":["CORN_SILAGE",
+        "GRASS_SILAGE",
+        "CATTLE_MANURE",],
+    "disturbances": Disturbances(),
+    "x0_true": x0_true_default,
+    "Tx": Tx_default,
+    "Ty": Ty_default,
+    "u_max": u_max_default,
+    "plot_vars": [],
+    "state_observer": StateObserver.STATEFEEDBACK,
+    "mhe_n_horizon": 5,
+    "num_std_devs_sim": 1.0}
+
+    cogeneration_dict = {"name":"cogeneration",
+                        "external_gas_storage_model":True,
+                        "t_step":t_step_default, 
+    "n_days_steady_state": n_days_steady_state_default,
+    "n_days_mpc": n_days_mpc_default,
+    "sub_names":["CORN_SILAGE",
+        "GRASS_SILAGE",
+        "CATTLE_MANURE",],
+    "disturbances": Disturbances(),
+    "x0_true": x0_true_default,
+    "Tx": Tx_default,
+    "Ty": Ty_default,
+    "u_max": u_max_default,
+    "plot_vars": [],
+    "state_observer": StateObserver.STATEFEEDBACK,
+    "mhe_n_horizon": 5,
+    "num_std_devs_sim": 1.0}
+
+
+
+    def create_scenario(self, scenario_type: str, controller_params: ControllerParams, **kwargs) -> Scenario:
+        # Create default dict based on scenario_type
+        if scenario_type == "methanation":
+            scenario_dict = self.methanation_dict
+        elif scenario_type == "cogeneration":
+            scenario_dict = self.cogeneration_dict
+        else:
+            raise NotImplementedError(f"Invalid scenario type {scenario_type}")
+        
+        # Edit kwargs with more specific options
+        scenario_dict["controller_params"] = controller_params
+        for key, value in kwargs.items():
+            scenario_dict[key] = value
+        return Scenario(**scenario_dict)

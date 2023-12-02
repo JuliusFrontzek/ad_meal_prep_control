@@ -1,8 +1,8 @@
-import scenario
+import simulation
 from utils import Disturbances
 import numpy as np
 import params_R3
-from utils import StateObserver, CHP, ScenarioData, CostFunction, ControllerParams
+from utils import StateObserver, Scenario, CostFunction, ControllerParams, typical_ch4_vol_flow_rate
 
 disturbances = Disturbances()
 
@@ -63,7 +63,7 @@ u_max = {
 
 Ty = np.array(
     [
-        250.0,  # 140.300279906936
+        250.0,
         0.574083930894918,
         0.376314347120225,
         7.0,
@@ -84,16 +84,7 @@ mhe_n_horizon = 5
 
 n_steps_mpc = round(n_days_mpc / t_step)
 
-# Set up CHP
-chp = CHP(max_power=124.0 / params_R3.SCALEDOWN)
-chp_load = np.zeros(n_steps_mpc + mpc_n_horizon)
-for i in range(6):
-    chp_load[i::48] = 1.0  # 6:00 - 12:00
-    chp_load[18 + i :: 48] = 1.0  # 15:00 - 21:00
-
-ch4_outflow_rate = chp.ch4_vol_flow_rate(
-    load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
-)
+ch4_outflow_rate = typical_ch4_vol_flow_rate(max_power=124.0/params_R3.SCALEDOWN, n_steps= n_steps_mpc + mpc_n_horizon)
 
 lterm = "100*(model.aux['y_1_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
 mterm = "1000*(model.aux['y_1_norm'] - 1.)**2"
@@ -110,7 +101,7 @@ controller_params = ControllerParams(
 )
 
 
-test_scenario_data = ScenarioData(
+test_scenario_data = Scenario(
     name="test_scenario",
     external_gas_storage_model=False,
     t_step=t_step,
@@ -145,7 +136,7 @@ test_scenario_data = ScenarioData(
     ch4_outflow_rate=ch4_outflow_rate,
 )
 
-test_scenario = scenario.Scenario(scenario_data=test_scenario_data)
+test_scenario = simulation.Simulation(scenario=test_scenario_data)
 
 test_scenario.setup()
 test_scenario.run()
