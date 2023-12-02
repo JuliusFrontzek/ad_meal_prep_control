@@ -74,7 +74,7 @@ Ty = np.array(
     ]
 )
 
-n_days_steady_state = 3
+n_days_steady_state = 0.5
 n_days_mpc = 3
 t_step = 0.5 / 24
 
@@ -95,8 +95,8 @@ ch4_outflow_rate = chp.ch4_vol_flow_rate(
     load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
 )
 
-lterm = "(model.aux['y_1_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
-mterm = "100*(model.aux['y_1_norm'] - 1.)**2"
+lterm = "100*(model.aux['y_1_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
+mterm = "1000*(model.aux['y_1_norm'] - 1.)**2"
 # lterm = "fabs(model.aux['y_1_norm'] - 1.) + (model.aux['y_1_norm'] - 1.) ** 2"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
@@ -104,7 +104,7 @@ cost_func = CostFunction(lterm=lterm, mterm=mterm)
 controller_params = ControllerParams(
     mpc_n_horizon=mpc_n_horizon,
     mpc_n_robust=mpc_n_robust,
-    num_std_devs=0.5,
+    num_std_devs=1.0,
     cost_func=cost_func,
     consider_substrate_costs=True,
 )

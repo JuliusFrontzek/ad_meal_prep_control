@@ -230,11 +230,11 @@ class Scenario:
             )
 
         if self.scenario_data.num_std_devs_sim == 0.0:
-            self._x_ch_in_sim = np.array([xi_ch_nom])
-            self._x_pr_in_sim = np.array([xi_pr_nom])
-            self._x_li_in_sim = np.array([xi_li_nom])
+            self._xi_ch_sim = np.array([xi_ch_nom])
+            self._xi_pr_sim = np.array([xi_pr_nom])
+            self._xi_li_sim = np.array([xi_li_nom])
         else:
-            self._x_ch_in_sim = np.array(
+            self._xi_ch_sim = np.array(
                 [
                     xi_ch_nom
                     + np.random.choice([-1, 1])
@@ -242,7 +242,7 @@ class Scenario:
                     * xi_ch_std_dev
                 ]
             )
-            self._x_pr_in_sim = np.array(
+            self._xi_pr_sim = np.array(
                 [
                     xi_pr_nom
                     + np.random.choice([-1, 1])
@@ -250,7 +250,7 @@ class Scenario:
                     * xi_pr_std_dev
                 ]
             )
-            self._x_li_in_sim = np.array(
+            self._xi_li_sim = np.array(
                 [
                     xi_li_nom
                     + np.random.choice([-1, 1])
@@ -264,9 +264,16 @@ class Scenario:
         self._xi_pr_mpc_mhe_norm = self._xi_pr_mpc_mhe / self.Tx[7]
         self._xi_li_mpc_mhe_norm = self._xi_li_mpc_mhe / self.Tx[8]
 
-        self._x_ch_in_sim_norm = self._x_ch_in_sim / self.Tx[5]
-        self._x_pr_in_sim_norm = self._x_pr_in_sim / self.Tx[7]
-        self._x_li_in_sim_norm = self._x_li_in_sim / self.Tx[8]
+        self._xi_ch_sim_norm = self._xi_ch_sim / self.Tx[5]
+        self._xi_pr_sim_norm = self._xi_pr_sim / self.Tx[7]
+        self._xi_li_sim_norm = self._xi_li_sim / self.Tx[8]
+
+        assert np.all(self._xi_ch_mpc_mhe_norm > 0.), f"Negative xi values for carbohydrates in MPC/MHE encountered."
+        assert np.all(self._xi_pr_mpc_mhe_norm > 0.), f"Negative xi values for proteins in MPC/MHE encountered."
+        assert np.all(self._xi_li_mpc_mhe_norm > 0.), f"Negative xi values for lipids in MPC/MHE encountered."
+        assert np.all(self._xi_ch_sim_norm > 0.), f"Negative xi values for carbohydrates in simulation encountered."
+        assert np.all(self._xi_pr_sim_norm > 0.), f"Negative xi values for proteins in simulation encountered."
+        assert np.all(self._xi_li_sim_norm > 0.), f"Negative xi values for lipids in simulation encountered."
 
     def _estimator_setup(self):
         if self.scenario_data.state_observer == StateObserver.MHE:
@@ -316,9 +323,9 @@ class Scenario:
         self._simulator = simulator_setup(
             model=self.model,
             t_step=self.scenario_data.t_step,
-            xi_ch_norm=self._x_ch_in_sim_norm,
-            xi_pr_norm=self._x_pr_in_sim_norm,
-            xi_li_norm=self._x_li_in_sim_norm,
+            xi_ch_norm=self._xi_ch_sim_norm,
+            xi_pr_norm=self._xi_pr_sim_norm,
+            xi_li_norm=self._xi_li_sim_norm,
             ch4_outflow_rate=ch4_outflow_rate,
         )
 
