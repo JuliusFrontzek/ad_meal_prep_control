@@ -12,7 +12,7 @@ from simulator import simulator_setup
 import copy
 import matplotlib.pyplot as plt
 import params_R3
-from utils import StateObserver, Scenario
+from utils import StateObserver, Scenario, typical_ch4_vol_flow_rate
 import os
 from pathlib import Path
 
@@ -47,10 +47,12 @@ class Simulation:
             1.0 + 0.1 * np.random.randn(self.x0_norm_true.shape[0])
         )
 
-        self._v_ch4_norm_true_0 = self.x0_norm_true[18]
-        self._v_co2_norm_true_0 = self.x0_norm_true[19]
-        self._v_ch4_norm_estimated_0 = self.x0_norm_estimated[18]
-        self._v_co2_norm_estimated_0 = self.x0_norm_estimated[19]
+        if self.scenario.external_gas_storage_model:
+            self._v_ch4_norm_true_0 = self.x0_norm_true[18]
+            self._v_co2_norm_true_0 = self.x0_norm_true[19]
+            self._v_ch4_norm_estimated_0 = self.x0_norm_estimated[18]
+            self._v_co2_norm_estimated_0 = self.x0_norm_estimated[19]
+            self._Tx_gas_storage_states = np.copy(self.Tx[18:])
 
         # Look for HSL solver
         self._hsllib = None
@@ -63,6 +65,12 @@ class Simulation:
         
         if len(self.scenario.plot_vars) == 0 and self.scenario.mpc_live_vis:
             raise ValueError("No variables provided for plotting!")
+        
+        # Set up ch4 outflow
+        if self.scenario.P_el_chp is None:
+            self._ch4_outflow_rate = None
+        else:    
+            self._ch4_outflow_rate = typical_ch4_vol_flow_rate(max_power=self.scenario.P_el_chp, n_steps=self._n_steps_mpc + self.scenario.controller_params.mpc_n_horizon)
 
     @property
     def x0_norm_true(self) -> np.ndarray:
@@ -107,7 +115,7 @@ class Simulation:
         if self.scenario.simulate_steady_state:
             self._sim_setup(ch4_outflow_rate=np.zeros(self._n_steps_steady_state))
         else:
-            self._sim_setup(self.scenario.ch4_outflow_rate)
+            self._sim_setup(self._ch4_outflow_rate)
 
         # Estimator setup
         self._estimator_setup()
@@ -125,7 +133,7 @@ class Simulation:
                 self.x0_norm_true[19] = self._v_co2_norm_true_0
                 self.x0_norm_estimated[18] = self._v_ch4_norm_estimated_0
                 self.x0_norm_estimated[19] = self._v_co2_norm_estimated_0
-            self._sim_setup(self.scenario.ch4_outflow_rate)
+            self._sim_setup(self._ch4_outflow_rate)
             self._estimator_setup()
 
         if self.scenario.simulate_mpc:
@@ -138,7 +146,7 @@ class Simulation:
                 xi_pr_norm=self._xi_pr_mpc_mhe_norm,
                 xi_li_norm=self._xi_li_mpc_mhe_norm,
                 compile_nlp=self.scenario.compile_nlp,
-                ch4_outflow_rate=self.scenario.ch4_outflow_rate,
+                ch4_outflow_rate=self._ch4_outflow_rate,
                 cost_func=self.scenario.controller_params.cost_func,
                 substrate_costs=[sub.cost for sub in self._subs],
                 consider_substrate_costs=self.scenario.controller_params.consider_substrate_costs,
@@ -289,7 +297,7 @@ class Simulation:
                 xi_li_norm=self._xi_li_mpc_mhe_norm,
                 P_x=np.diag((self.x0_norm_estimated - self.x0_norm_true) ** 2),
                 P_v=0.0001 * np.ones((8, 8)),
-                ch4_outflow_rate=self.scenario.ch4_outflow_rate,
+                ch4_outflow_rate=self._ch4_outflow_rate,
                 store_full_solution=self.scenario.mpc_live_vis,
                 hsllib=self._hsllib,
             )
@@ -354,6 +362,8 @@ class Simulation:
             else len(self.scenario.plot_vars)
         )
         self._fig, self._ax = plt.subplots(num_plots, sharex=True)
+        if num_plots == 1:
+            self._ax = [self._ax]
 
         for idx, var in enumerate(self.scenario.plot_vars):
             if var[0] == "u":
@@ -430,7 +440,7 @@ class Simulation:
             if self.scenario.pygame_vis:
                 self._screen.fill("white")
 
-            u_norm_steady_state = np.array([[0.1 for _ in self._subs]]).T
+            u_norm_steady_state = np.array([[0.01 if sub.state == "solid" else 0.02 for sub in self._subs]]).T
 
             y_next = self._simulator.make_step(u_norm_steady_state)
             self.x0_norm_true = np.array(self._simulator.x0.master)
@@ -528,10 +538,10 @@ class Simulation:
                 if self.scenario.external_gas_storage_model:
                     self._ax[-1].scatter(
                         self._t_mpc[: k + 1],
-                        self.scenario.ch4_outflow_rate[: k + 1],
+                        self._ch4_outflow_rate[: k + 1],
                         color="red",
                     )
-                    self._ax[-1].set_ylabel("CH4 outflow\nvolume flow")
+                    self._ax[-1].set_ylabel(f"CH4 outflow\nvolume flow {r'$[m^3/d]$'}")
 
                 plt.show()
                 plt.pause(0.01)
@@ -567,7 +577,10 @@ class Simulation:
         x_steady_state_estimated = np.copy(self.x0_denorm_estimated)
 
         # Set new Tx based on max absolute values of states during steady state simulation
-        self.Tx *= np.max(np.abs(self._simulator.data._x), axis=0)
+        self.Tx = np.max(np.abs(self._simulator.data._x), axis=0)
+
+        if self.scenario.external_gas_storage_model:
+            self.Tx[18:] = self._Tx_gas_storage_states
 
         # Set new normalized initial state (for MPC)
         self.x0_norm_true = (x_steady_state_true.T / self.Tx).T

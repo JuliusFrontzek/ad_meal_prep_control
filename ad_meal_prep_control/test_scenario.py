@@ -57,8 +57,8 @@ Tx = np.array(
 )
 
 u_max = {
-    "solid": 80_000.0 / params_R3.SCALEDOWN,
-    "liquid": 450_000.0 / params_R3.SCALEDOWN,
+    "solid": 80.0,
+    "liquid": 450.0,
 }
 
 Ty = np.array(
@@ -84,8 +84,6 @@ mhe_n_horizon = 5
 
 n_steps_mpc = round(n_days_mpc / t_step)
 
-ch4_outflow_rate = typical_ch4_vol_flow_rate(max_power=124.0/params_R3.SCALEDOWN, n_steps= n_steps_mpc + mpc_n_horizon)
-
 lterm = "100*(model.aux['y_1_norm'] - 1.)**2"  # "100*(model.aux['y_1_norm'] - 1.) ** 2"
 mterm = "1000*(model.aux['y_1_norm'] - 1.)**2"
 # lterm = "fabs(model.aux['y_1_norm'] - 1.) + (model.aux['y_1_norm'] - 1.) ** 2"
@@ -103,7 +101,7 @@ controller_params = ControllerParams(
 
 test_scenario_data = Scenario(
     name="test_scenario",
-    external_gas_storage_model=False,
+    external_gas_storage_model=True,
     t_step=t_step,
     n_days_steady_state=n_days_steady_state,
     n_days_mpc=n_days_mpc,
@@ -133,7 +131,6 @@ test_scenario_data = Scenario(
     pygame_vis=True,
     save_results=True,
     compile_nlp=False,
-    ch4_outflow_rate=ch4_outflow_rate,
 )
 
 test_scenario = simulation.Simulation(scenario=test_scenario_data)

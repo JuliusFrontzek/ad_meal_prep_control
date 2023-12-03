@@ -447,7 +447,6 @@ def adm1_r3_frac_norm(
             "v_dot_in_total",
             y_norm[0]
             * Ty[0]
-            / 1000.0
             * p_gas_total_fermenter
             / p_gas_storage
             * T_gas_storage

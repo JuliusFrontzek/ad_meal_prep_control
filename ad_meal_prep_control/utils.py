@@ -252,7 +252,7 @@ class Scenario:
     pygame_vis: bool = False
     save_results: bool = True
     compile_nlp: bool = False
-    ch4_outflow_rate: Union[np.ndarray, None] = None
+    P_el_chp: float = None
     limited_substrates: list[LimitedSubstrate] = None
 
     _state_names = [
@@ -336,13 +336,13 @@ class ScenarioFactory:
     )
 
     u_max_default = {
-        "solid": 80_000.0 / params_R3.SCALEDOWN,
-        "liquid": 450_000.0 / params_R3.SCALEDOWN,
+        "solid": 80.0,
+        "liquid": 450.0
     }
 
     Ty_default = np.array(
         [
-            350.0,
+            450.0,
             0.574083930894918,
             0.376314347120225,
             7.0,
