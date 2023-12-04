@@ -1,6 +1,7 @@
 %% Version
-% (R2022b) Update 5
+% (R2022b) Update 6
 % Erstelldatum: 24.08.2023
+% last modified: 1.12.2023
 % Autor: Simon Hellmann
 
 function [xIn,TS] = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich)
@@ -21,7 +22,7 @@ TS = labData(1)/100;        % unit change [%] -> [-]
 % assume no gas release in substrate:
 S_ch4_gas = 0; 
 S_co2_gas = 0; 
-% assume that no gasses dissolve in liquid phase: 
+% assume that no gasses dissolved in liquid phase: 
 S_ch4 = 0; 
 S_IC = 0; 
 S_hco3 = 0;             % since S_IC is also zero
@@ -48,17 +49,16 @@ FQ_ch = XC^(-1)*(FQ_ges*(1000 - XA) - XP - XL);
 X_ch_fast = FQ_ch*XC*TS*rhoFM; 
 
 % compute bacteria (estimated acc. to Félix)
-X_biomass = 0.001*(XC + XP + XL);   % total biomass is fraction of macro nutrients
+X_biomass = 0.001*(XC + XP + XL);   % total biomass is 0,1% fraction of macro nutrients
 X_bac = 0.95*X_biomass*TS*rhoFM;    % assign 95% of biomass to X_bac...
-X_ac = 0.05*X_biomass*TS*rhoFM;% ... and 5% to X_ac
+X_ac = 0.05*X_biomass*TS*rhoFM;     % ...and 5% to X_ac
 
 % acetic acid:
-Ac = labData(8); 
-S_ac = Ac/1000;         % unit change [mg/l] -> [g/l]
+Ac = labData(10);   % Achtung: beachte die Verdünnung des Eluats! [mg/L]
 
 % compute inlet concentrations of ions from pre-defined pH:
 pH = 7.5;   % regular operation condition
-[S_ac_minus, S_nh3, S_ion] = computeInletConcentrationsIons(pH,Ac,NH4N); 
+[S_ac,S_ac_minus,S_nh3,S_ion] = computeInletConcentrationsIons(pH,Ac,S_IN); 
 
 % summarize all in one vector of inlet concentrations: 
 xIn = [S_ac, S_ch4, S_IC, S_IN, S_h2o, X_ch_fast, X_ch_slow, X_pr, X_li,...
