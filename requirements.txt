@@ -1,5 +1,0 @@
-numpy
-matplotlib
-do-mpc
-scipy
-uncertainties

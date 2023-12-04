@@ -10,6 +10,8 @@ from copy import deepcopy
 class Substrate:
     """
     Attributes:
+        name:
+                                Name of the substrate.
         nominal_values:
                                 Case 1:
                                     Nominal BMP and TS only -> nominal values for XP, XL, XA will be
@@ -28,14 +30,24 @@ class Substrate:
         state:
                                 The physical state of the substrate.
                                 Must be either solid or liquid.
+        cost:
+                                Cost of the substrate measured as €/t fresh matter.
+        amount_remaining:
+                                The amount of the substrate remaining in kilograms.
+        days_remaining:
+                                The amount of days remaining to feed that substrate.
+        u_target:
+                                The amount of substrate that should be fed on average per time step in kilograms.
 
     Order: XP, XL, XA, BMP, TS
     """
 
+    name: str
     nominal_values: np.ndarray
     variation_coefficients: np.ndarray
     xi: list
     state: str
+    cost: float
 
     def __post_init__(self):
         assert self.state in [
@@ -43,6 +55,7 @@ class Substrate:
             "liquid",
         ], f"The physical state of an input must be either solid or liquid, not '{self.state}'."
 
+        assert self.cost >= 0.0, f"Substrate cost must be larger than or equal to 0"
         # Conversion of percentages to decimal numbers where appropriate
         if self.nominal_values.shape[0] == 5:
             self.nominal_values /= 100.0  # unit change [%] -> [-]
@@ -73,6 +86,8 @@ class Substrate:
         self.variation_coefficients /= 100.0
 
         self._set_std_devs()
+
+        self.limited = False
 
     def _set_std_devs(self) -> np.ndarray:
         self.std_devs = self.variation_coefficients * self.nominal_values
@@ -117,8 +132,26 @@ class Substrate:
 
         return sub
 
+    def set_limit(self, amount_remaining, days_remaining, t_step):
+        """
+        Limit the amount of substrate that can be fed and add a time limit to it.
+
+        Parameters:
+            amount_remaining:   The amount of the substrate remaining in kilograms.
+            days_remaining:     The amount of days remaining to feed that substrate.
+            t_step:             The time step size in days.
+        """
+        self.amount_remaining = amount_remaining
+        self.days_remaining = days_remaining
+
+        n_steps_total = self.days_remaining / t_step
+
+        self.u_target = self.amount_remaining / n_steps_total
+        self.limited = True
+
 
 STANDARD_SUBSTRATE = Substrate(
+    name="STANDARD_SUBSTRATE",
     nominal_values=np.array([7.25, 3.27, 4.4, 357.0, 3.518]),
     variation_coefficients=np.array(
         [5.22776012611444, 12.8464621768132, 17.4321599553856, 9.0, 2.14901476466728]
@@ -144,9 +177,11 @@ STANDARD_SUBSTRATE = Substrate(
         0,
     ],
     state="solid",
+    cost=10.0,
 )
 
 CORN_SILAGE = Substrate(
+    name="CORN_SILAGE",
     nominal_values=np.array([357.0, 31.6818754946664]),
     variation_coefficients=np.array(
         [5.22776012611444, 12.8464621768132, 17.4321599553856, 9, 2.14901476466728]
@@ -172,9 +207,11 @@ CORN_SILAGE = Substrate(
         0,
     ],
     state="solid",
+    cost=40.0,
 )
 
 GRASS_SILAGE = Substrate(
+    name="GRASS_SILAGE",
     nominal_values=np.array([315.0, 39.3633764654239]),
     variation_coefficients=np.array(
         [5.22776012611444, 12.8464621768132, 17.4321599553856, 6, 2.14901476466728]
@@ -200,10 +237,12 @@ GRASS_SILAGE = Substrate(
         0,
     ],
     state="solid",
+    cost=40.0,
 )
 
 
 CATTLE_MANURE = Substrate(
+    name="CATTLE_MANURE",
     nominal_values=np.array([230.0, 8.44120640954394]),
     variation_coefficients=np.array(
         [5.22776012611444, 12.8464621768132, 17.4321599553856, 7, 2.14901476466728]
@@ -229,4 +268,5 @@ CATTLE_MANURE = Substrate(
         0,
     ],
     state="liquid",
+    cost=1.0,
 )

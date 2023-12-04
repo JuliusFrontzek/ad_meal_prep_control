@@ -24,7 +24,7 @@ import time
 
 """ User settings: """
 show_animation = True
-store_results = True
+save_results = True
 
 p0 = 1.0133  # [bar]
 p_gas_storage = p0 * 1.001  # slightly larger than atmospheric pressure [bar]

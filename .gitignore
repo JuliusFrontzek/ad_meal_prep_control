@@ -3,7 +3,8 @@
 
 # Directories
 __pycache__
-coinhsl
+coinhsl*
+*.egg-info/
 
 # File types
 *.pdf
@@ -12,3 +13,5 @@ coinhsl
 *.png
 *.DS_Store
 *.so
+*.pkl
+*.csv

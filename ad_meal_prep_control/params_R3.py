@@ -8,8 +8,8 @@ fracChFast = (
     0.5  # fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
 )
 mu_m_ac = 0.4  # 1/d
-K_S_ac = 0.14  # g/l
-K_I_nh3 = 0.0306  # g/l
+K_S_ac = 0.14  # kg/m^3
+K_I_nh3 = 0.0306  # kg/m^3
 
 # Henry coefficients: [mol/l/bar] (Tab. B.7 in Sörens Diss)
 Kch4 = 0.0011
@@ -22,10 +22,9 @@ p0 = 1.0133  # atmospheric pressure [bar]
 kla = 200  # mass transfer coefficient [1/d]
 kp = 5e4  # friction parameter [l/bar/d]
 T = 311  # operating temperature [K]
-SCALEDOWN = 1630.0
-Vl = 163000.0 / SCALEDOWN  # liquid volume, aus Sörens GitHub [l]
-Vg = Vl / 10.0  # 26000.0  # gas volume, aus Sörens GitHub [l]
-rho = 1000.0  # mass density of digestate [g/l]
+Vl = 163.0  # liquid volume, aus Sörens GitHub [m^3]
+Vg = Vl / 10.0  # 26000.0  # gas volume, aus Sörens GitHub [m^3]
+rho = 1000.0  # mass density of digestate [kg/m^3]
 Mch4 = 16  # molar mass CH4 [kg/kmol]
 Mco2 = 44  # molar mass CO2 [kg/kmol]
 
@@ -33,7 +32,7 @@ pHULac = 7.0
 pHLLac = 6.0
 nac = 3.0 / (pHULac - pHLLac)
 KW = 2.078771055954360 * 10 ** (-14.0)  # mol/l
-KS_IN = 0.0017  # g/l
+KS_IN = 0.0017  # kg/m^3
 k_AB_ac = 1.0 * 10**10  # l/mol/d
 k_AB_co2 = 1.0 * 10**10  # l/mol/d
 k_AB_IN = 1.0 * 10**10  # l/mol/d
@@ -50,4 +49,5 @@ p_gas_storage = p0 * 1.001  # slightly larger than atmospheric pressure [bar]
 p_norm = p0  # [bar]
 T_norm = 273.15  # [K]
 T_gas_storage = 323.15  # [K]
-V_GAS_STORAGE_MAX = 150 / SCALEDOWN  # m^3
+V_GAS_STORAGE_MAX = 500 # m^3
+P_el_chp = 124.0 # kW

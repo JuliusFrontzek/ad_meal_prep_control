@@ -4,7 +4,13 @@ from casadi.tools import *
 import sys
 import os
 from params_R3 import *
-from ad_meal_prep_control.utils import CostFunction, Bound, NlConstraint
+from ad_meal_prep_control.utils import (
+    CostFunction,
+    Bound,
+    NlConstraint,
+    LimitedSubstrate,
+)
+from pathlib import Path
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -17,15 +23,20 @@ def mpc_setup(
     n_horizon: int,
     n_robust: int,
     t_step: float,
-    x_ch_in: np.ndarray,
-    x_pr_in: np.ndarray,
-    x_li_in: np.ndarray,
+    xi_ch_norm: np.ndarray,
+    xi_pr_norm: np.ndarray,
+    xi_li_norm: np.ndarray,
     compile_nlp: bool,
-    vol_flow_rate: np.ndarray,
+    ch4_outflow_rate: np.ndarray,
     cost_func: CostFunction,
+    substrate_costs: list[float],
+    consider_substrate_costs: bool,
+    store_full_solution: bool,
     bounds: list[Bound] = None,
     nl_cons: list[NlConstraint] = None,
     rterm: str = None,
+    hsllib: Path = None,
+    limited_substrates: list[LimitedSubstrate] = None,
 ) -> do_mpc.controller.MPC:
     num_states = model._x.size
 
@@ -34,22 +45,23 @@ def mpc_setup(
     setup_mpc = {
         "n_horizon": n_horizon,
         "n_robust": n_robust,
-        "open_loop": 0,
+        "open_loop": False,
         "t_step": t_step,
         "state_discretization": "collocation",
         "collocation_type": "radau",
         "collocation_deg": 2,
         "collocation_ni": 1,
-        # Use MA27 linear solver in ipopt for faster calculations:
-        "nlpsol_opts": {
-            "ipopt.linear_solver": "MA27",
-            "ipopt.hsllib": "/home/julius/Documents/coinhsl-2023.05.26/builddir/libcoinhsl.so",
-        },
+        "store_full_solution": store_full_solution,
     }
 
-    mpc.set_param(**setup_mpc)
+    if hsllib is not None:
+        # Use MA27 linear solver in ipopt for faster calculations:
+        setup_mpc["nlpsol_opts"] = {
+            "ipopt.linear_solver": "MA27",
+            "ipopt.hsllib": str(hsllib),  # "./coinhsl*/builddir/libcoinhsl.so",
+        }
 
-    mpc.set_param(store_full_solution=True)
+    mpc.set_param(**setup_mpc)
 
     if num_states == 20:  # i.e. if we consider the gas storage
         tvp_template = mpc.get_tvp_template()
@@ -57,7 +69,9 @@ def mpc_setup(
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
             for k in range(n_horizon + 1):
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[t_now_idx + k]
+                tvp_template["_tvp", k, "v_ch4_dot_out"] = ch4_outflow_rate[
+                    t_now_idx + k
+                ]
 
             return tvp_template
 
@@ -75,7 +89,21 @@ def mpc_setup(
 
     mpc.set_objective(lterm=eval(cost_func.lterm), mterm=eval(cost_func.mterm))
 
-    # mpc.set_rterm(u_norm=0.1)
+    if consider_substrate_costs:
+        substrate_costs = np.array(substrate_costs)
+        substrate_costs /= np.min(substrate_costs[substrate_costs > 0])
+
+        sub_cost_rterms = []
+        for idx, cost in enumerate(substrate_costs):
+            sub_cost_rterms.append(f"{cost} * model.u['u_norm'][{idx}]**2")
+
+        sub_cost_rterm = " + ".join(sub_cost_rterms)
+
+        if rterm is None:
+            rterm = sub_cost_rterm
+        else:
+            rterm += sub_cost_rterm
+
     if rterm is not None:
         mpc.set_rterm(rterm=eval(rterm))
 
@@ -101,7 +129,9 @@ def mpc_setup(
                 maximum_violation=nl_con.maximum_violation,
             )
 
-    mpc.set_uncertainty_values(x_ch_in=x_ch_in, x_pr_in=x_pr_in, x_li_in=x_li_in)
+    mpc.set_uncertainty_values(
+        xi_ch_norm=xi_ch_norm, xi_pr_norm=xi_pr_norm, xi_li_norm=xi_li_norm
+    )
 
     mpc.setup()
     if compile_nlp:

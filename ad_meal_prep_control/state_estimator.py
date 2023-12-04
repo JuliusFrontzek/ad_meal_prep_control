@@ -1,5 +1,6 @@
 import do_mpc
 import numpy as np
+from pathlib import Path
 
 
 class StateFeedback(do_mpc.estimator.Estimator):
@@ -12,21 +13,23 @@ class StateFeedback(do_mpc.estimator.Estimator):
         super().__init__(model)
         self._simulator = simulator
 
-    def make_step(self, y):
-        """Return the measurement ``y`` because this is a state estimator."""
-        return self._simulator.x0.master
+    def make_step(self, y) -> np.ndarray:
+        """Return the actual state of the system. The parameter y is passed as a dummy but not actually used to match the signature of the MHE 'make_step' method."""
+        return np.array(self._simulator.x0.master)
 
 
 def mhe_setup(
     model: do_mpc.model.Model,
     t_step: float,
     n_horizon: int,
-    x_ch_in: np.ndarray,
-    x_pr_in: np.ndarray,
-    x_li_in: np.ndarray,
+    xi_ch_norm: np.ndarray,
+    xi_pr_norm: np.ndarray,
+    xi_li_norm: np.ndarray,
     P_x: np.ndarray,
     P_v: np.ndarray,
-    vol_flow_rate: np.ndarray,
+    ch4_outflow_rate: np.ndarray,
+    store_full_solution: bool,
+    hsllib: Path = None,
 ) -> do_mpc.estimator.MHE:
     """
     MHE setup
@@ -38,9 +41,16 @@ def mhe_setup(
     setup_mhe = {
         "t_step": t_step,
         "n_horizon": n_horizon,
-        "store_full_solution": True,
+        "store_full_solution": store_full_solution,
         "meas_from_data": True,
     }
+
+    if hsllib is not None:
+        setup_mhe["nlpsol_opts"] = {
+            "ipopt.linear_solver": "MA27",
+            "ipopt.hsllib": str(hsllib),
+        }
+
     mhe.set_param(**setup_mhe)
 
     mhe.set_default_objective(P_x=P_x, P_v=P_v)
@@ -53,7 +63,9 @@ def mhe_setup(
             n_steps = min(t_now_idx, n_horizon)
 
             for k in range(n_steps):
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = vol_flow_rate[t_now_idx + k]
+                tvp_template["_tvp", k, "v_ch4_dot_out"] = ch4_outflow_rate[
+                    t_now_idx + k
+                ]
 
             return tvp_template
 
@@ -61,13 +73,13 @@ def mhe_setup(
 
     p_num = mhe.get_p_template()
     p_num["x_ch_in"] = np.array(
-        [np.mean(x_ch_in[:, i]) for i in range(x_ch_in.shape[1])]
+        [np.mean(xi_ch_norm[:, i]) for i in range(xi_ch_norm.shape[1])]
     )
     p_num["x_pr_in"] = np.array(
-        [np.mean(x_pr_in[:, i]) for i in range(x_pr_in.shape[1])]
+        [np.mean(xi_pr_norm[:, i]) for i in range(xi_pr_norm.shape[1])]
     )
     p_num["x_li_in"] = np.array(
-        [np.mean(x_li_in[:, i]) for i in range(x_li_in.shape[1])]
+        [np.mean(xi_li_norm[:, i]) for i in range(xi_li_norm.shape[1])]
     )
 
     def p_fun(t_now):
@@ -75,21 +87,11 @@ def mhe_setup(
 
     mhe.set_p_fun(p_fun)
 
-    mhe.prepare_nlp()
+    # Every state but the 13th state must not be negative
+    for i in range(1, num_states + 1):
+        if i != 13:
+            mhe.bounds["lower", "_x", f"x_{i}"] = 0.0
 
-    # mhe.bounds["lower", "_x", "m_x"] = 0.0
-    # mhe.bounds["lower", "_x", "m_s"] = 0.0
-    # mhe.bounds["lower", "_x", "v"] = 0.0
-
-    mhe_options = {
-        "nlpsol_opts": {
-            "ipopt.linear_solver": "MA27",
-            "ipopt.hsllib": "/home/julius/Documents/coinhsl-2023.05.26/builddir/libcoinhsl.so",
-            "ipopt.hessian_approximation": "limited-memory",
-        },
-    }
-
-    mhe.set_param(**mhe_options)
-    mhe.create_nlp()
+    mhe.setup()
 
     return mhe
