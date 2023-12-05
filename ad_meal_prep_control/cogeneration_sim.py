@@ -2,8 +2,7 @@ import simulation
 from utils import ScenarioFactory, CostFunction, ControllerParams
 from params_R3 import P_el_chp
 
-lterm = "100*(model.aux['y_1_norm'] - 1.)**2"
-mterm = "1000*(model.aux['y_1_norm'] - 1.)**2"
+lterm = mterm = "model.tvp['dummy_tvp']"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 

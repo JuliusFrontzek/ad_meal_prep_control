@@ -8,7 +8,7 @@ from ad_meal_prep_control.utils import (
     CostFunction,
     Bound,
     NlConstraint,
-    LimitedSubstrate,
+    LimitedSubstrate, SetpointFunction
 )
 from pathlib import Path
 
@@ -36,6 +36,7 @@ def mpc_setup(
     nl_cons: list[NlConstraint] = None,
     rterm: str = None,
     hsllib: Path = None,
+    ch4_set_point_function: SetpointFunction = None,
     limited_substrates: list[LimitedSubstrate] = None,
 ) -> do_mpc.controller.MPC:
     num_states = model._x.size
@@ -63,18 +64,9 @@ def mpc_setup(
 
     mpc.set_param(**setup_mpc)
 
+    tvp_template = mpc.get_tvp_template()
+
     if num_states == 20:  # i.e. if we consider the gas storage
-        tvp_template = mpc.get_tvp_template()
-
-        def tvp_fun(t_now):
-            t_now_idx = int(np.round(t_now / t_step))
-            for k in range(n_horizon + 1):
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = ch4_outflow_rate[
-                    t_now_idx + k
-                ]
-
-            return tvp_template
-
         mpc.set_nl_cons(
             "max_vol_gas_storage",
             model._aux_expression["v_gas_storage"],
@@ -85,7 +77,26 @@ def mpc_setup(
         mpc.bounds["lower", "_x", "x_19"] = 0.0
         mpc.bounds["lower", "_x", "x_20"] = 0.0
 
-        mpc.set_tvp_fun(tvp_fun)
+        def tvp_fun(t_now):
+            t_now_idx = int(np.round(t_now / t_step))
+            for k in range(n_horizon + 1):
+                tvp_template["_tvp", k, "v_ch4_dot_out"] = ch4_outflow_rate[
+                    t_now_idx + k
+                ]
+            
+            if ch4_set_point_function is not None:
+                tvp_template["_tvp", :, "v_ch4_dot_out_setpoint"] = ch4_set_point_function.get_current_setpoint(t_now)
+
+            return tvp_template
+    else:
+        def tvp_fun(t_now):
+            if ch4_set_point_function is not None:
+                tvp_template["_tvp", :, "v_ch4_dot_out_setpoint"] = ch4_set_point_function.get_current_setpoint(t_now)
+
+            return tvp_template
+
+
+    mpc.set_tvp_fun(tvp_fun)
 
     mpc.set_objective(lterm=eval(cost_func.lterm), mterm=eval(cost_func.mterm))
 

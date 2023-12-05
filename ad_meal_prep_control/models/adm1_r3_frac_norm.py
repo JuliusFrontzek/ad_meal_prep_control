@@ -413,6 +413,9 @@ def adm1_r3_frac_norm(
     y = []
     for i in range(8):
         y.append(model.set_expression(f"y_{i+1}", Ty[i] * y_norm[i]))
+    
+    model.set_variable(var_type="_tvp", var_name="v_ch4_dot_out_setpoint")
+    model.set_variable(var_type="_tvp", var_name="dummy_tvp")
 
     if external_gas_storage_model:
         p_h2o = vapour_pressure_h2o(T)

@@ -154,6 +154,7 @@ class Simulation:
                 bounds=self.scenario.controller_params.bounds,
                 nl_cons=self.scenario.controller_params.nl_cons,
                 rterm=self.scenario.controller_params.rterm,
+                ch4_set_point_function=self.scenario.controller_params.ch4_set_point_function,
                 hsllib=self._hsllib,
             )
 

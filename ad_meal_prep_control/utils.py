@@ -216,6 +216,30 @@ class LimitedSubstrate:
     days_remaining: float
 
 
+@dataclass
+class SetpointFunction:
+    """
+    This class holds information required to follow setpoints.
+
+    Attributes:
+        setpoints:
+                        Setpoint values. 1D-Numpy array with one more element than time_points.
+        time_points:
+                        Time points [d] at which the setpoints change.
+                        First time point specifies when the change happens from the 0th setpoint to the 1st.
+    """
+    setpoints: np.ndarray
+    time_points: np.ndarray
+
+    def __post_init__(self):
+        assert np.all(np.diff(self.time_points) > 0), f"Supplied time points {self.time_points} are not in strictly increasing order"
+        assert len(self.setpoints) == len(self.time_points) + 1, "You must supply one more setpoint than the number of time points."
+
+    def get_current_setpoint(self, time: float):
+        current_time_idx = np.argmax(self.time_points > time)
+        return self.setpoints[current_time_idx]
+    
+
 @dataclass(kw_only=True)
 class ControllerParams:
     mpc_n_horizon: int
@@ -226,6 +250,7 @@ class ControllerParams:
     bounds: list[Bound] = None
     nl_cons: list[NlConstraint] = None
     rterm: str = None
+    ch4_set_point_function: SetpointFunction = None
 
 
 @dataclass(kw_only=True)
