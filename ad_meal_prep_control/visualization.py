@@ -212,13 +212,15 @@ def visualize(
     Tx: np.ndarray,
     simulator: do_mpc.simulator.Simulator,
     u_actual: np.ndarray,
+    model: do_mpc.model.Model,
 ):
     x0_norm = np.copy(x0_norm)
     x0 = x0_norm * np.array([Tx]).T
     y = np.array(
         [
-            simulator.data._aux[-1, idx + 1] * Ty
-            for idx, Ty in enumerate(scenario_data.Ty)
+            simulator.data._aux[-1, idx]
+            for idx, label in enumerate(model.aux.keys())
+            if label.startswith("y_") and not label.endswith("_norm")
         ]
     )
     if scenario_data.external_gas_storage_model:

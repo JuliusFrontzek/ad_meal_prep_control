@@ -32,16 +32,18 @@ def simulator_setup(
 
     tvp_num = simulator.get_tvp_template()
     if num_states == 20:  # i.e. if we consider the gas storage
+
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
-            tvp_num["v_ch4_dot_out", 0] = ch4_outflow_rate[t_now_idx]
+            tvp_num["v_ch4_dot_tank_out", 0] = ch4_outflow_rate[t_now_idx]
             return tvp_num
+
     else:
+
         def tvp_fun(t_ind):
             return tvp_num
 
     simulator.set_tvp_fun(tvp_fun)
-
 
     p_num = simulator.get_p_template()
     p_num["xi_ch_norm"] = xi_ch_norm

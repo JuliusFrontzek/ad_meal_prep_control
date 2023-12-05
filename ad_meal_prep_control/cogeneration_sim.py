@@ -14,9 +14,20 @@ controller_params = ControllerParams(
     consider_substrate_costs=True,
 )
 
-kwargs = { "pygame_vis": True, "mpc_live_vis": True, "plot_vars":["u_norm", "y_meas_1", "y_meas_4",],"P_el_chp": P_el_chp}
+kwargs = {
+    "pygame_vis": True,
+    "mpc_live_vis": True,
+    "plot_vars": [
+        "u_norm",
+        "y_meas_1",
+        "y_meas_4",
+    ],
+    "P_el_chp": P_el_chp,
+}
 
-scenario = ScenarioFactory().create_scenario("cogeneration", controller_params=controller_params, **kwargs)
+scenario = ScenarioFactory().create_scenario(
+    "cogeneration", controller_params=controller_params, **kwargs
+)
 
 sim = simulation.Simulation(scenario=scenario)
 sim.setup()

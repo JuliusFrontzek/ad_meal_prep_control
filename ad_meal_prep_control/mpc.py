@@ -8,7 +8,8 @@ from ad_meal_prep_control.utils import (
     CostFunction,
     Bound,
     NlConstraint,
-    LimitedSubstrate, SetpointFunction
+    LimitedSubstrate,
+    SetpointFunction,
 )
 from pathlib import Path
 
@@ -80,21 +81,26 @@ def mpc_setup(
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
             for k in range(n_horizon + 1):
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = ch4_outflow_rate[
+                tvp_template["_tvp", k, "v_ch4_dot_tank_out"] = ch4_outflow_rate[
                     t_now_idx + k
                 ]
-            
+
             if ch4_set_point_function is not None:
-                tvp_template["_tvp", :, "v_ch4_dot_out_setpoint"] = ch4_set_point_function.get_current_setpoint(t_now)
+                tvp_template[
+                    "_tvp", :, "v_ch4_dot_tank_in_setpoint"
+                ] = ch4_set_point_function.get_current_setpoint(t_now)
 
             return tvp_template
+
     else:
+
         def tvp_fun(t_now):
             if ch4_set_point_function is not None:
-                tvp_template["_tvp", :, "v_ch4_dot_out_setpoint"] = ch4_set_point_function.get_current_setpoint(t_now)
+                tvp_template[
+                    "_tvp", :, "v_ch4_dot_tank_in_setpoint"
+                ] = ch4_set_point_function.get_current_setpoint(t_now)
 
             return tvp_template
-
 
     mpc.set_tvp_fun(tvp_fun)
 

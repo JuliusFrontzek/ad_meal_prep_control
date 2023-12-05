@@ -413,13 +413,27 @@ def adm1_r3_frac_norm(
     y = []
     for i in range(8):
         y.append(model.set_expression(f"y_{i+1}", Ty[i] * y_norm[i]))
-    
-    model.set_variable(var_type="_tvp", var_name="v_ch4_dot_out_setpoint")
+
+    model.set_variable(var_type="_tvp", var_name="v_ch4_dot_tank_in_setpoint")
     model.set_variable(var_type="_tvp", var_name="dummy_tvp")
 
+    p_h2o = vapour_pressure_h2o(T)
+    p_gas_total_fermenter = model.set_expression(
+        "p_gas_total_fermenter", y_norm[1] * Ty[1] + y_norm[2] * Ty[2] + p_h2o
+    )
+    v_total_dot_tank_in = model.set_expression(
+        "v_total_dot_tank_in",
+        y_norm[0] * Ty[0] * p_gas_total_fermenter / p_gas_storage * T_gas_storage / T,
+    )
+    v_ch4_dot_tank_in = model.set_expression(
+        f"v_ch4_dot_tank_in",
+        v_total_dot_tank_in * y_norm[1] * Ty[1] / p_gas_total_fermenter,
+    )
+
     if external_gas_storage_model:
-        p_h2o = vapour_pressure_h2o(T)
-        v_ch4_dot_out = model.set_variable(var_type="_tvp", var_name="v_ch4_dot_out")
+        v_ch4_dot_tank_out = model.set_variable(
+            var_type="_tvp", var_name="v_ch4_dot_tank_out"
+        )
         v_h2o = model.set_expression(
             "V_H2O",
             1.0
@@ -440,20 +454,6 @@ def adm1_r3_frac_norm(
         y_co2 = model.set_expression(
             "y_co2",
             Tx[19] * x_norm[19] / (v_gas_storage),
-        )
-
-        p_gas_total_fermenter = model.set_expression(
-            "p_gas_total_fermenter", y_norm[1] * Ty[1] + y_norm[2] * Ty[2] + p_h2o
-        )
-
-        v_dot_in_total = model.set_expression(
-            "v_dot_in_total",
-            y_norm[0]
-            * Ty[0]
-            * p_gas_total_fermenter
-            / p_gas_storage
-            * T_gas_storage
-            / T,
         )
 
     if num_inputs > 1:
@@ -655,17 +655,16 @@ def adm1_r3_frac_norm(
     if external_gas_storage_model:
         model.set_rhs(
             "x_19",
-            (v_dot_in_total * y_norm[1] * Ty[1] / p_gas_total_fermenter - v_ch4_dot_out)
-            / Tx[18],
+            (v_ch4_dot_tank_in - v_ch4_dot_tank_out) / Tx[18],
         )  # V_CH4
         model.set_rhs(
             "x_20",
             (
-                v_dot_in_total * y_norm[2] * Ty[2] / p_gas_total_fermenter
+                v_total_dot_tank_in * y_norm[2] * Ty[2] / p_gas_total_fermenter
                 - y_co2
                 / (1.0 - y_co2)
                 / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
-                * (v_ch4_dot_out * (1.0 + y_h2o / (1.0 - y_h2o)))
+                * (v_ch4_dot_tank_out * (1.0 + y_h2o / (1.0 - y_h2o)))
             )
             / Tx[18],
         )  # V_CO2

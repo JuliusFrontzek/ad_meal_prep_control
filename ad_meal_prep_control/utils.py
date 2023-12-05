@@ -5,6 +5,7 @@ from enum import Enum, auto
 import params_R3
 from copy import deepcopy
 
+
 @dataclass
 class CHP:
     """
@@ -56,6 +57,7 @@ class CHP:
 
         return ch4_outflow_rate * 60 * 60 * 24
 
+
 def typical_ch4_vol_flow_rate(max_power: float, n_steps: int):
     # Set up CHP
     chp = CHP(max_power=max_power)
@@ -67,6 +69,7 @@ def typical_ch4_vol_flow_rate(max_power: float, n_steps: int):
     return chp.ch4_vol_flow_rate(
         load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
     )
+
 
 @dataclass
 class Disturbances:
@@ -228,17 +231,22 @@ class SetpointFunction:
                         Time points [d] at which the setpoints change.
                         First time point specifies when the change happens from the 0th setpoint to the 1st.
     """
+
     setpoints: np.ndarray
     time_points: np.ndarray
 
     def __post_init__(self):
-        assert np.all(np.diff(self.time_points) > 0), f"Supplied time points {self.time_points} are not in strictly increasing order"
-        assert len(self.setpoints) == len(self.time_points) + 1, "You must supply one more setpoint than the number of time points."
+        assert np.all(
+            np.diff(self.time_points) > 0
+        ), f"Supplied time points {self.time_points} are not in strictly increasing order"
+        assert (
+            len(self.setpoints) == len(self.time_points) + 1
+        ), "You must supply one more setpoint than the number of time points."
 
     def get_current_setpoint(self, time: float):
         current_time_idx = np.argmax(self.time_points > time)
         return self.setpoints[current_time_idx]
-    
+
 
 @dataclass(kw_only=True)
 class ControllerParams:
@@ -309,7 +317,7 @@ class Scenario:
 class ScenarioFactory:
     n_days_steady_state_default = 30
     n_days_mpc_default = 30
-    t_step_default = 0.5/24
+    t_step_default = 0.5 / 24
     x0_true_default = np.array(
         [
             0.0494667574155131,
@@ -360,10 +368,7 @@ class ScenarioFactory:
         ]
     )
 
-    u_max_default = {
-        "solid": 80.0,
-        "liquid": 450.0
-    }
+    u_max_default = {"solid": 80.0, "liquid": 450.0}
 
     Ty_default = np.array(
         [
@@ -378,45 +383,52 @@ class ScenarioFactory:
         ]
     )
 
-    methanation_dict = {"name":"methanation",
-                        "external_gas_storage_model":False,
-                        "t_step":t_step_default, 
-    "n_days_steady_state": n_days_steady_state_default,
-    "n_days_mpc": n_days_mpc_default,
-    "sub_names":["CORN_SILAGE",
+    sub_names_default = [
+        "CORN_SILAGE",
         "GRASS_SILAGE",
-        "CATTLE_MANURE",],
-    "disturbances": Disturbances(),
-    "x0_true": x0_true_default,
-    "Tx": Tx_default,
-    "Ty": Ty_default,
-    "u_max": u_max_default,
-    "plot_vars": [],
-    "state_observer": StateObserver.STATEFEEDBACK,
-    "mhe_n_horizon": 5,
-    "num_std_devs_sim": 1.0}
+        "CATTLE_MANURE",
+        # "SUGAR_BEET_SILAGE",
+    ]
 
-    cogeneration_dict = {"name":"cogeneration",
-                        "external_gas_storage_model":True,
-                        "t_step":t_step_default, 
-    "n_days_steady_state": n_days_steady_state_default,
-    "n_days_mpc": n_days_mpc_default,
-    "sub_names":["CORN_SILAGE",
-        "GRASS_SILAGE",
-        "CATTLE_MANURE",],
-    "disturbances": Disturbances(),
-    "x0_true": x0_true_default,
-    "Tx": Tx_default,
-    "Ty": Ty_default,
-    "u_max": u_max_default,
-    "plot_vars": [],
-    "state_observer": StateObserver.STATEFEEDBACK,
-    "mhe_n_horizon": 5,
-    "num_std_devs_sim": 1.0}
+    methanation_dict = {
+        "name": "methanation",
+        "external_gas_storage_model": False,
+        "t_step": t_step_default,
+        "n_days_steady_state": n_days_steady_state_default,
+        "n_days_mpc": n_days_mpc_default,
+        "sub_names": sub_names_default,
+        "disturbances": Disturbances(),
+        "x0_true": x0_true_default,
+        "Tx": Tx_default,
+        "Ty": Ty_default,
+        "u_max": u_max_default,
+        "plot_vars": [],
+        "state_observer": StateObserver.STATEFEEDBACK,
+        "mhe_n_horizon": 5,
+        "num_std_devs_sim": 1.0,
+    }
 
+    cogeneration_dict = {
+        "name": "cogeneration",
+        "external_gas_storage_model": True,
+        "t_step": t_step_default,
+        "n_days_steady_state": n_days_steady_state_default,
+        "n_days_mpc": n_days_mpc_default,
+        "sub_names": sub_names_default,
+        "disturbances": Disturbances(),
+        "x0_true": x0_true_default,
+        "Tx": Tx_default,
+        "Ty": Ty_default,
+        "u_max": u_max_default,
+        "plot_vars": [],
+        "state_observer": StateObserver.STATEFEEDBACK,
+        "mhe_n_horizon": 5,
+        "num_std_devs_sim": 1.0,
+    }
 
-
-    def create_scenario(self, scenario_type: str, controller_params: ControllerParams, **kwargs) -> Scenario:
+    def create_scenario(
+        self, scenario_type: str, controller_params: ControllerParams, **kwargs
+    ) -> Scenario:
         # Create default dict based on scenario_type
         if scenario_type == "methanation":
             scenario_dict = self.methanation_dict
@@ -424,7 +436,7 @@ class ScenarioFactory:
             scenario_dict = self.cogeneration_dict
         else:
             raise NotImplementedError(f"Invalid scenario type {scenario_type}")
-        
+
         # Edit kwargs with more specific options
         scenario_dict["controller_params"] = controller_params
         for key, value in kwargs.items():

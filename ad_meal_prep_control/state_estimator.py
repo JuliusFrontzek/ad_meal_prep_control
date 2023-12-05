@@ -63,7 +63,7 @@ def mhe_setup(
             n_steps = min(t_now_idx, n_horizon)
 
             for k in range(n_steps):
-                tvp_template["_tvp", k, "v_ch4_dot_out"] = ch4_outflow_rate[
+                tvp_template["_tvp", k, "v_ch4_dot_tank_out"] = ch4_outflow_rate[
                     t_now_idx + k
                 ]
 

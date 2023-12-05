@@ -5,7 +5,6 @@ from mpc import mpc_setup
 import numpy as np
 import do_mpc
 import substrates
-from uncertainties import ufloat
 from models import adm1_r3_frac_norm
 from state_estimator import StateFeedback, mhe_setup
 from simulator import simulator_setup
@@ -27,9 +26,7 @@ class Simulation:
         self._n_steps_steady_state = round(
             self.scenario.n_days_steady_state / self.scenario.t_step
         )
-        self._n_steps_mpc = round(
-            self.scenario.n_days_mpc / self.scenario.t_step
-        )
+        self._n_steps_mpc = round(self.scenario.n_days_mpc / self.scenario.t_step)
 
         self._t_mpc = np.linspace(
             0,
@@ -62,15 +59,19 @@ class Simulation:
                 if path_to_check.exists():
                     self._hsllib = path_to_check
                     break
-        
+
         if len(self.scenario.plot_vars) == 0 and self.scenario.mpc_live_vis:
             raise ValueError("No variables provided for plotting!")
-        
+
         # Set up ch4 outflow
         if self.scenario.P_el_chp is None:
             self._ch4_outflow_rate = None
-        else:    
-            self._ch4_outflow_rate = typical_ch4_vol_flow_rate(max_power=self.scenario.P_el_chp, n_steps=self._n_steps_mpc + self.scenario.controller_params.mpc_n_horizon)
+        else:
+            self._ch4_outflow_rate = typical_ch4_vol_flow_rate(
+                max_power=self.scenario.P_el_chp,
+                n_steps=self._n_steps_mpc
+                + self.scenario.controller_params.mpc_n_horizon,
+            )
 
     @property
     def x0_norm_true(self) -> np.ndarray:
@@ -280,12 +281,24 @@ class Simulation:
         self._xi_pr_sim_norm = self._xi_pr_sim / self.Tx[7]
         self._xi_li_sim_norm = self._xi_li_sim / self.Tx[8]
 
-        assert np.all(self._xi_ch_mpc_mhe_norm > 0.), f"Negative xi values for carbohydrates in MPC/MHE encountered."
-        assert np.all(self._xi_pr_mpc_mhe_norm > 0.), f"Negative xi values for proteins in MPC/MHE encountered."
-        assert np.all(self._xi_li_mpc_mhe_norm > 0.), f"Negative xi values for lipids in MPC/MHE encountered."
-        assert np.all(self._xi_ch_sim_norm > 0.), f"Negative xi values for carbohydrates in simulation encountered."
-        assert np.all(self._xi_pr_sim_norm > 0.), f"Negative xi values for proteins in simulation encountered."
-        assert np.all(self._xi_li_sim_norm > 0.), f"Negative xi values for lipids in simulation encountered."
+        assert np.all(
+            self._xi_ch_mpc_mhe_norm > 0.0
+        ), f"Negative xi values for carbohydrates in MPC/MHE encountered."
+        assert np.all(
+            self._xi_pr_mpc_mhe_norm > 0.0
+        ), f"Negative xi values for proteins in MPC/MHE encountered."
+        assert np.all(
+            self._xi_li_mpc_mhe_norm > 0.0
+        ), f"Negative xi values for lipids in MPC/MHE encountered."
+        assert np.all(
+            self._xi_ch_sim_norm > 0.0
+        ), f"Negative xi values for carbohydrates in simulation encountered."
+        assert np.all(
+            self._xi_pr_sim_norm > 0.0
+        ), f"Negative xi values for proteins in simulation encountered."
+        assert np.all(
+            self._xi_li_sim_norm > 0.0
+        ), f"Negative xi values for lipids in simulation encountered."
 
     def _estimator_setup(self):
         if self.scenario.state_observer == StateObserver.MHE:
@@ -373,8 +386,7 @@ class Simulation:
                 )
                 self._ax[idx].legend(
                     labels=[
-                        sub.lower().replace("_", " ")
-                        for sub in self.scenario.sub_names
+                        sub.lower().replace("_", " ") for sub in self.scenario.sub_names
                     ],
                     title="Substrates",
                     loc="center right",
@@ -441,7 +453,9 @@ class Simulation:
             if self.scenario.pygame_vis:
                 self._screen.fill("white")
 
-            u_norm_steady_state = np.array([[0.01 if sub.state == "solid" else 0.02 for sub in self._subs]]).T
+            u_norm_steady_state = np.array(
+                [[0.01 if sub.state == "solid" else 0.02 for sub in self._subs]]
+            ).T
 
             y_next = self._simulator.make_step(u_norm_steady_state)
             self.x0_norm_true = np.array(self._simulator.x0.master)
@@ -476,9 +490,7 @@ class Simulation:
             # Manipulate the actual feed to the biogas plant 'u_norm_actual'
             # based on the set disturbances
             if not self.scenario.disturbances.feed_computation_stuck is None:
-                stuck_start_idx = (
-                    self.scenario.disturbances.feed_computation_stuck[0]
-                )
+                stuck_start_idx = self.scenario.disturbances.feed_computation_stuck[0]
                 stuck_end_idx = (
                     stuck_start_idx
                     + self.scenario.disturbances.feed_computation_stuck[1]
@@ -535,6 +547,21 @@ class Simulation:
                         self._ax[idx].set_ylabel(
                             self.scenario._meas_names[int(var.split("_")[-1]) - 1]
                         )
+                    elif var[0] != "u" and var[0] != "x":
+                        try:
+                            aux_expression_idx = np.where(
+                                np.array(self.model.aux.keys()) == var
+                            )[0][0]
+                            self._ax[idx].scatter(
+                                self._t_mpc[: k + 1],
+                                self._simulator.data._aux[:, aux_expression_idx],
+                                color="red",
+                            )
+                            self._ax[idx].set_ylabel(var)
+                        except IndexError:
+                            raise ValueError(
+                                f"'{var}' was detected as an aux expression. However, it was either wrongly identified or is not defined as an aux expression in the do-mpc model."
+                            )
 
                 if self.scenario.external_gas_storage_model:
                     self._ax[-1].scatter(
@@ -556,6 +583,7 @@ class Simulation:
                     self.Tx,
                     self._simulator,
                     u_norm_actual,
+                    model=self.model,
                 )
 
         if self.scenario.save_results:
@@ -571,7 +599,8 @@ class Simulation:
 
     def _set_new_Tx_x0(self):
         """
-        Sets the new Tx normalization vector based on the simulation results from the initial steady state simulation as well as the new x0 value.
+        Sets the new Tx normalization vector based on the simulation results from the initial
+        steady state simulation as well as the new x0 value.
         """
         # Get denormalized steady state state-vector
         x_steady_state_true = np.copy(self._simulator.x0.master * self.Tx)
