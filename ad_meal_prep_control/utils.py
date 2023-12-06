@@ -249,6 +249,8 @@ class SetpointFunction:
 
     def get_current_setpoint(self, time: float):
         current_time_idx = np.argmax(self.time_points > time)
+        if np.all(self.time_points < time):
+            current_time_idx = -1
         return self.setpoints[current_time_idx]
 
 
