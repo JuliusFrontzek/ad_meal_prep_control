@@ -3,7 +3,7 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
-import random
+from utils import Disturbances
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)
@@ -17,6 +17,7 @@ def simulator_setup(
     xi_pr_norm: np.ndarray,
     xi_li_norm: np.ndarray,
     ch4_outflow_rate: np.ndarray,
+    disturbances: Disturbances,
 ):
     num_states = model._x.size
     simulator = do_mpc.simulator.Simulator(model)
@@ -30,18 +31,31 @@ def simulator_setup(
 
     simulator.set_param(**params_simulator)
 
-    tvp_num = simulator.get_tvp_template()
+    tvp_template = simulator.get_tvp_template()
+
+    def dictated_sub_tvp_setup(t_now: float):
+        if disturbances.dictated_feeding is not None:
+            for feed_idx, dictated_sub in enumerate(
+                disturbances.dictated_feeding.values()
+            ):
+                if t_now >= dictated_sub[0] and t_now < dictated_sub[1]:
+                    tvp_template["dictated_sub_feed", feed_idx] = dictated_sub[2]
+                else:
+                    tvp_template["dictated_sub_feed", feed_idx] = 0.0
+
     if num_states == 20:  # i.e. if we consider the gas storage
 
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
-            tvp_num["v_ch4_dot_tank_out", 0] = ch4_outflow_rate[t_now_idx]
-            return tvp_num
+            tvp_template["v_ch4_dot_tank_out", 0] = ch4_outflow_rate[t_now_idx]
+            dictated_sub_tvp_setup(t_now)
+            return tvp_template
 
     else:
 
-        def tvp_fun(t_ind):
-            return tvp_num
+        def tvp_fun(t_now):
+            dictated_sub_tvp_setup(t_now)
+            return tvp_template
 
     simulator.set_tvp_fun(tvp_fun)
 

@@ -1,6 +1,7 @@
 import do_mpc
 import numpy as np
 from pathlib import Path
+from utils import Disturbances
 
 
 class StateFeedback(do_mpc.estimator.Estimator):
@@ -30,10 +31,12 @@ def mhe_setup(
     ch4_outflow_rate: np.ndarray,
     store_full_solution: bool,
     hsllib: Path = None,
+    suppress_ipopt_output: bool = False,
 ) -> do_mpc.estimator.MHE:
     """
     MHE setup
     """
+    raise NotImplementedError("Not properly implemented at the moment. Must be fixed.")
     num_states = model._x.size
     mhe = do_mpc.estimator.MHE(
         model, p_est_list=[f"x_{i+1}" for i in range(num_states)]
@@ -51,12 +54,16 @@ def mhe_setup(
             "ipopt.hsllib": str(hsllib),
         }
 
+    if suppress_ipopt_output:
+        setup_mhe["nlpsol_opts"]["ipopt.print_level"] = 0
+
     mhe.set_param(**setup_mhe)
 
     mhe.set_default_objective(P_x=P_x, P_v=P_v)
 
+    tvp_template = mhe.get_tvp_template()
+
     if num_states == 20:
-        tvp_template = mhe.get_tvp_template()
 
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
@@ -69,7 +76,7 @@ def mhe_setup(
 
             return tvp_template
 
-        mhe.set_tvp_fun(tvp_fun)
+    mhe.set_tvp_fun(tvp_fun)
 
     p_num = mhe.get_p_template()
     p_num["x_ch_in"] = np.array(

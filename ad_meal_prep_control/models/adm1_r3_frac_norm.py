@@ -17,6 +17,7 @@ def adm1_r3_frac_norm(
     Tx: np.ndarray,
     Ty: np.ndarray,
     external_gas_storage_model: bool,
+    num_dictated_subs: int,
     limited_subs_indices: list[int],
 ):
     """
@@ -25,7 +26,7 @@ def adm1_r3_frac_norm(
     model_type = "continuous"
     model = do_mpc.model.Model(model_type, "SX")
 
-    num_inputs = xi_norm[0].shape[0]
+    num_inputs = xi_norm[0].shape[0] - num_dictated_subs
 
     xi_norm[5] = model.set_variable(
         var_type="_p", var_name="xi_ch_norm", shape=(len(xi_norm[0]), 1)
@@ -325,6 +326,12 @@ def adm1_r3_frac_norm(
 
     # Input
     u_norm = model.set_variable(var_type="_u", var_name="u_norm", shape=(num_inputs, 1))
+
+    if num_dictated_subs:
+        dictated_sub_feed = model.set_variable(
+            var_type="_tvp", var_name="dictated_sub_feed", shape=(num_dictated_subs, 1)
+        )
+        u_norm = vertcat(u_norm, dictated_sub_feed)
 
     # Time-variant parameters (time-invariant for now -> making them invariant and estimating them: TODO for Simon)
     theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])

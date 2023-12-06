@@ -1,9 +1,7 @@
 from dataclasses import dataclass
-from typing import Union
 import numpy as np
 from enum import Enum, auto
 import params_R3
-from copy import deepcopy
 
 
 @dataclass
@@ -62,7 +60,7 @@ def typical_ch4_vol_flow_rate(max_power: float, n_steps: int):
     # Set up CHP
     chp = CHP(max_power=max_power)
     chp_load = np.zeros(n_steps)
-    for i in range(6):
+    for i in range(12):
         chp_load[i::48] = 1.0  # 6:00 - 12:00
         chp_load[18 + i :: 48] = 1.0  # 15:00 - 21:00
 
@@ -71,7 +69,7 @@ def typical_ch4_vol_flow_rate(max_power: float, n_steps: int):
     )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Disturbances:
     """
     Class used to store the desired setup of one or multiple disturbances.
@@ -97,6 +95,10 @@ class Disturbances:
                                 Its key indicate the respective substrate index.
                                 Its values consist of tuples that contain the start time index and the number
                                 of time steps for which this particular substrate feeder is clogged.
+        dictated_feeding:
+                                Dictionary describing the substrates whose feed is dictated.
+                                Keys: Strings that correspond to substrate names.
+                                Values: Tuple consisting of start time, end time and normalized feed volume flow.
 
     Example of a 'Disturbances' object initialization:
         disturbances = Disturbances(
@@ -104,6 +106,7 @@ class Disturbances:
             max_feeding_error=(0.1, 0.3, 0.2),
             feed_computation_stuck=(7, 2),
             clogged_feeding={1: (10, 2)},
+            dictated_feeding={"CATTLE_MANURE": (0.5, 1.2, 0.3)},
         )
     """
 
@@ -111,6 +114,7 @@ class Disturbances:
     max_feeding_error: tuple[float] = None
     feed_computation_stuck: tuple[int, int] = None
     clogged_feeding: dict[int, tuple[int, int]] = None
+    dictated_feeding: dict[str, tuple[float, float, float]] = None
 
 
 @dataclass(kw_only=True)
@@ -316,28 +320,28 @@ class Scenario:
 
 class ScenarioFactory:
     n_days_steady_state_default = 30
-    n_days_mpc_default = 30
+    n_days_mpc_default = 3
     t_step_default = 0.5 / 24
     x0_true_default = np.array(
         [
-            0.0494667574155131,
-            0.0116512808544296,
-            4.97521803226548,
-            0.963856429890969,
-            957.102301745169,
-            1.48089980608238,
-            1.48089980608238,
-            0.948575266222027,
-            0.412040527872582,
-            1.92558575222279,
-            0.521526149938689,
+            0.0494,
+            0.0116,
+            4.97,
+            0.963,
+            957.0,
+            1.48,
+            1.48,
+            0.948,
+            0.412,
+            1.92,
+            0.521,
             1,
-            0.0487500000000000,
-            0.0493342637010683,
-            4.54552248672517,
-            0.0223970128000483,
-            0.358267793064052,
-            0.660494133806800,
+            0.0487,
+            0.0493,
+            4.54,
+            0.0223,
+            0.358,
+            0.660,
             0.44 * params_R3.V_GAS_STORAGE_MAX,  # m^3
             0.4 * params_R3.V_GAS_STORAGE_MAX,  # m^3
         ]
@@ -345,24 +349,24 @@ class ScenarioFactory:
 
     Tx_default = np.array(
         [
-            0.137434457537417,
-            0.0127484119685527,
-            4.79932043710544,
-            0.950816195802454,
-            958.064331770733,
-            2.59654516843011,
-            8.09630748329204,
-            1.46003537123105,
-            0.624174795213073,
-            1.45262583426474,
-            0.421713306327953,
-            14.0000000291803,
-            0.0487500000000000,
-            0.137097486806281,
-            4.42830805698549,
-            0.0297771563953578,
-            0.380487873826158,
-            0.569429468392225,
+            0.137,
+            0.0127,
+            4.79,
+            0.950,
+            958.0,
+            2.59,
+            8.09,
+            1.46,
+            0.624,
+            1.45,
+            0.421,
+            14.0,
+            0.0487,
+            0.137,
+            4.42,
+            0.0297,
+            0.380,
+            0.569,
             params_R3.V_GAS_STORAGE_MAX,
             params_R3.V_GAS_STORAGE_MAX,
         ]
@@ -373,13 +377,13 @@ class ScenarioFactory:
     Ty_default = np.array(
         [
             450.0,
-            0.574083930894918,
-            0.376314347120225,
+            0.574,
+            0.376,
             7.0,
-            0.850445630702126,
-            0.0422284958830547,
-            0.668470313534998,
-            0.0959467827166042,
+            0.850,
+            0.0422,
+            0.668,
+            0.0959,
         ]
     )
 
@@ -387,8 +391,10 @@ class ScenarioFactory:
         "CORN_SILAGE",
         "GRASS_SILAGE",
         "CATTLE_MANURE",
-        # "SUGAR_BEET_SILAGE",
+        "SUGAR_BEET_SILAGE",
     ]
+
+    state_observer_default = StateObserver.STATEFEEDBACK
 
     methanation_dict = {
         "name": "methanation",
@@ -403,7 +409,7 @@ class ScenarioFactory:
         "Ty": Ty_default,
         "u_max": u_max_default,
         "plot_vars": [],
-        "state_observer": StateObserver.STATEFEEDBACK,
+        "state_observer": state_observer_default,
         "mhe_n_horizon": 5,
         "num_std_devs_sim": 1.0,
     }
@@ -421,7 +427,7 @@ class ScenarioFactory:
         "Ty": Ty_default,
         "u_max": u_max_default,
         "plot_vars": [],
-        "state_observer": StateObserver.STATEFEEDBACK,
+        "state_observer": state_observer_default,
         "mhe_n_horizon": 5,
         "num_std_devs_sim": 1.0,
     }

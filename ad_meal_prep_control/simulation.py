@@ -11,9 +11,10 @@ from simulator import simulator_setup
 import copy
 import matplotlib.pyplot as plt
 import params_R3
-from utils import StateObserver, Scenario, typical_ch4_vol_flow_rate
+from utils import StateObserver, Scenario, typical_ch4_vol_flow_rate, Disturbances
 import os
 from pathlib import Path
+from tqdm import tqdm
 
 np.random.seed(seed=42)
 
@@ -60,8 +61,21 @@ class Simulation:
                     self._hsllib = path_to_check
                     break
 
+        if self.scenario.disturbances.dictated_feeding is not None:
+            self._num_dictated_subs = len(self.scenario.disturbances.dictated_feeding)
+        else:
+            self._num_dictated_subs = 0
+
+        # Check if plotting setup is valid
         if len(self.scenario.plot_vars) == 0 and self.scenario.mpc_live_vis:
             raise ValueError("No variables provided for plotting!")
+
+        for plot_var in self.scenario.plot_vars:
+            if plot_var.startswith("dictated_sub_feed"):
+                feed_num = int(plot_var.split("_")[-1])
+                assert (
+                    feed_num >= 0 and feed_num <= self._num_dictated_subs
+                ), f"Plotting variable {plot_var} is incompatible with the simulation setup."
 
         # Set up ch4 outflow
         if self.scenario.P_el_chp is None:
@@ -72,6 +86,11 @@ class Simulation:
                 n_steps=self._n_steps_mpc
                 + self.scenario.controller_params.mpc_n_horizon,
             )
+
+        if not self.scenario.mpc_live_vis and not self.scenario.pygame_vis:
+            self._suppress_ipopt_output = True
+        else:
+            self._suppress_ipopt_output = False
 
     @property
     def x0_norm_true(self) -> np.ndarray:
@@ -114,9 +133,14 @@ class Simulation:
             self._pygame_setup()
 
         if self.scenario.simulate_steady_state:
-            self._sim_setup(ch4_outflow_rate=np.zeros(self._n_steps_steady_state))
+            self._sim_setup(
+                ch4_outflow_rate=np.zeros(self._n_steps_steady_state),
+                disturbances=Disturbances(),
+            )
         else:
-            self._sim_setup(self._ch4_outflow_rate)
+            self._sim_setup(
+                self._ch4_outflow_rate, disturbances=self.scenario.disturbances
+            )
 
         # Estimator setup
         self._estimator_setup()
@@ -134,7 +158,9 @@ class Simulation:
                 self.x0_norm_true[19] = self._v_co2_norm_true_0
                 self.x0_norm_estimated[18] = self._v_ch4_norm_estimated_0
                 self.x0_norm_estimated[19] = self._v_co2_norm_estimated_0
-            self._sim_setup(self._ch4_outflow_rate)
+            self._sim_setup(
+                self._ch4_outflow_rate, disturbances=self.scenario.disturbances
+            )
             self._estimator_setup()
 
         if self.scenario.simulate_mpc:
@@ -149,14 +175,16 @@ class Simulation:
                 compile_nlp=self.scenario.compile_nlp,
                 ch4_outflow_rate=self._ch4_outflow_rate,
                 cost_func=self.scenario.controller_params.cost_func,
-                substrate_costs=[sub.cost for sub in self._subs],
+                substrate_costs=[sub.cost for sub in self._subs_controlled],
                 consider_substrate_costs=self.scenario.controller_params.consider_substrate_costs,
                 store_full_solution=self.scenario.mpc_live_vis,
+                disturbances=self.scenario.disturbances,
                 bounds=self.scenario.controller_params.bounds,
                 nl_cons=self.scenario.controller_params.nl_cons,
                 rterm=self.scenario.controller_params.rterm,
                 ch4_set_point_function=self.scenario.controller_params.ch4_set_point_function,
                 hsllib=self._hsllib,
+                suppress_ipopt_output=self._suppress_ipopt_output,
             )
 
             if self.scenario.mpc_live_vis:
@@ -175,15 +203,21 @@ class Simulation:
 
     def _substrate_setup(self):
         # Get the substrate objects
-        self._subs = []
+        self._subs_controlled = []
         for sub_name in self.scenario.sub_names:
-            self._subs.append(getattr(substrates, sub_name))
+            self._subs_controlled.append(getattr(substrates, sub_name))
+
+        self._subs_all = copy.copy(self._subs_controlled)
+
+        if self._num_dictated_subs > 0:
+            for sub_name in self.scenario.disturbances.dictated_feeding.keys():
+                self._subs_all.append(getattr(substrates, sub_name))
 
         # Set substrate feeding limits
         self._limited_subs_indices = []
         if isinstance(self.scenario.limited_substrates, list):
             for lim_sub in self.scenario.limited_substrates:
-                for idx, sub in enumerate(self._subs):
+                for idx, sub in enumerate(self._subs_controlled):
                     if sub.name == lim_sub.name:
                         sub.set_limit(
                             lim_sub.amount_remaining,
@@ -192,13 +226,13 @@ class Simulation:
                         )
                         self._limited_subs_indices.append(idx)
 
-        xi = [sub.xi for sub in self._subs]
+        xi = [sub.xi for sub in self._subs_all]
 
         # Normalize xi values (also includes ch, pr and li but these are ignored in the model and later replaced with the uncertain ones)
         self._xi_norm = list(np.array([val / self.Tx[:18] for val in xi]).T)
 
         # Compute the uncertain xis (ch, pr and li)
-        uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in self._subs]
+        uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in self._subs_all]
 
         # Get nominal values and standard deviations for uncertain xis of all substrates
         xi_ch_nom = np.array([un_xi[0].nominal_value for un_xi in uncertain_xis])
@@ -314,6 +348,7 @@ class Simulation:
                 ch4_outflow_rate=self._ch4_outflow_rate,
                 store_full_solution=self.scenario.mpc_live_vis,
                 hsllib=self._hsllib,
+                suppress_ipopt_output=self._suppress_ipopt_output,
             )
 
             self._estimator.x0 = np.copy(self.x0_norm_estimated)
@@ -331,7 +366,7 @@ class Simulation:
             self.x0_norm_estimated = self.x0_norm_estimated[:18]
             self.Tx = self.Tx[:18]
 
-        self.Tu = np.array([self.scenario.u_max[sub.state] for sub in self._subs])
+        self.Tu = np.array([self.scenario.u_max[sub.state] for sub in self._subs_all])
 
     def _model_setup(self):
         # Model
@@ -341,10 +376,13 @@ class Simulation:
             Tx=self.Tx,
             Ty=self.scenario.Ty,
             external_gas_storage_model=self.scenario.external_gas_storage_model,
+            num_dictated_subs=self._num_dictated_subs,
             limited_subs_indices=self._limited_subs_indices,
         )
 
-    def _sim_setup(self, ch4_outflow_rate: np.ndarray):
+    def _sim_setup(
+        self, ch4_outflow_rate: np.ndarray, disturbances: Disturbances = None
+    ):
         self._simulator = simulator_setup(
             model=self.model,
             t_step=self.scenario.t_step,
@@ -352,6 +390,7 @@ class Simulation:
             xi_pr_norm=self._xi_pr_sim_norm,
             xi_li_norm=self._xi_li_sim_norm,
             ch4_outflow_rate=ch4_outflow_rate,
+            disturbances=disturbances,
         )
 
         # Set normalized x0
@@ -454,7 +493,12 @@ class Simulation:
                 self._screen.fill("white")
 
             u_norm_steady_state = np.array(
-                [[0.01 if sub.state == "solid" else 0.02 for sub in self._subs]]
+                [
+                    [
+                        0.01 if sub.state == "solid" else 0.02
+                        for sub in self._subs_controlled
+                    ]
+                ]
             ).T
 
             y_next = self._simulator.make_step(u_norm_steady_state)
@@ -471,13 +515,13 @@ class Simulation:
     def _run_mpc(self):
         # Initialize simulator and controller
         self._mpc.x0 = np.copy(self.x0_norm_estimated)
-        self._mpc.u0 = np.ones(len(self._subs)) * 0.5
+        self._mpc.u0 = np.ones(len(self._subs_controlled)) * 0.5
         self._mpc.set_initial_guess()
 
         u_norm_computed = None
 
         # MPC
-        for k in range(self._n_steps_mpc):
+        for k in tqdm(range(self._n_steps_mpc)):
             # fill the screen with a color to wipe away anything from last frame
             if self.scenario.pygame_vis:
                 self._screen.fill("white")
@@ -540,21 +584,35 @@ class Simulation:
                         y_num = int(var.split("_")[-1])
 
                         self._ax[idx].scatter(
-                            self._t_mpc[: k + 1],
-                            self._simulator.data._y[:, self.model.u.size + y_num - 1],
+                            self._t_mpc[k],
+                            self._simulator.data._y[
+                                -1,
+                                self.model.u.size + y_num + self._num_dictated_subs - 1,
+                            ],
                             color="red",
                         )
                         self._ax[idx].set_ylabel(
                             self.scenario._meas_names[int(var.split("_")[-1]) - 1]
                         )
+                    elif var.startswith("dictated_sub_feed"):
+                        feed_num = int(var.split("_")[-1])
+
+                        self._ax[idx].scatter(
+                            self._t_mpc[k],
+                            self._simulator.data._y[
+                                -1, self.model.u.size + feed_num - 1
+                            ],
+                            color="red",
+                        )
+                        self._ax[idx].set_ylabel(f"Dictated substrate num. {feed_num}")
                     elif var[0] != "u" and var[0] != "x":
                         try:
                             aux_expression_idx = np.where(
                                 np.array(self.model.aux.keys()) == var
                             )[0][0]
                             self._ax[idx].scatter(
-                                self._t_mpc[: k + 1],
-                                self._simulator.data._aux[:, aux_expression_idx],
+                                self._t_mpc[k],
+                                self._simulator.data._aux[-1, aux_expression_idx],
                                 color="red",
                             )
                             self._ax[idx].set_ylabel(var)
@@ -565,8 +623,8 @@ class Simulation:
 
                 if self.scenario.external_gas_storage_model:
                     self._ax[-1].scatter(
-                        self._t_mpc[: k + 1],
-                        self._ch4_outflow_rate[: k + 1],
+                        self._t_mpc[k],
+                        self._ch4_outflow_rate[k],
                         color="red",
                     )
                     self._ax[-1].set_ylabel(f"CH4 outflow\nvolume flow {r'$[m^3/d]$'}")

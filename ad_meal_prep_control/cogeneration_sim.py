@@ -1,5 +1,5 @@
 import simulation
-from utils import ScenarioFactory, CostFunction, ControllerParams
+from utils import ScenarioFactory, CostFunction, ControllerParams, Disturbances
 from params_R3 import P_el_chp
 
 lterm = mterm = "model.tvp['dummy_tvp']"
@@ -23,6 +23,12 @@ kwargs = {
         "y_meas_4",
     ],
     "P_el_chp": P_el_chp,
+    "disturbances": Disturbances(
+        dictated_feeding={
+            "CATTLE_MANURE": (0.2, 0.4, 1.0),
+            # "GRASS_SILAGE": (0.1, 0.3, 0.3),
+        }
+    ),
 }
 
 scenario = ScenarioFactory().create_scenario(

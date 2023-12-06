@@ -17,6 +17,7 @@ setup(
         "do-mpc",
         "uncertainties",
         "pygame",
+        "tqdm",
     ],
 )
 

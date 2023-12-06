@@ -10,6 +10,7 @@ from ad_meal_prep_control.utils import (
     NlConstraint,
     LimitedSubstrate,
     SetpointFunction,
+    Disturbances,
 )
 from pathlib import Path
 
@@ -33,10 +34,12 @@ def mpc_setup(
     substrate_costs: list[float],
     consider_substrate_costs: bool,
     store_full_solution: bool,
+    disturbances: Disturbances,
     bounds: list[Bound] = None,
     nl_cons: list[NlConstraint] = None,
     rterm: str = None,
     hsllib: Path = None,
+    suppress_ipopt_output: bool = False,
     ch4_set_point_function: SetpointFunction = None,
     limited_substrates: list[LimitedSubstrate] = None,
 ) -> do_mpc.controller.MPC:
@@ -60,12 +63,29 @@ def mpc_setup(
         # Use MA27 linear solver in ipopt for faster calculations:
         setup_mpc["nlpsol_opts"] = {
             "ipopt.linear_solver": "MA27",
-            "ipopt.hsllib": str(hsllib),  # "./coinhsl*/builddir/libcoinhsl.so",
+            "ipopt.hsllib": str(hsllib),
         }
+
+    if suppress_ipopt_output:
+        setup_mpc["nlpsol_opts"]["ipopt.print_level"] = 0
 
     mpc.set_param(**setup_mpc)
 
     tvp_template = mpc.get_tvp_template()
+
+    def dictated_sub_tvp_setup(t_now: float):
+        if disturbances.dictated_feeding is not None:
+            for feed_idx, dictated_sub in enumerate(
+                disturbances.dictated_feeding.values()
+            ):
+                for k in range(n_horizon + 1):
+                    time_k = t_now + t_step * k
+                    if time_k >= dictated_sub[0] and time_k < dictated_sub[1]:
+                        tvp_template[
+                            "_tvp", k, "dictated_sub_feed", feed_idx
+                        ] = dictated_sub[2]
+                    else:
+                        tvp_template["_tvp", k, "dictated_sub_feed", feed_idx] = 0.0
 
     if num_states == 20:  # i.e. if we consider the gas storage
         mpc.set_nl_cons(
@@ -90,6 +110,8 @@ def mpc_setup(
                     "_tvp", :, "v_ch4_dot_tank_in_setpoint"
                 ] = ch4_set_point_function.get_current_setpoint(t_now)
 
+            dictated_sub_tvp_setup(t_now)
+
             return tvp_template
 
     else:
@@ -99,6 +121,8 @@ def mpc_setup(
                 tvp_template[
                     "_tvp", :, "v_ch4_dot_tank_in_setpoint"
                 ] = ch4_set_point_function.get_current_setpoint(t_now)
+
+            dictated_sub_tvp_setup(t_now)
 
             return tvp_template
 
