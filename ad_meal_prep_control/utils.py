@@ -320,7 +320,7 @@ class Scenario:
 
 class ScenarioFactory:
     n_days_steady_state_default = 30
-    n_days_mpc_default = 3
+    n_days_mpc_default = 30
     t_step_default = 0.5 / 24
     x0_true_default = np.array(
         [
