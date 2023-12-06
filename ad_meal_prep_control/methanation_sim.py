@@ -14,8 +14,8 @@ mterm = "1000*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_se
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 ch4_set_point_function = SetpointFunction(
-    setpoints=np.array([350.0, 450.0, 550.0, 450.0]),
-    time_points=np.array([1.0, 1.5, 2.0]),
+    setpoints=np.array([350.0, 450.0, 550.0]),
+    time_points=np.array([1.0, 2.0]),
 )
 
 controller_params = ControllerParams(
@@ -40,7 +40,7 @@ kwargs = {
     "disturbances": Disturbances(
         dictated_feeding={
             "GRASS_SILAGE": (0.2, 0.4, 0.1),
-            "CATTLE_MANURE": (3.0, 5.0, 0.1),
+            "CATTLE_MANURE": (3.0, 5.0, 0.05),
         }
     ),
     "n_days_mpc": 10,
