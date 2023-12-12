@@ -15,6 +15,8 @@ from utils import StateObserver, Scenario, typical_ch4_vol_flow_rate, Disturbanc
 import os
 from pathlib import Path
 from tqdm import tqdm
+import pickle
+
 
 np.random.seed(seed=42)
 
@@ -648,12 +650,19 @@ class Simulation:
             self._save_results()
 
     def _save_results(self):
+        # Save do_mpc data
         do_mpc.data.save_results(
             save_list=[self._mpc, self._simulator],
             result_name=f"{self.scenario.name}_mpc_results",
             result_path="./results/",
             overwrite=True,
         )
+
+        # Save scenario meta data
+        scenario_dict = self.scenario.to_dict()
+
+        with open(f"./results/{self.scenario.name}_scenario_meta_data.pkl", 'wb') as fp:
+            pickle.dump(scenario_dict, fp)
 
     def _set_new_Tx_x0(self):
         """

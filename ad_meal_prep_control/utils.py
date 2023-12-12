@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 from enum import Enum, auto
 import params_R3
+from dataclasses_json import dataclass_json
 
 
 @dataclass
@@ -69,6 +70,7 @@ def typical_ch4_vol_flow_rate(max_power: float, n_steps: int):
     )
 
 
+@dataclass_json
 @dataclass(kw_only=True)
 class Disturbances:
     """
@@ -267,6 +269,7 @@ class ControllerParams:
     ch4_set_point_function: SetpointFunction = None
 
 
+@dataclass_json
 @dataclass(kw_only=True)
 class Scenario:
     name: str

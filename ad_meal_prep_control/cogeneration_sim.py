@@ -2,7 +2,9 @@ import simulation
 from utils import ScenarioFactory, CostFunction, ControllerParams, Disturbances
 from params_R3 import P_el_chp
 
-lterm = mterm = "model.tvp['dummy_tvp']"
+# lterm = mterm = "model.tvp['dummy_tvp']"
+lterm = "30*((model.aux['v_ch4_dot_tank_in'] - 500.)/500.)**2"
+mterm = "300*((model.aux['v_ch4_dot_tank_in'] - 500.)/500.)**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
@@ -15,20 +17,24 @@ controller_params = ControllerParams(
 )
 
 kwargs = {
-    "pygame_vis": True,
-    "mpc_live_vis": True,
+    "name": "cogeneration_07_12",
+    "pygame_vis": False,
+    "mpc_live_vis": False,
+    "P_el_chp": P_el_chp,
     "plot_vars": [
         "u_norm",
         "y_meas_1",
+        "v_ch4_dot_tank_in",
+        "dictated_sub_feed_1",
         "y_meas_4",
     ],
-    "P_el_chp": P_el_chp,
     "disturbances": Disturbances(
         dictated_feeding={
-            "CATTLE_MANURE": (0.2, 0.4, 1.0),
-            # "GRASS_SILAGE": (0.1, 0.3, 0.3),
+            "GRASS_SILAGE": (0.2, 0.4, 0.1),
+            "CATTLE_MANURE": (3.0, 5.0, 0.05),
         }
     ),
+    "n_days_mpc": 10,
 }
 
 scenario = ScenarioFactory().create_scenario(

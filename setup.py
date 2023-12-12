@@ -18,6 +18,7 @@ setup(
         "uncertainties",
         "pygame",
         "tqdm",
+        "dataclasses-json",
     ],
 )
 

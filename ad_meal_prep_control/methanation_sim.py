@@ -8,8 +8,8 @@ from utils import (
 )
 import numpy as np
 
-lterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
-mterm = "1000*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
+lterm = "30*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
+mterm = "300*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
@@ -28,13 +28,14 @@ controller_params = ControllerParams(
 )
 
 kwargs = {
+    "name": "Methanation_test_12_12",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "plot_vars": [
         "u_norm",
         "y_meas_1",
         "v_ch4_dot_tank_in",
-        # "dictated_sub_feed_1",
+        "dictated_sub_feed_1",
         "y_meas_4",
     ],
     "disturbances": Disturbances(
