@@ -7,20 +7,25 @@ import numpy as np
 
 plt.rcParams["axes.grid"] = True
 
+@dataclass_json
+@dataclass(kw_only=True)
+class MPLProperties:
+    color: str
+    linewidth: float
+    linestyle: str
 
 @dataclass_json
 @dataclass(kw_only=True)
 class PlotVarProperty:
-    color: str
-    linewidth: float
-    linestyle: str
+    mpl_properties: MPLProperties
+    label: str = None
 
 
 @dataclass
 class PostProcessing:
     scenario_name: str
-
-    _default_plot_var_property = PlotVarProperty(color="blue", linewidth=2., linestyle="-")
+    _default_mpl_properties = MPLProperties(color="blue", linewidth=2., linestyle="-")
+    _default_plot_var_properties = PlotVarProperty(mpl_properties=_default_mpl_properties)
     
     def __post_init__(self):
         self._data_simulation = do_mpc.data.load_results(f"./results/{self.scenario_name}_mpc_results.pkl")
@@ -42,15 +47,15 @@ class PostProcessing:
         ax[-1].set_xlabel("Time [d]")
         
         for ax, subplot_label_and_vars in zip(ax, subplot_labels_and_vars):
-            y_label, plot_vars = subplot_label_and_vars
+            y_label, plot_var_properties = subplot_label_and_vars
 
             labels = []
-            for plot_var_name, plot_var_property in plot_vars.items():
-                plt_kwargs = plot_var_property.to_dict() if isinstance(plot_var_property, PlotVarProperty) else self._default_plot_var_property.to_dict()
+            for plot_var_name, plot_var_property in plot_var_properties.items():
+                plt_kwargs = plot_var_property.mpl_properties.to_dict() if isinstance(plot_var_property, PlotVarProperty) else self._default_mpl_properties.to_dict()
                 if plot_var_name[0] == "u":
                     plt_kwargs.pop("color")
 
-                plot_var_type = plot_var_name[0] if plot_var_name[0] in ["x", "u"] else None
+                plot_var_type = plot_var_name[0] if plot_var_name[0] in ["x", "u", "tvp"] else None
                 if plot_var_type is not None:
                     self._graphics_mpc.add_line(var_type=f"_{plot_var_type}", var_name=plot_var_name, axis=ax, **plt_kwargs)
                     if plot_var_type == "u":
@@ -80,13 +85,13 @@ class PostProcessing:
 
                         ax.plot(
                             self._data_simulator._time,
-                            self._data_simulator._y[
-                                :, self._num_u + feed_num - 1
+                            self._data_simulator._tvp[
+                                :, feed_num - 1
                             ],**plt_kwargs
                         )
                         labels.append(f"Dictated substrate num. {feed_num}")
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":
-                        try:
+                        if plot_var_name in self._scenario_meta_data["aux_var_names"]:
                             aux_expression_idx = np.where(
                                 np.array(self._scenario_meta_data["aux_var_names"]) == plot_var_name
                             )[0][0]
@@ -96,10 +101,12 @@ class PostProcessing:
                                 **plt_kwargs
                             )
                             labels.append(plot_var_name)
-                        except IndexError:
-                            raise ValueError(
-                                f"'{plot_var_name}' was detected as an aux expression. However, it was either wrongly identified or is not defined as an aux expression in the do-mpc model."
-                            )
+                        else:
+                            self._graphics_mpc.add_line(var_type=f"_tvp", var_name=plot_var_name, axis=ax, **plt_kwargs)
+                            if plot_var_property.label is None:
+                                labels.append(plot_var_name)
+                            else:
+                                labels.append(plot_var_property.label)
             ax.legend(labels=labels)
             ax.set_ylabel(y_label)
         
@@ -108,6 +115,7 @@ class PostProcessing:
         plt.show()
 
 if __name__ == "__main__":
-    default_plot_property = PlotVarProperty(color="red", linewidth=3., linestyle="-")
-    post_processing = PostProcessing("Methanation_test_12_12")
-    post_processing.plot([("States",{"x_2": None, "x_3": PlotVarProperty(color="green", linewidth=1., linestyle="-")}), ("Test", {"y_1": default_plot_property}), ("Test2", {"dictated_sub_feed_1": None, "dictated_sub_feed_2": None}), ("Volume flow ch4", {"v_ch4_dot_tank_in": None})], time_range=(1.5,4.))
+    default_mpl_properties = MPLProperties(color="red", linewidth=3., linestyle="-")
+    default_plot_property = PlotVarProperty(mpl_properties=default_mpl_properties, label=None)
+    post_processing = PostProcessing("Methanation_12_12_new_substrates")
+    post_processing.plot([("States",{"x_2": None, "x_3": PlotVarProperty(mpl_properties=MPLProperties(color="green", linewidth=1., linestyle="-"))}), ("V'g", {"y_1": default_plot_property}), ("Forced substrates", {"dictated_sub_feed_1": None, "dictated_sub_feed_2": None}), ("Volume flow ch4", {"v_ch4_dot_tank_in": None, "v_ch4_dot_tank_in_setpoint": PlotVarProperty(mpl_properties=MPLProperties(color="orange", linewidth=1., linestyle="-."))})])
