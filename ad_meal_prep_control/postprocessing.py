@@ -38,6 +38,8 @@ class PostProcessing:
         if plot_inputs:
             subplot_labels_and_vars.insert(0, ("u_norm",{f"u_norm": None}))
         fig, ax = plt.subplots(len(subplot_labels_and_vars), sharex=True)
+
+        ax[-1].set_xlabel("Time [d]")
         
         for ax, subplot_label_and_vars in zip(ax, subplot_labels_and_vars):
             y_label, plot_vars = subplot_label_and_vars
@@ -73,6 +75,8 @@ class PostProcessing:
 
                     elif plot_var_name.startswith("dictated_sub_feed"):
                         feed_num = int(plot_var_name.split("_")[-1])
+
+                        plt_kwargs["drawstyle"] = "steps-post"
 
                         ax.plot(
                             self._data_simulator._time,
