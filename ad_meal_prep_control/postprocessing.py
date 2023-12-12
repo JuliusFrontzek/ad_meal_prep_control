@@ -34,7 +34,7 @@ class PostProcessing:
         
         self._graphics_mpc = do_mpc.graphics.Graphics(self._data_mpc)
 
-    def plot(self, subplot_labels_and_vars: list[tuple[str,dict[str,PlotVarProperty]]], plot_inputs: bool = True):
+    def plot(self, subplot_labels_and_vars: list[tuple[str,dict[str,PlotVarProperty]]], plot_inputs: bool = True, time_range: tuple[float] = None):
         if plot_inputs:
             subplot_labels_and_vars.insert(0, ("u_norm",{f"u_norm": None}))
         fig, ax = plt.subplots(len(subplot_labels_and_vars), sharex=True)
@@ -98,9 +98,12 @@ class PostProcessing:
                             )
             ax.legend(labels=labels)
             ax.set_ylabel(y_label)
+        
+        if time_range is not None:
+            plt.setp(ax, xlim=time_range)
         plt.show()
 
 if __name__ == "__main__":
     default_plot_property = PlotVarProperty(color="red", linewidth=3., linestyle="-")
     post_processing = PostProcessing("Methanation_test_12_12")
-    post_processing.plot([("States",{"x_2": None, "x_3": PlotVarProperty(color="green", linewidth=1., linestyle="-")}), ("Test", {"y_1": default_plot_property}), ("Test2", {"dictated_sub_feed_1": None, "dictated_sub_feed_2": None}), ("Volume flow ch4", {"v_ch4_dot_tank_in": None})])
+    post_processing.plot([("States",{"x_2": None, "x_3": PlotVarProperty(color="green", linewidth=1., linestyle="-")}), ("Test", {"y_1": default_plot_property}), ("Test2", {"dictated_sub_feed_1": None, "dictated_sub_feed_2": None}), ("Volume flow ch4", {"v_ch4_dot_tank_in": None})], time_range=(1.5,4.))
