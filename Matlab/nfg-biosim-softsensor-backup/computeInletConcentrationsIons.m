@@ -1,30 +1,28 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 18.08.2023
+% last modified: 12.12.2023
 % Autor: Simon Hellmann
 
 % compute inlet concentrations of ions from pH assuming no dissolved co2 in
 % substrate
 
-function [S_ac,S_ac_minus,S_nh3,S_ion] = computeInletConcentrationsIons(pH,Ac,S_IN)
+function [S_ac_minus,S_nh3,S_ion] = computeInletConcentrationsIons(pH,S_ac,S_IN)
 % outputs: 
 % S_ac      - mass concentration of total acetic acid
 % S_ac_minus- mass concentration (MC) of dissociated acetic acid 
 % S_nh3     - MC of ammonia
-% S_ion     - molar concentration of left-over ions to close ion balance
+% S_ion     - molar concentration of left-over cations to close ion balance
 
 % inputs: 
 % pH        - pH value of substrate (assumed the same as in reactor)
-% Ac        - GC measurement of acetic acid [mg/L]  
+% S_ac      - GC measurement of acetic acid [g/L]
 % S_IN      - total inorganic nitrogen concentration [g/L_FM]
 
 % define constants: 
 K_a_IN = 1.3809E-9; % dissociation constants
 K_a_ac = 1.7378E-5;
 K_w = 2.07877105595436e-14; 
-
-% transform lab measurements into concentrations: 
-S_ac = Ac/1000;     % unit change [mg/L] -> [g/L_FM]
 
 % compute dissociated versions of ions (assume dissociation equilibrium):
 SHPlus = 10^(-pH);  

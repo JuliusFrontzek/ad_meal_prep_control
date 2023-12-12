@@ -1,7 +1,7 @@
 %% Version
 % (R2022b) Update 5
 % Erstelldatum: 23.08.2023
-% last modified: 04.12.2023
+% last modified: 12.12.2023
 % Autor: Simon Hellmann
 
 % compute inlet concentrations from lab measurements of substrates
@@ -51,13 +51,33 @@ for k = 1:nSubstrates
     % remove all rows containing negative values: 
     labDataEff = labDataEffPre(all(labDataEffPre > 0,2),:); 
     
-    % pick rows from labDataEff 1 by 1 and compute xIn, save in xInMat:
+    % allocate memory:
     nSamples = size(labDataEff,1);  % # complete samples per substrate
-    xInMat = nan(18,nSamples);  % input vector size for ADM1-R3-frac
-    TSVec = nan(1,nSamples);    % 
+    xInMat = nan(18,nSamples);  
+    TSVec = nan(1,nSamples);    
+    
+    % insert special inlet specifications for silages:
+    switch substrate 
+        case "Maissilage"
+            silageInletSpecs.pH = 4;        % [-]
+            silageInletSpecs.NH4N = 0.764;  % [g/L]
+            silageInletSpecs.ACeq = 10.59;  % [g/kg FM] = [g/L]
+        case "Grassilage"
+            silageInletSpecs.pH = 4.7; 
+            silageInletSpecs.NH4N = 1.574;
+            silageInletSpecs.ACeq = 12.91;
+        case "Zuckerruebensilage"
+            silageInletSpecs.pH = 4.4;
+            silageInletSpecs.NH4N = 0.070;
+            silageInletSpecs.ACeq = 8.69;
+        otherwise 
+            silageInletSpecs = []; 
+    end
+
+    % pick rows from labDataEff 1 by 1 and compute xIn, save in xInMat:
     for kk = 1:nSamples
         labData = labDataEff(kk,:); 
-        [xInMat(:,kk),TSVec(kk)] = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich); 
+        [xInMat(:,kk),TSVec(kk)] = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich,silageInletSpecs); 
     end % for
     
     % compute mean of all xIn_i and TS from the for loop and save in

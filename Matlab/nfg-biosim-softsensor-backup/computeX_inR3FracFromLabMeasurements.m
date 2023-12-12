@@ -1,10 +1,10 @@
 %% Version
 % (R2022b) Update 6
 % Erstelldatum: 24.08.2023
-% last modified: 1.12.2023
+% last modified: 12.12.2023
 % Autor: Simon Hellmann
 
-function [xIn,TS] = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich)
+function [xIn,TS] = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich,silageInletSpecs)
 
 % uses lab data of one sample and transforms it into inlet concentrations
 % of ADM1-R3-frac model and TS
@@ -14,10 +14,11 @@ function [xIn,TS] = computeX_inR3FracFromLabMeasurements(labData,BMP,BMP_stoich)
 % lab data  - results from lab analysis of one substrate sample
 % BMP       - BMP of specific substrate acc. to KTBL
 % BMP_stoich- max. BMP for agricultural substrates [L_N/kg_FoTS]
+% silageInletSpecs  - contains special inlet specifications for silages
     
 % compute inlet concentrations of all states except ions 
 rhoFM = 1;  % assumed mass density of free matter [kg_FM/l_FM]
-TS = labData(1)/100;        % unit change [%] -> [-]
+TS = labData(1)/100;    % unit change [%] -> [-]
    
 % assume no gas release in substrate:
 S_ch4_gas = 0; 
@@ -27,9 +28,7 @@ S_ch4 = 0;
 S_IC = 0; 
 S_hco3 = 0;             % since S_IC is also zero
 
-NH4N = labData(3); 
-S_IN = NH4N*rhoFM;      % unit change [g/kg_FM] -> [g/l_FM]
-
+%% process values that are non-zero:
 XA = labData(4); 
 X_ash = XA*TS*rhoFM;    % unit change [g/kg_TS] -> [g/l_FM]
 
@@ -53,12 +52,22 @@ X_biomass = 0.001*(XC + XP + XL);   % total biomass is 0,1% fraction of macro nu
 X_bac = 0.95*X_biomass*TS*rhoFM;    % assign 95% of biomass to X_bac...
 X_ac = 0.05*X_biomass*TS*rhoFM;     % ...and 5% to X_ac
 
-% acetic acid:
-Ac = labData(10);   % Achtung: beachte die Verdünnung des Eluats! [mg/L]
+% lab data measurements:
+NH4N = labData(3);          % nitrogen [
+S_ac = labData(10)/1000;    % acetic acid [g/L]
+pH = 7.4;   % default inlet pH about netral
+
+%% XY: hier Sonderwerte abrufen, sofern verfügbar!
+if ~isempty(silageInletSpecs)
+    pH = silageInletSpecs.pH; 
+    NH4N = silageInletSpecs.NH4N; 
+    S_ac = silageInletSpecs.ACeq; 
+end
+
+S_IN = NH4N*rhoFM;      % unit change [g/kg FM] -> [g/L FM]
 
 % compute inlet concentrations of ions from pre-defined pH:
-pH = 7.5;   % regular operation condition
-[S_ac,S_ac_minus,S_nh3,S_ion] = computeInletConcentrationsIons(pH,Ac,S_IN); 
+[S_ac_minus,S_nh3,S_ion] = computeInletConcentrationsIons(pH,S_ac,S_IN); 
 
 % summarize all in one vector of inlet concentrations: 
 xIn = [S_ac, S_ch4, S_IC, S_IN, S_h2o, X_ch_fast, X_ch_slow, X_pr, X_li,...
