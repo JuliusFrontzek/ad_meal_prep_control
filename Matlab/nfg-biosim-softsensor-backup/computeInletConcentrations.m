@@ -57,19 +57,20 @@ for k = 1:nSubstrates
     TSVec = nan(1,nSamples);    
     
     % insert special inlet specifications for silages:
+    % (acetic acids based on Weissbach & Strubelt (2008), equivalent acid values)
     switch substrate 
         case "Maissilage"
             silageInletSpecs.pH = 4;        % [-]
             silageInletSpecs.NH4N = 0.764;  % [g/L]
-            silageInletSpecs.ACeq = 10.59;  % [g/kg FM] = [g/L]
+            silageInletSpecs.ACeq = 10.32;  % [g/kg FM] = [g/L]
         case "Grassilage"
             silageInletSpecs.pH = 4.7; 
             silageInletSpecs.NH4N = 1.574;
-            silageInletSpecs.ACeq = 12.91;
+            silageInletSpecs.ACeq = 10.44;
         case "Zuckerruebensilage"
             silageInletSpecs.pH = 4.4;
             silageInletSpecs.NH4N = 0.070;
-            silageInletSpecs.ACeq = 8.69;
+            silageInletSpecs.ACeq = 8.17;
         otherwise 
             silageInletSpecs = []; 
     end

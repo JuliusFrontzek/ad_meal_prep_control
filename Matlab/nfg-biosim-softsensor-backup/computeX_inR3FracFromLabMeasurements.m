@@ -57,7 +57,7 @@ NH4N = labData(3);          % nitrogen [
 S_ac = labData(10)/1000;    % acetic acid [g/L]
 pH = 7.4;   % default inlet pH about netral
 
-%% XY: hier Sonderwerte abrufen, sofern verfügbar!
+% hier Sonderwerte abrufen, sofern verfügbar:
 if ~isempty(silageInletSpecs)
     pH = silageInletSpecs.pH; 
     NH4N = silageInletSpecs.NH4N; 
@@ -74,4 +74,3 @@ xIn = [S_ac, S_ch4, S_IC, S_IN, S_h2o, X_ch_fast, X_ch_slow, X_pr, X_li,...
        X_bac, X_ac, X_ash, S_ion, S_ac_minus, S_hco3, S_nh3, S_ch4_gas, S_co2_gas]';
 
 end
-
