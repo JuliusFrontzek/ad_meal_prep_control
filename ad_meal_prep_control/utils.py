@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 from enum import Enum, auto
 import params_R3
@@ -296,8 +296,7 @@ class Scenario:
     compile_nlp: bool = False
     P_el_chp: float = None
     limited_substrates: list[LimitedSubstrate] = None
-
-    _state_names = [
+    _state_names: list[str] = field(default_factory=lambda: [
         "S_ac",
         "S_ch4",
         "S_IC",
@@ -318,9 +317,9 @@ class Scenario:
         "S_co2_gas",
         "V_CH4",
         "V_CO2",
-    ]
+    ])
 
-    _meas_names = ["V´_g", "p_CH4", "p_CO2", "pH", "S_IN", "TS", "VS", "S_ac"]
+    _meas_names: list[str] = field(default_factory=lambda: ["V´_g", "p_CH4", "p_CO2", "pH", "S_IN", "TS", "VS", "S_ac",])
 
 
 class ScenarioFactory:

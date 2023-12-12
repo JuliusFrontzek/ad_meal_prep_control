@@ -660,6 +660,7 @@ class Simulation:
 
         # Save scenario meta data
         scenario_dict = self.scenario.to_dict()
+        scenario_dict["aux_var_names"] = self.model.aux.keys()
 
         with open(f"./results/{self.scenario.name}_scenario_meta_data.pkl", 'wb') as fp:
             pickle.dump(scenario_dict, fp)
