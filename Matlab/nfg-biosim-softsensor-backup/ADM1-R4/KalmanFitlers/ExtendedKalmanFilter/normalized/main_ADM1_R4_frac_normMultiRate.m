@@ -1,7 +1,7 @@
 %% Version
 % (R2022b) Update 6
 % Erstelldatum: 25.07.2023
-% last modified: 21.11.2023
+% last modified: 26.11.2023
 % Autor: Simon Hellmann
 
 % create the multirate synthetic measurement data for Kalman Filtering. 
@@ -103,9 +103,9 @@ tFeedOff = tFeedOn + feedingDuration; % end times of feedings
 tEnd = 7;   % [d] End of Simulation
 tSS = 300;  % [d] Dauer, bis steady state als erreicht gilt (~ 1/3 Jahr) 
 dt = 20/60/24;          % sample time [min], converted to [d]. 
-tOnline = (0:dt:tEnd)'; % time grid for online measurements. highest frequency in this script
+tOnline = (0:dt:tEnd)'; % time grid for online measurements. 
 tEvents = sort([0;tFeedOn;tFeedOff]); 
-tMinor = unique([tOnline; tEvents]);% Join and sort timestamps
+tOverall = unique([tOnline; tEvents]);% Join and sort timestamps
 
 % construct vector of feed volume flows at times tFeedOn (we start in
 % steady state but wait with first feeding for a little)
@@ -217,8 +217,8 @@ ySSDeNorm   = TyNum.*ySSNorm;
 %% Dynamic simulation
 % via iterative solution of constant feeding regimes (on or off)
 
-xSimNorm = zeros(length(tMinor), nStates);% allocate memory
-tSim = zeros(length(tMinor),1);           % allocate memory
+xSimNorm = zeros(length(tOverall), nStates);% allocate memory
+tSim = zeros(length(tOverall),1);           % allocate memory
 
 % integrate ODEs for each interval (=time when feeding constantly =on or
 % =off):
@@ -246,8 +246,8 @@ for cI = 1:nIntervals
     odeFunNorm = @(t,xNorm) fNorm(xNorm,uCurrNorm,xInCurrNorm,thNum,cNum,aNum,TxNum,TuNum); 
     
     % Construct time vector for ODE (t_ode) by filtering of tOverall:
-    idxTimeInterval = (tMinor >= tCurrent & tMinor <= tNext);
-    t_ode           = tMinor(idxTimeInterval); 
+    idxTimeInterval = (tOverall >= tCurrent & tOverall <= tNext);
+    t_ode           = tOverall(idxTimeInterval); 
     if length(t_ode) == 2   % in this case, the solver would interpret 
         % t_ode as a time span and choose integration time points on his own
         t_ode   = linspace(t_ode(1), t_ode(end), 3);    % request to evaluate at exactly 3 time points
@@ -267,7 +267,7 @@ end
 toc
 
 % Evaluate xSol only in tOnline, discard the rest
-idxGridOn = ismember(tMinor, tOnline); 
+idxGridOn = ismember(tOverall, tOnline); 
 xSolOnNorm = xSimNorm(idxGridOn,:);
 
 % de-normalize online evaluation of states: 
@@ -293,7 +293,7 @@ tOfflineSample = (0.45:dtOff:tEnd)';  % offset offline measurements from online 
 NOff = numel(tOfflineSample); % # offline sample points
 
 % interpolate xSimNorm at offline sample times: 
-xSolOffNorm = interp1(tMinor,xSimNorm,tOfflineSample);
+xSolOffNorm = interp1(tOverall,xSimNorm,tOfflineSample);
 % de-normalize offline evaluation of states: 
 xSolOff = repmat(TxNum',NOff,1).*xSolOffNorm;
  

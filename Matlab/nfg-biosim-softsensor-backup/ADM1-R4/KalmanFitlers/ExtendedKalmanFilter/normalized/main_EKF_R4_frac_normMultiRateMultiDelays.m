@@ -23,15 +23,16 @@ TyNum = TNum.Ty; % outputs
 TuNum = TNum.Tu; % inputs
 
 %% set up time vectors required for multirate measurements:
-tMinor = MESS.tOnline;          % time grid of minor measurements 
+tMinor = MESS.tOnline(2:end);   % time grid of minor measurements. no measurement in initial state! 
 nSamplesMinor = length(tMinor); % number of online measurements taken
 % extend time vector by one instance to account for index shift (Matlab
 % only starts counting at 1, but we start with t0, x0...)
 diff_t = diff(tMinor); 
-dt = diff_t(1);                 % sampling time
-tKF = [tMinor;tMinor(end)+dt];  % time vector for Kalman Filter
+dt = diff_t(1);               % sampling time
+tKF = [tMinor(1)-dt;tMinor];  % time vector for Kalman Filter, including initial state
 
-% obtain true time instances:
+% obtain true time instances (ignore the index shift possibly caused by 
+% excluding the first online measurement at t0):
 tOfflineSample = MESS.tOfflineSample;   
 tOfflineArrival = MESS.tOfflineArrival; 
 % shift/pad sampling and arrival times of offline measurements into fine 
@@ -41,18 +42,28 @@ tOfflineArrivalShiftPre = interp1(tMinor,tMinor,tOfflineArrival,'next'); % inclu
 idxKeepOfflineMeasurements = ~isnan(tOfflineArrivalShiftPre); % remove NaNs
 tOfflineArrivalShift = tOfflineArrivalShiftPre(idxKeepOfflineMeasurements); % remove NaNs
 
-%% create united measurement array with NaNs where no (offline) measurement available
-MEASOn = MESS.yMeasOn;
+%% create united measurement array with NaNs where no (offline) measurements available
+MEASOn = MESS.yMeasOn(2:end,:); % also ignore measurement at initial value t0
 MEASOffPre = MESS.yMeasOff; % contains measurements arriving AFTER the end of simulation...
 MEASOff = MEASOffPre(idxKeepOfflineMeasurements,:); % ... so drop those
 qOn = size(MEASOn,2);       % # secondary (online) measurements
 qOff = size(MEASOffPre,2);  % # primary (online) measurements
-MEASUnite = nan(nSamplesMinor,qOn+qOff);     % allocate memory
-% insert minor instances in first qOn columns: 
-MEASUnite(:,1:qOn) = MEASOn; 
-% insert minor instances (at right timing) in last qOff cols of MEASUnite:
-[Lia,idxTOfflineArrPre] = ismember(tOfflineArrivalShift,tMinor); % determine correct row positioning of major instances in MEASUnite (right timing)
-MEASUnite(idxTOfflineArrPre,qOn+1:qOn+qOff) = MEASOff; 
+MEASUnite = nan(nSamplesMinor,4+qOn+qOff);     % allocate memory [tMinor, tSamples, tArrivals, idxSample, yOn, yOff]
+% insert minor sampling times and corresponding measurements: 
+MEASUnite(:,1) = tKF(2:end); 
+MEASUnite(:,4+1:4+qOn) = MEASOn; 
+% XY: überlege hier, an welchen Stellen was einzusetzen ist vor dem
+% Hintergrund der Index-Problematik!
+% insert major instances (at right timing) in last qOff cols of MEASUnite:
+[~,idxTOfflineArrShift] = ismember(tOfflineArrivalShift,tMinor); % determine correct row positioning of major instances in MEASUnite (right timing)
+MEASUnite(idxTOfflineArrShift,4+qOn+1:4+qOn+qOff) = MEASOff; 
+% insert corresponding offline sample times: 
+MEASUnite(idxTOfflineArrShift,2) = tOfflineSampleShift; 
+% insert corresponding offline arrival times: 
+MEASUnite(idxTOfflineArrShift,3) = tOfflineArrivalShift; 
+% insert a 1 in fourth col whenever there are samples taken: 
+[~,idxTOfflineSampleShift] = ismember(tOfflineSampleShift,tMinor); % determine correct row positioning of samples in MEASUnite (right timing)
+MEASUnite(idxTOfflineSampleShift,4) = ones(numel(tOfflineSampleShift),1); 
 
 %% Initialize EKF:
 % initial state values:
@@ -156,9 +167,12 @@ dhdxNorm = matlabFunction(dhdxNormSym, 'Vars', {xNormS, cS, TxS, TyS});
 tic
 % flagAugmented = 0;      % 0: non-augmented; 1: augmented
 flagDelayPeriod = 0;    % 0: not in delay period; 1: in delay period
-nAug = 0;   % number of augmentations
-tActiveSamples = nan;    % allocate memory
-tActiveArrivals = nan;   % allocate memory
+flagArrival = 0;        % 0: no offline measurement arrival, 1: arrival
+nAug = 0;               % number of augmentations
+tKnownSamples = nan;    % allocate memory   
+tKnownArrivals = nan;   % allocate memory
+tActiveSamples = [];    % allocate memory
+tActiveArrivals = [];   % allocate memory
 currKnownMeasurements = nan(1,(qOn+qOff)); % allocate memory
 
 % integrate over all (online) measurement intervals (like in reality):
@@ -166,58 +180,70 @@ for k = 1:nSamplesMinor
 
     tSpan = [tKF(k);tKF(k+1)]; % measurement interval (starts with t0)
     tkm1 = tSpan(1);    % t_k-1 (m for minus)
-    tk = tSpan(2);      % t_k. We do the time and measurement update for this time instance!
+    tk = tSpan(2);      % t_k. This time instance counts, cause we do time and measurement update for this time instance!
 
-    % XY: check, wie viele Arrivals das EKF schon kennt: 
-    tKnownArrivals = tOfflineArrivalShift(tOfflineArrivalShift <= tk); 
+    knownMeasUnite = MEASUnite(1:k,:); 
 
     % check if you're AT a primary sampling (k==s): 
-    % XY: im Zweifel mehrfache augmentation!
+    % XY: auch hier könnten in der Theorie mehrere Samples zur gleichen
+    % Zeit genommen werden...
     if ismember(tk,tOfflineSampleShift)
         nAug = nAug + 1; % increase level of augmentation
-        % add new active sampling time: 
-        if isnan(tActiveSamples)
-            tActiveSamples = tk;   
+        % add new knwon sampling time: 
+        if isempty(tActiveSamples)
+            tActiveSamples = tk;
         else
             tActiveSamples = unique([tActiveSamples;tk]);   
         end
-        flagDelayPeriod = 1; 
-        disp('sampling'); 
+        disp(['took new sample. Level of augmentation: ',num2str(nAug)]); 
         % augment and initialize state x & state err. cov. matrix P
         xAugMinusNorm = [xMinusNorm;xMinusNorm]; 
-        PAugMinusNorm = repmat(PMinusNorm,2,2); 
+        PAugMinusNorm = blkdiag(PMinusNorm,PMinusNorm); 
         xMinusNorm = xAugMinusNorm; 
         PMinusNorm = PAugMinusNorm; 
     end
+    nActiveSamples = nnz(~isnan(tActiveSamples)); % number of non-zero elements
     
-    if flagDelayPeriod == 1
-        disp(['in delay period... at time ', num2str(tkm1)]);
+    % create active samples matrix: 
+    if nActiveSamples > 0
+        % out of knownSamplesMat, extract those rows that belong to active
+        % samples:
+        [~,idxActSamples] = ismember(tActiveSamples,knownMeasUnite(:,1)); 
+        actSamplesMat = knownMeasUnite(idxActSamples,[1,3,8:end]); % [tSample, tArrival, yMeasOff] 
+    else 
+        actSamplesMat = []; 
     end
-    
-    % XY: checke, OB offline-Messwerte zurückkommen; und wenn JA, zu
-    % welcher sampling time diese gehören! 
 
-    % get most recent measurement:
-    yMeas = MEASUnite(k,:);    % simulated measurement
-    % check if you're at minor or major instance: 
-    flagArrival = all(~isnan(yMeas)); % 0: minor instance, 1: major instance
+    % find active arrival times: 
+    if ismember(tk,tOfflineArrivalShift)
+        disp('received offline measurement!'); 
+        if isempty(tActiveArrivals)
+            tActiveArrivals = tk;   
+        else
+            tActiveArrivals = unique([tActiveArrivals;tk]);   
+        end
+        flagArrival = 1; 
+    end
+    nActiveArrivals = nnz(~isnan(tActiveArrivals));
     
-    if flagArrival == 1
-        disp(['now major instance!', newline,...
-        'Delay period over.'])
+    % find and replace those active arrivals in measurement array: 
+    if nActiveArrivals > 0 % otherwise leave actSamplesMat unchanged!
+        [~,idxActArrivals] = ismember(tActiveArrivals,knownMeasUnite(:,3));
+        % cache corresponding entries for now ...: 
+        activeArrivals = knownMeasUnite(idxActArrivals,[2,3,8:end]); % [tCorrespondingSample, tArrival, yMeasOff] 
+        % ... and add values at the corresponding rows of actSamplesMat: 
+        [~,idxCorrectRowIn_actSampleMat] = ismember(activeArrivals(:,1),actSamplesMat(:,1)); 
+        actSamplesMat(idxCorrectRowIn_actSampleMat,:) = activeArrivals; 
+    end
         
-%         flagDelayPeriod = 0;
+    if nAug > 0
+        disp(['in delay period... at time ', num2str(tk)]);
+        flagDelayPeriod = 1; 
     end
-
-    % create body of active samples matrix:
-    nActSamples = numel(tActiveSamples); 
-    actSamplesMat = zeros(nActSamples,2+qOn+qOff); 
-    % fill relevant values: 
-    actSamplesMat(:,1) = tActiveSamples; 
-    % XY think how you can add the available measurement information!
-
-%     [tActiveSamples,tActiveArrivals,currKnownMeasurements];
-
+    
+    % get most recent measurement (get anything that comes in):
+    yMeas = MEASUnite(k,4+1:end);    % obtained full measurement
+    
     %% get feeding information:
     % pass on only relevant feedings during the measurement interval, 
     % because only those would be known in reality:
@@ -240,12 +266,18 @@ for k = 1:nSamplesMinor
     %% execute multirate EKF
     
     % normalized coordinates:  
-%     [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateMultiDelay(xMinusNorm,PMinusNorm, ...
-%         feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
-%         TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,nAug,flagDelayPeriod,flagArrival); 
+    % XY: überlege, wie actSamplesMat (und ggf. andere Infos) richtig
+    % umgesetzt werden!
+    [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateMultiDelay(xMinusNorm,PMinusNorm, ...
+        feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
+        TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,nAug,actSamplesMat,...
+        flagDelayPeriod,flagArrival); 
+    disp('executed real EKF step.')
+    
     % XY: wieder löschen, wenn dummy nicht mehr gebraucht:
-    xPlusNorm = xMinusNorm; 
-    PPlusNorm = PMinusNorm; 
+%     disp('executed dummy EKF step.')
+%     xPlusNorm = xMinusNorm; 
+%     PPlusNorm = PMinusNorm; 
 
     % save results in normalized coordinates:
     ESTIMATESNorm(k+1,:) = xPlusNorm(1:nStates); 
@@ -255,19 +287,41 @@ for k = 1:nSamplesMinor
     xMinusNorm = xPlusNorm; 
     PMinusNorm = PPlusNorm; 
 
-    % remove state augmentation once primary measurement (& delay period) is over:
-    if ismember(tkm1,tOfflineArrivalShift)
-        flagAugmented = 0; 
-%         flagDelayPeriod = 0;
+    % remove augmentation after primary measurement (& delay period);
+    % also remove redeemed samples (and corresponding arrivals):
+    % XY: beachte, dass unter Umständen auch zwei Samples auf einmal
+    % retourniert werden könnten (auch wenn das unwahrscheinlich ist)!
+    if flagArrival
+        % assume that only one arrival is used every minor step!
+        nAug = nAug - 1; 
         disp(['primary measurement over', newline, ...
-              'remove augmentation']); 
+              'remove 1 augmentation. Level of augmentation: ', num2str(nAug)]); 
+        % remove entries from active samples ... : 
+        [~,idxRemove] = ismember(tk,actSamplesMat(:,2)); 
+        tSamplesToBeRemoved = actSamplesMat(idxRemove,1);
+        [~,idxSampleRemove] = ismember(tSamplesToBeRemoved,tActiveSamples); 
+        tActiveSamples = tActiveSamples(~idxSampleRemove); 
+        
+        % ... and remove entries from active arrivals: 
+        tArrivalsToBeRemoved = actSamplesMat(idxRemove,2);
+        [~,idxArrivalRemove] = ismember(tArrivalsToBeRemoved,tActiveArrivals);
+        tActiveArrivals = tActiveArrivals(~idxArrivalRemove); 
+        
+        % ... and also remove entries from actSamplesMat (probably optional):
+        actSamplesMat = actSamplesMat(~idxRemove);      
+
         % remove augmentation of state and state err. cov. matrix P:
-        xMinusUnAugNorm = xMinusNorm(1:nStates); 
-        PMinusUnAugNorm = PMinusNorm(1:nStates,1:nStates); 
+        xMinusUnAugNorm = xMinusNorm(1:nStates*(1 + nAug)); 
+        PMinusUnAugNorm = PMinusNorm(1:nStates*(1 + nAug),1:nStates*(1 + nAug)); 
         % overwrite old (augmented) enteties: 
         xMinusNorm = xMinusUnAugNorm; 
-        PMinusNorm = PMinusUnAugNorm;  
-
+        PMinusNorm = PMinusUnAugNorm;
+        
+        flagArrival = 0; 
+    end
+    
+    if nAug == 0
+        flagDelayPeriod = 0;
     end
 
 end

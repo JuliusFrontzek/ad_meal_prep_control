@@ -1,14 +1,16 @@
 %% Version
-% (R2022b) Update 5
-% Erstelldatum: 01.08.2023
+% (R2022b) Update 6
+% Erstelldatum: 26.11.2023
+% last modified: 26.11.2023
 % Autor: Simon Hellmann
 
-function dxPNormdt = dfP_dtAugNorm(xPNorm,uNorm,xiNorm,params,QNorm, ...
+function dxPNormdt = dfP_dtAugNormMulti(xPNorm,uNorm,xiNorm,params,QNorm, ...
                                    fNorm,dfdxNorm,TxNum,TuNum,...
-                                   nStates,flagAugmented)
+                                   nStates,nAug)
+
 % compute right-hand side of ODEs of both normalized (norm.) states and 
-% norm. state error covariance matrix P. Respect both cases (augmented and
-% non-augmented)
+% norm. state error covariance matrix P. Respect all augmentation cases 
+% (single augmented, multi-augmented and non-augmented)
 
 % dxPNormdt - right-hand side of ODE (of norm. states and dynamics of norm. 
 % state error covariance matrix)
@@ -23,7 +25,7 @@ function dxPNormdt = dfP_dtAugNorm(xPNorm,uNorm,xiNorm,params,QNorm, ...
 % dfdxNorm - function handle of norm. partial derivatives of df/dx 
 % TxNum, TuNum - normalization vectors of states and inputs
 % nStates - # states (without sample state augmentation)
-% flagAugmented - 0: non-augmented, 1: augmented
+% nAug - # of augmentations
 
     % extract constant parameters out of struct: 
     th = params.th; 
@@ -33,9 +35,9 @@ function dxPNormdt = dfP_dtAugNorm(xPNorm,uNorm,xiNorm,params,QNorm, ...
     dxPNormdt = zeros(size(xPNorm));    % allocate memory 
     
     % separate states and covariance matrix:
-    if flagAugmented == 1
-        xAugNorm = xPNorm(1:2*nStates); 
-        PAugNorm = reshape(xPNorm(2*nStates+1:end),[2*nStates,2*nStates]);
+    if nAug > 0
+        xAugNorm = xPNorm(1:nStates*(1+nAug)); 
+        PAugNorm = reshape(xPNorm(nStates*(1+nAug)+1:end),[nStates*(1+nAug),nStates*(1+nAug)]);
         xNorm = xAugNorm(1:nStates); % ignore the sample state for further computations
         PNorm = PAugNorm; 
     else
@@ -49,10 +51,14 @@ function dxPNormdt = dfP_dtAugNorm(xPNorm,uNorm,xiNorm,params,QNorm, ...
     %% ODEs of states:
     dxdtNorm = fNorm(xNorm,uNorm,xiNorm,th,c,a,TxNum,TuNum);                
 
-    if flagAugmented == 1
-        dxsNormdt = zeros(nStates,1); % maintain sample state
-        dxAugNormdt = [dxdtNorm;dxsNormdt]; 
-        dxPNormdt(1:2*nStates) = dxAugNormdt; 
+    if nAug > 1
+        dxAugNormdt = zeros(nStates(1+nAug),1);
+        % replace only first nStates entries with active state difference
+        % equations, keep the rest constant:
+        dxAugNormdt(1:nStates) = dxdtNorm; 
+        % fill these values into the first rows of combined vector of 
+        % states and entries of P-Matrix: 
+        dxPNormdt(1:nStates*(1+nAug)) = dxAugNormdt; 
     else 
         dxPNormdt(1:nStates) = dxdtNorm; 
     end
@@ -62,17 +68,17 @@ function dxPNormdt = dfP_dtAugNorm(xPNorm,uNorm,xiNorm,params,QNorm, ...
     % partial derivatives of the right-hand side w.r.t. states, evaluated
     % at current estimate x (which is actually xHat):
     FNorm = dfdxNorm(xNorm,uNorm,th,c,a,TxNum,TuNum);            
-    if flagAugmented == 1
+    if nAug > 0
         % augment F- and Q-matrix:
-        FNorms = zeros(nStates);    % for normalized sample-states
-        FAugNorm = blkdiag(FNorm,FNorms);  % augmented, normalized F-matrix
+        FNorms = zeros(nStates*nAug);       % for normalized sample-states
+        FAugNorm = blkdiag(FNorm,FNorms);   % augmented, normalized F-matrix
 %         Q = zeros(nStates);   % XY Rania
-        QNorms = zeros(nStates);    % for sample-states
-        QAugNorm = blkdiag(QNorm,QNorms);     % augmented Q-matrix
+        QNorms = zeros(nStates*nAug);       % for sample-states
+        QAugNorm = blkdiag(QNorm,QNorms);   % augmented Q-matrix
         
         dPAugNormdt = FAugNorm*PAugNorm + PAugNorm*FAugNorm' + QAugNorm;  % dynamics of normalized state error covariance matrix
         % reshape matrix as long column vector and append values dxPdt:
-        dxPNormdt(2*nStates+1:end) = reshape(dPAugNormdt,[],1);
+        dxPNormdt(nStates*(1+nAug)+1:end) = reshape(dPAugNormdt,[],1);
     else 
 %         Q = zeros(nStates);   % XY Rania
         dPNormdt = FNorm*PNorm + PNorm*FNorm' + QNorm;  % dynamics of state error covariance matrix

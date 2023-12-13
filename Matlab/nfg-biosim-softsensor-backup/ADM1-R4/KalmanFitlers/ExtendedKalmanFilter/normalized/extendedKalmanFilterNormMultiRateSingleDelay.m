@@ -1,7 +1,7 @@
 %% Version
-% (R2022b) Update 2
+% (R2022b) Update 6
 % Erstelldatum: 01.08.2023
-% last modified: 23.11.2023
+% last modified: 26.11.2023
 % Autor: Simon Hellmann
 
 function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateSingleDelay(xOldNorm,POldNorm, ...
@@ -60,7 +60,7 @@ if isempty(tRelEvents)
     feedVolFlowNorm = feedInfoNorm(2); 
     xInCurrNorm = feedInfoNorm(3:end)';  % current inlet concentrations
     tEval = tSpan;
-    odeFunNorm = @(t,xPNorm) dfP_dtAugNorm(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
+    odeFunNorm = @(t,xPNorm) dfP_dtAugNormSingle(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
                                 params,QNorm,fNorm,dfdxNorm,TxNum,TuNum,...
                                 nStates,flagAugmented);
     [~,xPSolNorm] = ode15s(odeFunNorm,tEval,xPOldNorm);
@@ -76,7 +76,7 @@ else
         feedVolFlowNorm = feedInfoNorm(jj,2); 
         xInCurrNorm = feedInfoNorm(jj,3:end)';   % current inlet concentrations
         tEval = [tOverall(jj), tOverall(jj+1)];
-        odeFunNorm = @(t,xPNorm) dfP_dtAugNorm(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
+        odeFunNorm = @(t,xPNorm) dfP_dtAugNormSingle(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
                         params,QNorm,fNorm,dfdxNorm,TxNum,TuNum,...
                         nStates,flagAugmented); 
         [~,xPSolNorm] = ode15s(odeFunNorm,tEval,xP0Norm);

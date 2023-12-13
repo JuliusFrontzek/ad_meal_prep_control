@@ -6,13 +6,17 @@
 
 function [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateMultiDelay(xOldNorm,POldNorm, ...
     feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
-    TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,nAug,flagDelayPeriod,flagArrival)
+    TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,nAug,actSamplesMat,...
+    flagDelayPeriod,flagArrival)
 
 % compute time & measurement update with normalized multirate measurements
 % with multiple augmentation before return of measurement for samples
 % in normalized (norm.) coordinates
 
-% XY: change flagAugmentation to counter nAug everywhere!
+% XY: überlege, wie du die Werte aus actSamplesMat gut umsetzt. Bedenke,
+% dass die Matrix auch empty sein kann!
+
+% XY: nomenclatur anpassen!
 
 % xPlusNorm - new norm. state estimate
 % PPlusNorm - new norm. state error covariance matrix
@@ -64,7 +68,7 @@ if isempty(tRelEvents)
     tEval = tSpan;
     odeFunNorm = @(t,xPNorm) dfP_dtAugNorm(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
                                 params,QNorm,fNorm,dfdxNorm,TxNum,TuNum,...
-                                nStates,flagAugmented);
+                                nStates,nAug);
     [~,xPSolNorm] = ode15s(odeFunNorm,tEval,xPOldNorm);
     xPMinusNorm = xPSolNorm(end,:)';
 % Case b: feeding changes during measurement interval:
@@ -78,9 +82,9 @@ else
         feedVolFlowNorm = feedInfoNorm(jj,2); 
         xInCurrNorm = feedInfoNorm(jj,3:end)';   % current inlet concentrations
         tEval = [tOverall(jj), tOverall(jj+1)];
-        odeFunNorm = @(t,xPNorm) dfP_dtAugNorm(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
+        odeFunNorm = @(t,xPNorm) dfP_dtAugNormMulti(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
                         params,QNorm,fNorm,dfdxNorm,TxNum,TuNum,...
-                        nStates,flagAugmented); 
+                        nStates,nAug); 
         [~,xPSolNorm] = ode15s(odeFunNorm,tEval,xP0Norm);
         % update initial value for next interval:
         xP0Norm = xPSolNorm(end,:)';
@@ -88,12 +92,11 @@ else
     xPMinusNorm = xP0Norm;
 end
 
-% separate states x and covariance matrix P:
-% differentiate between different augmented and non-augmented case:
-if flagAugmented == 1
-    xAugMinusNorm = xPMinusNorm(1:2*nStates);
-    PAugMinusNorm = reshape(xPMinusNorm(2*nStates+1:end),[2*nStates,2*nStates]);
-    xMinusNorm = xAugMinusNorm(1:2*nStates); 
+% separate states x and covariance matrix P from LONG vector xPMinus:
+if nAug > 0 % augmented case: 
+    xAugMinusNorm = xPMinusNorm(1:nStates*(1+nAug));
+    PAugMinusNorm = reshape(xPMinusNorm(nStates*(1+nAug)+1:end),[nStates*(1+nAug),nStates*(1+nAug)]);
+    xMinusNorm = xAugMinusNorm(1:nStates*(1+nAug)); 
     PMinusNorm = PAugMinusNorm; 
 else % non-augmented case:
     xMinusNorm = xPMinusNorm(1:nStates);
@@ -102,16 +105,42 @@ end
 
 %% Measurement Update
 xMinusCoreNorm = xMinusNorm(1:nStates); % definitely without augmentation
-hNorm = gNorm(xMinusCoreNorm,params.c,TxNum,TyNum); % predicted normalized model output
-if flagAugmented == 1    
-    HAugNorm = nan(qOn+qOff,2*nStates);     % allocate memory
-    HAugNorm(:,1:nStates) = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % the remaining nStates cols stay 0
-    % fill augmented columns with zeros since they correspond to sample
-    % state which is fixed, thus currently not time dependent anymore:
-    HAugNorm(:,nStates+1:end) = zeros(qOn+qOff, nStates); 
+hNormPre = gNorm(xMinusCoreNorm,params.c,TxNum,TyNum);     % predicted normalized model output
+HNormPre = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
+yMeasNorm = yMeas'./TyNum; % full normalized measurement vector
+
+% figure out which measurements are available and reduce hNorm, yMeasNorm,
+% HNorm and RNorm accordingly: 
+idxMeas = ~isnan(yMeas);        % 1 where there is measurement, 0 where NaN
+hNorm = hNormPre(idxMeas);         % still col vector
+yMeasNorm = yMeasNorm(idxMeas); % still row vector
+HNorm = HNormPre(idxMeas,:);   
+RNorm = RNorm(idxMeas,idxMeas); 
+
+
+% XY: die folgenden 4 Zeilen Code kommen wahrscheinlich erst später!
+SNorm = HNorm*PMinusNorm*HNorm' + RNorm;    % auxiliary matrix
+SNormInv = SNorm\eye(size(RNorm));  % efficient least squares (numerically more efficient alternative for inverse)
+KNorm = PMinusNorm*HNorm'*SNormInv; % Kalman Gain matrix
+KvNorm = KNorm*(yMeasNorm - hNorm);    % effective correction of Kalman Gain on state estimate (n,1); 
+% XY Ende der vier Zeilen Code
+
+
+% XY: rekonstruiere die korrekte Indicator Matrix aus der active samples
+% matrix!
+if nAug > 0 % augmented case:    
+%     HAugNorm = nan(qOn+qOff,nStates*(1+nAug));     % allocate memory
+%     HAugNorm(:,1:nStates) = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % the remaining nStates cols stay 0
+%     % fill augmented columns with zeros since they correspond to sample
+%     % state which is fixed, thus currently not time dependent anymore:
+%     HAugNorm(:,nStates+1:end) = zeros(qOn+qOff, nStates); 
+    
+    % XY: checke, ob die Dimensionen korrekt sind, auch wenn vorher schon 
+    % nach den laut idxMeas relevanten Einträgen gesliced wurde!
+    HAugNorm = [HNorm,zeros(qOn+qOff, nStates*nAug)];
     HNorm = HAugNorm; 
-else % non-augmented case:
-    HNorm = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
+% else % non-augmented case:
+%     HNorm = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
 end
 
 % Slicing. During minor instance...
@@ -137,10 +166,10 @@ KvNorm = KNorm*(yMeasNorm - hNorm);    % effective correction of Kalman Gain on 
 
 % XY: passe die indicator matrix an!
 if flagDelayPeriod == 1
-    M = blkdiag(eye(nStates),zeros(nStates)); % indicator matrix
+    M = blkdiag(eye(nStates),zeros(nStates)); % indicator matrix. XY anpassen!
     xPlusNorm = xMinusNorm + M*KvNorm;    % updated normalized state estimation
     % Joseph-Algorithm for measurement update of P: 
-    leftMat = eye(2*nStates) - M*KNorm*HNorm; 
+    leftMat = eye(nStates*(1+nAug)) - M*KNorm*HNorm; 
     rightMat = leftMat'; 
     PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated normalized covariance of estimation error
 else % when not waiting for lab measurement to return, update all of x and P, 
