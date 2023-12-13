@@ -51,8 +51,8 @@ function dxPNormdt = dfP_dtAugNormMulti(xPNorm,uNorm,xiNorm,params,QNorm, ...
     %% ODEs of states:
     dxdtNorm = fNorm(xNorm,uNorm,xiNorm,th,c,a,TxNum,TuNum);                
 
-    if nAug > 1
-        dxAugNormdt = zeros(nStates(1+nAug),1);
+    if nAug > 0
+        dxAugNormdt = zeros(nStates*(1+nAug),1);
         % replace only first nStates entries with active state difference
         % equations, keep the rest constant:
         dxAugNormdt(1:nStates) = dxdtNorm; 

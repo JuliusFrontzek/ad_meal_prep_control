@@ -209,7 +209,8 @@ for k = 1:nSamplesMinor
         % out of knownSamplesMat, extract those rows that belong to active
         % samples:
         [~,idxActSamples] = ismember(tActiveSamples,knownMeasUnite(:,1)); 
-        actSamplesMat = knownMeasUnite(idxActSamples,[1,3,8:end]); % [tSample, tArrival, yMeasOff] 
+%         actSamplesMat = knownMeasUnite(idxActSamples,[1,3,8:end]); % [tSample, tArrival, yMeasOff] 
+        actSamplesMat = knownMeasUnite(idxActSamples,[1,3]); % [tSample, tArrival] 
     else 
         actSamplesMat = []; 
     end
@@ -224,16 +225,19 @@ for k = 1:nSamplesMinor
         end
         flagArrival = 1; 
     end
-    nActiveArrivals = nnz(~isnan(tActiveArrivals));
+    nActiveArrivals = nnz(~isnan(tActiveArrivals)); % number of non-zero elements
     
     % find and replace those active arrivals in measurement array: 
     if nActiveArrivals > 0 % otherwise leave actSamplesMat unchanged!
         [~,idxActArrivals] = ismember(tActiveArrivals,knownMeasUnite(:,3));
         % cache corresponding entries for now ...: 
-        activeArrivals = knownMeasUnite(idxActArrivals,[2,3,8:end]); % [tCorrespondingSample, tArrival, yMeasOff] 
+%         activeArrivals = knownMeasUnite(idxActArrivals,[2,3,8:end]); % [tCorrespondingSample, tArrival, yMeasOff] 
+        activeArrivals = knownMeasUnite(idxActArrivals,[2,3]); % [tCorrespondingSample, tArrival] 
         % ... and add values at the corresponding rows of actSamplesMat: 
         [~,idxCorrectRowIn_actSampleMat] = ismember(activeArrivals(:,1),actSamplesMat(:,1)); 
         actSamplesMat(idxCorrectRowIn_actSampleMat,:) = activeArrivals; 
+        % XY: hier offline-Messgrößen ggf. wieder rausnehmen, da diese
+        % bereits in yMeas enthalten sind!
     end
         
     if nAug > 0

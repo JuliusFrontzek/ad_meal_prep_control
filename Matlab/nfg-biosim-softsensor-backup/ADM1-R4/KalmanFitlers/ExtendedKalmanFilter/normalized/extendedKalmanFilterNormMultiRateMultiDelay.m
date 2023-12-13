@@ -66,9 +66,9 @@ if isempty(tRelEvents)
     feedVolFlowNorm = feedInfoNorm(2); 
     xInCurrNorm = feedInfoNorm(3:end)';  % current inlet concentrations
     tEval = tSpan;
-    odeFunNorm = @(t,xPNorm) dfP_dtAugNorm(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
+    odeFunNorm = @(t,xPNorm) dfP_dtAugNormMulti(xPNorm,feedVolFlowNorm,xInCurrNorm, ...
                                 params,QNorm,fNorm,dfdxNorm,TxNum,TuNum,...
-                                nStates,nAug);
+                                nStates,nAug); 
     [~,xPSolNorm] = ode15s(odeFunNorm,tEval,xPOldNorm);
     xPMinusNorm = xPSolNorm(end,:)';
 % Case b: feeding changes during measurement interval:
@@ -105,81 +105,75 @@ end
 
 %% Measurement Update
 xMinusCoreNorm = xMinusNorm(1:nStates); % definitely without augmentation
-hNormPre = gNorm(xMinusCoreNorm,params.c,TxNum,TyNum);     % predicted normalized model output
-HNormPre = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
-yMeasNorm = yMeas'./TyNum; % full normalized measurement vector
+hNormFullCore = gNorm(xMinusCoreNorm,params.c,TxNum,TyNum);     % predicted normalized model output
+HNormFullCore = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
+yMeasNormFull = yMeas'./TyNum; % full normalized measurement vector
 
 % figure out which measurements are available and reduce hNorm, yMeasNorm,
 % HNorm and RNorm accordingly: 
 idxMeas = ~isnan(yMeas);        % 1 where there is measurement, 0 where NaN
-hNorm = hNormPre(idxMeas);         % still col vector
-yMeasNorm = yMeasNorm(idxMeas); % still row vector
-HNorm = HNormPre(idxMeas,:);   
+hNormCore = hNormFullCore(idxMeas);      % still col vector
+yMeasNorm = yMeasNormFull(idxMeas); % still row vector
+HNormCore = HNormFullCore(idxMeas,:);   
 RNorm = RNorm(idxMeas,idxMeas); 
+% XY: hier evtl. die Nomenklatur von HNormCore und hNormCore anpassen!
 
-
-% XY: die folgenden 4 Zeilen Code kommen wahrscheinlich erst später!
-SNorm = HNorm*PMinusNorm*HNorm' + RNorm;    % auxiliary matrix
-SNormInv = SNorm\eye(size(RNorm));  % efficient least squares (numerically more efficient alternative for inverse)
-KNorm = PMinusNorm*HNorm'*SNormInv; % Kalman Gain matrix
-KvNorm = KNorm*(yMeasNorm - hNorm);    % effective correction of Kalman Gain on state estimate (n,1); 
-% XY Ende der vier Zeilen Code
-
-
-% XY: rekonstruiere die korrekte Indicator Matrix aus der active samples
-% matrix!
-if nAug > 0 % augmented case:    
-%     HAugNorm = nan(qOn+qOff,nStates*(1+nAug));     % allocate memory
-%     HAugNorm(:,1:nStates) = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % the remaining nStates cols stay 0
-%     % fill augmented columns with zeros since they correspond to sample
-%     % state which is fixed, thus currently not time dependent anymore:
-%     HAugNorm(:,nStates+1:end) = zeros(qOn+qOff, nStates); 
-    
-    % XY: checke, ob die Dimensionen korrekt sind, auch wenn vorher schon 
-    % nach den laut idxMeas relevanten Einträgen gesliced wurde!
-    HAugNorm = [HNorm,zeros(qOn+qOff, nStates*nAug)];
-    HNorm = HAugNorm; 
-% else % non-augmented case:
-%     HNorm = dhdxNorm(xMinusCoreNorm,params.c,TxNum,TyNum);  % partial derivative of output, evaluated at xMinus
-end
-
-% Slicing. During minor instance...
-if flagArrival == 0
-    % ... reduce H and R to # of measurement signals during minor instance:
-    HNorm = HNorm(1:qOn,:); 
-    RNorm = RNorm(1:qOn,1:qOn); 
-    % ... extract reduced # of measurement signals during minor instance:
-    hNorm = hNorm(1:qOn); 
-    yMeasNorm = yMeas(1:qOn)'./TyNum(1:qOn); % reduced normalized measurement vector
+% do augmentation if applicable: 
+if nAug > 0    
+    HNormAug = [HNormCore,zeros(nnz(hNormCore), nStates*nAug)];
+    HNorm = HNormAug; 
 else 
-    yMeasNorm = yMeas'./TyNum; % full normalized measurement vector
+    HNorm = HNormCore;
 end
-% during major instance, you must use all of the measurements available
-% (merged online and offline measurements together)
+% XY: hier auch die Nomenklatur von HNormCore und hNormCore anpassen!
 
-SNorm = HNorm*PMinusNorm*HNorm' + RNorm;    % auxiliary matrix
+SNorm = HNorm*PMinusNorm*HNorm' + RNorm;    % auxiliary matrix [q,q]
 SNormInv = SNorm\eye(size(RNorm));  % efficient least squares (numerically more efficient alternative for inverse)
-KNorm = PMinusNorm*HNorm'*SNormInv; % Kalman Gain matrix
-
-KvNorm = KNorm*(yMeasNorm - hNorm);    % effective correction of Kalman Gain on state estimate (n,1); 
+KNorm = PMinusNorm*HNorm'*SNormInv; % Kalman Gain matrix [n,q]
+KvNorm = KNorm*(yMeasNorm - hNormCore);    % effective correction of Kalman Gain on state estimate (n,1); 
 % KvNorm = zeros(nStates,1);  % XY Rania
 
-% XY: passe die indicator matrix an!
-if flagDelayPeriod == 1
-    M = blkdiag(eye(nStates),zeros(nStates)); % indicator matrix. XY anpassen!
-    xPlusNorm = xMinusNorm + M*KvNorm;    % updated normalized state estimation
-    % Joseph-Algorithm for measurement update of P: 
-    leftMat = eye(nStates*(1+nAug)) - M*KNorm*HNorm; 
-    rightMat = leftMat'; 
-    PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated normalized covariance of estimation error
-else % when not waiting for lab measurement to return, update all of x and P, 
-    % regardless whether augmented or not:
-    xPlusNorm = xMinusNorm + KvNorm;    % updated state estimation
-    % Joseph-Algorithm for measurement update of P: 
-    leftMat = eye(size(xMinusNorm)) - KNorm*HNorm; 
-    rightMat = leftMat'; 
-    PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated normalized covariance of estimation error
+% XY: baue aus der active samples matrix die ranking matrix, dann die
+% augmented indicator matrix (ohne die 1 oben links) und dann die full 
+% indicator matrix
+if nAug > 0
+    % default is to update only original state entries, leave copies 
+    % unchanged (no measurement arrival, just samples awaiting return):
+    M = blkdiag(eye(nStates),zeros(nStates*nAug)); 
+    if any(~isnan(actSamplesMat(:,2))) % if there is measurement coming in
+        % find earliest current return time: 
+        [~,idxFirstCurrReturn] = min(actSamplesMat(:,2)); 
+        % and switch those entries in M to ones that correspond to the 
+        % copies updated by the incoming measurements: 
+        indexForM = (idxFirstCurrReturn)*nStates+1:(1+idxFirstCurrReturn)*nStates; 
+        M(indexForM,indexForM) = eye(nStates); 
+    end
+else % non-augmented case: 
+    M = eye(nStates); % update all (original) states as usual
 end
+
+% XY: die folgende if-Bedingung stimmt noch nicht. Es geht eher darum, ob noch
+% Messwerte ausstehen oder nicht!
+% if nAug > 0     % augmented case
+%     % XY: passe die indicator matrix an!
+%     M = blkdiag(eye(nStates),zeros(nStates)); % indicator matrix. XY anpassen!
+
+xPlusNorm = xMinusNorm + M*KvNorm;    % updated normalized state estimation
+% Joseph-Algorithm for measurement update of P: 
+leftMat = eye(nStates*(1+nAug)) - M*KNorm*HNorm; 
+rightMat = leftMat'; 
+PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated normalized covariance of estimation error
+
+% else % when all lab measurements return (none left expected), update all of 
+%     % x and P, regardless whether augmented or not:
+%     % XY: ersetze das else lieber durch eine ordentliche Konstruktion von
+%     % M!
+%     xPlusNorm = xMinusNorm + KvNorm;    % updated state estimation
+%     % Joseph-Algorithm for measurement update of P: 
+%     leftMat = eye(size(xMinusNorm)) - KNorm*HNorm; 
+%     rightMat = leftMat'; 
+%     PPlusNorm = leftMat*PMinusNorm*rightMat + KNorm*RNorm*KNorm'; % updated normalized covariance of estimation error
+% end
 
 % clipping of negative state estimations: 
 % xPlus(xPlus<0) = 0; 
