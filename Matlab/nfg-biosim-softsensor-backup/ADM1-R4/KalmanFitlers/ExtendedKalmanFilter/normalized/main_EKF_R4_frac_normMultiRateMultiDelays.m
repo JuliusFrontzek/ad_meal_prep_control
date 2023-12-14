@@ -1,7 +1,7 @@
 %% Version
 % (R2022b) Update 6
 % Erstelldatum: 23.11.2023
-% last modified: 23.11.2023
+% last modified: 14.12.2023
 % Autor: Simon Hellmann
 
 %% DAS Kalman Filter fürs ADM1-R4-frac-norm mit Online/Offline Messwerten
@@ -29,7 +29,7 @@ nSamplesMinor = length(tMinor); % number of online measurements taken
 % only starts counting at 1, but we start with t0, x0...)
 diff_t = diff(tMinor); 
 dt = diff_t(1);               % sampling time
-tKF = [tMinor(1)-dt;tMinor];  % time vector for Kalman Filter, including initial state
+tKF = [tMinor(1)-dt;tMinor];  % time vector for Kalman Filter, starting at initial state
 
 % obtain true time instances (ignore the index shift possibly caused by 
 % excluding the first online measurement at t0):
@@ -52,8 +52,6 @@ MEASUnite = nan(nSamplesMinor,4+qOn+qOff);     % allocate memory [tMinor, tSampl
 % insert minor sampling times and corresponding measurements: 
 MEASUnite(:,1) = tKF(2:end); 
 MEASUnite(:,4+1:4+qOn) = MEASOn; 
-% XY: überlege hier, an welchen Stellen was einzusetzen ist vor dem
-% Hintergrund der Index-Problematik!
 % insert major instances (at right timing) in last qOff cols of MEASUnite:
 [~,idxTOfflineArrShift] = ismember(tOfflineArrivalShift,tMinor); % determine correct row positioning of major instances in MEASUnite (right timing)
 MEASUnite(idxTOfflineArrShift,4+qOn+1:4+qOn+qOff) = MEASOff; 
@@ -61,7 +59,7 @@ MEASUnite(idxTOfflineArrShift,4+qOn+1:4+qOn+qOff) = MEASOff;
 MEASUnite(idxTOfflineArrShift,2) = tOfflineSampleShift; 
 % insert corresponding offline arrival times: 
 MEASUnite(idxTOfflineArrShift,3) = tOfflineArrivalShift; 
-% insert a 1 in fourth col whenever there are samples taken: 
+% insert a 1 in 4th col whenever there are samples taken: 
 [~,idxTOfflineSampleShift] = ismember(tOfflineSampleShift,tMinor); % determine correct row positioning of samples in MEASUnite (right timing)
 MEASUnite(idxTOfflineSampleShift,4) = ones(numel(tOfflineSampleShift),1); 
 
@@ -165,29 +163,29 @@ dhdxNorm = matlabFunction(dhdxNormSym, 'Vars', {xNormS, cS, TxS, TyS});
 
 %% call MR-EKF iteratively
 tic
-% flagAugmented = 0;      % 0: non-augmented; 1: augmented
 flagDelayPeriod = 0;    % 0: not in delay period; 1: in delay period
 flagArrival = 0;        % 0: no offline measurement arrival, 1: arrival
 nAug = 0;               % number of augmentations
-tKnownSamples = nan;    % allocate memory   
-tKnownArrivals = nan;   % allocate memory
 tActiveSamples = [];    % allocate memory
 tActiveArrivals = [];   % allocate memory
-currKnownMeasurements = nan(1,(qOn+qOff)); % allocate memory
 
 % integrate over all (online) measurement intervals (like in reality):
 for k = 1:nSamplesMinor 
-
-    tSpan = [tKF(k);tKF(k+1)]; % measurement interval (starts with t0)
-    tkm1 = tSpan(1);    % t_k-1 (m for minus)
-    tk = tSpan(2);      % t_k. This time instance counts, cause we do time and measurement update for this time instance!
+    
+    % make index shift; note that tKF starts at t0 = 0, while the first 
+    % measurement comes in at t1. The latter is what counts for the
+    % measurement update within the Kalman Filter updates
+    tkm1 = tKF(k); 
+    tk = tKF(k+1); 
+    tSpan = [tkm1;tk]; 
 
     knownMeasUnite = MEASUnite(1:k,:); 
 
-    % check if you're AT a primary sampling (k==s): 
-    % XY: auch hier könnten in der Theorie mehrere Samples zur gleichen
-    % Zeit genommen werden...
+    % check if you're AT a primary sampling (k==s). If so, remember this
+    % moment as sample time:
+    % XY: note that in theory, multiple samples could be drawn in one step
     if ismember(tk,tOfflineSampleShift)
+        % assume that only one sample is drawn in every minor step!
         nAug = nAug + 1; % increase level of augmentation
         % add new knwon sampling time: 
         if isempty(tActiveSamples)
@@ -195,8 +193,8 @@ for k = 1:nSamplesMinor
         else
             tActiveSamples = unique([tActiveSamples;tk]);   
         end
-        disp(['took new sample. Level of augmentation: ',num2str(nAug)]); 
-        % augment and initialize state x & state err. cov. matrix P
+        disp(['took new sample at time ',num2str(tk),'. Level of augmentation: ',num2str(nAug)]); 
+        % augment and initialize state x & state err. cov. matrix P:
         xAugMinusNorm = [xMinusNorm;xMinusNorm]; 
         PAugMinusNorm = blkdiag(PMinusNorm,PMinusNorm); 
         xMinusNorm = xAugMinusNorm; 
@@ -204,12 +202,14 @@ for k = 1:nSamplesMinor
     end
     nActiveSamples = nnz(~isnan(tActiveSamples)); % number of non-zero elements
     
-    % create active samples matrix: 
+    if nAug > 0
+        disp(['in delay period... at time ', num2str(tk)]); 
+    end
+
+    % from this knowledge, create matrix of active samples (only times matter): 
     if nActiveSamples > 0
-        % out of knownSamplesMat, extract those rows that belong to active
-        % samples:
+    % out of knownSamplesMat, extract rows that belong to active samples:
         [~,idxActSamples] = ismember(tActiveSamples,knownMeasUnite(:,1)); 
-%         actSamplesMat = knownMeasUnite(idxActSamples,[1,3,8:end]); % [tSample, tArrival, yMeasOff] 
         actSamplesMat = knownMeasUnite(idxActSamples,[1,3]); % [tSample, tArrival] 
     else 
         actSamplesMat = []; 
@@ -227,25 +227,17 @@ for k = 1:nSamplesMinor
     end
     nActiveArrivals = nnz(~isnan(tActiveArrivals)); % number of non-zero elements
     
-    % find and replace those active arrivals in measurement array: 
+    % insert those active arrivals in measurement array: 
     if nActiveArrivals > 0 % otherwise leave actSamplesMat unchanged!
         [~,idxActArrivals] = ismember(tActiveArrivals,knownMeasUnite(:,3));
-        % cache corresponding entries for now ...: 
-%         activeArrivals = knownMeasUnite(idxActArrivals,[2,3,8:end]); % [tCorrespondingSample, tArrival, yMeasOff] 
+        % save corresponding entries for now ...: 
         activeArrivals = knownMeasUnite(idxActArrivals,[2,3]); % [tCorrespondingSample, tArrival] 
         % ... and add values at the corresponding rows of actSamplesMat: 
         [~,idxCorrectRowIn_actSampleMat] = ismember(activeArrivals(:,1),actSamplesMat(:,1)); 
         actSamplesMat(idxCorrectRowIn_actSampleMat,:) = activeArrivals; 
-        % XY: hier offline-Messgrößen ggf. wieder rausnehmen, da diese
-        % bereits in yMeas enthalten sind!
-    end
-        
-    if nAug > 0
-        disp(['in delay period... at time ', num2str(tk)]);
-        flagDelayPeriod = 1; 
     end
     
-    % get most recent measurement (get anything that comes in):
+    % retrieve most recent measurement (get anything that comes in):
     yMeas = MEASUnite(k,4+1:end);    % obtained full measurement
     
     %% get feeding information:
@@ -270,18 +262,10 @@ for k = 1:nSamplesMinor
     %% execute multirate EKF
     
     % normalized coordinates:  
-    % XY: überlege, wie actSamplesMat (und ggf. andere Infos) richtig
-    % umgesetzt werden!
     [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateMultiDelay(xMinusNorm,PMinusNorm, ...
         feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
-        TxNum,TyNum,TuNum,tSpan,nStates,qOn,qOff,nAug,actSamplesMat,...
-        flagDelayPeriod,flagArrival); 
+        TxNum,TyNum,TuNum,tSpan,nStates,nAug,actSamplesMat); 
     disp('executed real EKF step.')
-    
-    % XY: wieder löschen, wenn dummy nicht mehr gebraucht:
-%     disp('executed dummy EKF step.')
-%     xPlusNorm = xMinusNorm; 
-%     PPlusNorm = PMinusNorm; 
 
     % save results in normalized coordinates:
     ESTIMATESNorm(k+1,:) = xPlusNorm(1:nStates); 
@@ -291,10 +275,10 @@ for k = 1:nSamplesMinor
     xMinusNorm = xPlusNorm; 
     PMinusNorm = PPlusNorm; 
 
-    % remove augmentation after primary measurement (& delay period);
-    % also remove redeemed samples (and corresponding arrivals):
-    % XY: beachte, dass unter Umständen auch zwei Samples auf einmal
-    % retourniert werden könnten (auch wenn das unwahrscheinlich ist)!
+    % after primary measurement (& delay period), remove redeemed samples, 
+    % corresponding arrivals and augmentation:
+    % XY: note that in theory, measurements of multiple measurements could 
+    % be returned in one step (resulting in multiple augmentations dropped)
     if flagArrival
         % assume that only one arrival is used every minor step!
         nAug = nAug - 1; 
@@ -311,9 +295,6 @@ for k = 1:nSamplesMinor
         [~,idxArrivalRemove] = ismember(tArrivalsToBeRemoved,tActiveArrivals);
         tActiveArrivals = tActiveArrivals(~idxArrivalRemove); 
         
-        % ... and also remove entries from actSamplesMat (probably optional):
-        actSamplesMat = actSamplesMat(~idxRemove);      
-
         % remove augmentation of state and state err. cov. matrix P:
         xMinusUnAugNorm = xMinusNorm(1:nStates*(1 + nAug)); 
         PMinusUnAugNorm = PMinusNorm(1:nStates*(1 + nAug),1:nStates*(1 + nAug)); 
@@ -323,11 +304,6 @@ for k = 1:nSamplesMinor
         
         flagArrival = 0; 
     end
-    
-    if nAug == 0
-        flagDelayPeriod = 0;
-    end
-
 end
 toc
 
@@ -356,7 +332,7 @@ for kk = 1:nOutputs
     measurements = MESS.yMeas(:,kk); 
     
     % ignore the first value because that's only the output of x0:
-    estimatedMeasurements = yEKFDeNorm(2:end,kk);    
+    estimatedMeasurements = yEKFDeNorm(:,kk);    
     
     % get RMSSE and squared numerators and denominators:
     [RMSSE(kk)] = computeRMSSE(measurements,estimatedMeasurements); 
@@ -364,20 +340,20 @@ end
 
 RMSSE_mean = mean(RMSSE); 
 
-%% compute filter efficiency for selected variables: 
-% volFlowCH4:
-[NSE_VCH4,eNSE_VCH4] = compute_NSE(MESS.yMeasExt(:,4), yEKFDeNormExt(2:end,4)); 
-
-% TS:
-% compute interpolated measurements first (without EKF, you would only have
-% access to them): 
-TSMeasInterp = interp1(tOfflineArrivalShift,MESS.yMeasOff(:,2),tMinor,'previous');
-% reduce all vectors to time period for which there are measurements available: 
-idxMeasAvailable = ~isnan(TSMeasInterp); 
-TSMeasInterpAvail = TSMeasInterp(idxMeasAvailable); 
-TSEKF = yEKFDeNormExt(2:end,7);  % leave out time t0
-TSEKFAvail = TSEKF(idxMeasAvailable);
-[NSE_TS,eNSE_TS] = compute_NSE(TSMeasInterpAvail,TSEKFAvail); 
+% %% compute filter efficiency for selected variables: 
+% % volFlowCH4:
+% [NSE_VCH4,eNSE_VCH4] = compute_NSE(MESS.yMeasExt(:,4), yEKFDeNormExt(2:end,4)); 
+% 
+% % TS:
+% % compute interpolated measurements first (without EKF, you would only have
+% % access to them): 
+% TSMeasInterp = interp1(tOfflineArrivalShift,MESS.yMeasOff(:,2),tMinor,'previous');
+% % reduce all vectors to time period for which there are measurements available: 
+% idxMeasAvailable = ~isnan(TSMeasInterp); 
+% TSMeasInterpAvail = TSMeasInterp(idxMeasAvailable); 
+% TSEKF = yEKFDeNormExt(2:end,7);  % leave out time t0
+% TSEKFAvail = TSEKF(idxMeasAvailable);
+% [NSE_TS,eNSE_TS] = compute_NSE(TSMeasInterpAvail,TSEKFAvail); 
 
 %% Plot results
 
@@ -393,17 +369,17 @@ colorPaletteHex = ["#fe9f6d","#de4968","#8c2981","#3b0f70","#000004"];
 colorPaletteHexMagma = ["#fcfdbf","#fc8961","#b73779","#51127c","#000004"];
 
 figOutputs = figure; 
-% set text appearance to latex rendering: 
-set(figOutputs,'defaultAxesTickLabelInterpreter','latex');  
-set(figOutputs,'defaulttextinterpreter','latex');
-set(figOutputs,'defaultLegendInterpreter','latex');
+% % set text appearance to latex rendering: 
+% set(figOutputs,'defaultAxesTickLabelInterpreter','latex');  
+% set(figOutputs,'defaulttextinterpreter','latex');
+% set(figOutputs,'defaultLegendInterpreter','latex');
 
 % gas volume flow: 
 subplot(3,2,1)
 scatter(tMinor, MEASOn(:,1),'DisplayName','noisy measurements',...
         'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
-plot(tMinor,yCleanOn(:,1),'DisplayName','clean output',...
+plot(tKF,yCleanOn(:,1),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 plot(tKF,yEKFDeNorm(:,1),'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
@@ -420,15 +396,15 @@ legend('Location','NorthEast');
 
 % V_ch4: 
 subplot(3,2,2)
-scatter(tMinor, yMeasExt(:,4),'DisplayName','noisy measurements',...
+scatter(tKF, yMeasExt(:,4),'DisplayName','noisy measurements',...
         'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on
-plot(tMinor,yCleanExt(:,4),'DisplayName','clean output',...
+plot(tKF,yCleanExt(:,4),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 plot(tKF,yEKFDeNormExt(:,4),'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8); 
 % ylim([0,50])
-ylabel("$\dot V_{ch4} \, \mathrm{[m^3\,d^{-1}]}$")
+ylabel("vol flow CH4 [m^3/d]")
 yyaxis right
 stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
@@ -463,7 +439,7 @@ subplot(3,2,3)
 scatter(tMinor, MEASOn(:,3),'DisplayName','noisy measurements',...
         'Marker','.', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1.5); 
 hold on; 
-plot(tMinor,yCleanOn(:,3),'DisplayName','clean output',...
+plot(tKF,yCleanOn(:,3),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 plot(tKF,yEKFDeNorm(:,3),'DisplayName','EKF-Output',...
      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8)
@@ -480,7 +456,7 @@ axis tight % draw axis only as long as time vectors
 
 % SIN:  
 subplot(3,2,4)
-plot(tMinor,yClean(:,4),'DisplayName','clean output',...
+plot(tKF,yClean(:,4),'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 hold on; 
 scatter(tOfflineSampleShift,MEASOffPre(:,1),'DisplayName','noisy samples',...
@@ -501,7 +477,7 @@ legend('Location','NorthEast');
 
 % TS:  
 subplot(3,2,5)
-plot(tMinor,yClean(:,5)*100,'DisplayName','clean output',...
+plot(tKF,yClean(:,5)*100,'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 hold on; 
 scatter(tOfflineSampleShift,MEASOffPre(:,2)*100,'DisplayName','noisy samples',...
@@ -523,7 +499,7 @@ axis tight % draw axis only as long as time vectors
 
 % VS:  
 subplot(3,2,6)
-plot(tMinor,yClean(:,6)*100,'DisplayName','clean output',...
+plot(tKF,yClean(:,6)*100,'DisplayName','clean output',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 hold on; 
 scatter(tOfflineSampleShift,MEASOffPre(:,3)*100,'DisplayName','noisy samples',...
@@ -554,7 +530,7 @@ covarianceBacDeNorm = covarianceBac*TxNum(9)^2;
 sigmaBac = sqrt(abs(covarianceBacDeNorm)); % exclude negative values because of numerical issues
 
 figure
-plot(tMinor,STATES(:,9),'DisplayName','true',...
+plot(tKF,STATES(:,9),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5)
 hold on
 plot(tKF,xEKFDeNorm(:,9),'DisplayName','estimate',...
@@ -572,7 +548,7 @@ figStates = figure;
 
 % S_IN:
 subplot(3,2,1)
-plot(tMinor,STATES(:,3),'DisplayName','true',...
+plot(tKF,STATES(:,3),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(tKF,xEKFDeNorm(:,3),'DisplayName','estimate',...
@@ -590,7 +566,7 @@ axis tight % draw axis only as long as time vectors
 
 % S_h2o:
 subplot(3,2,2)
-plot(tMinor,STATES(:,4),'DisplayName','true',...
+plot(tKF,STATES(:,4),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(tKF,xEKFDeNorm(:,4),'DisplayName','estimate',...
@@ -608,7 +584,7 @@ axis tight % draw axis only as long as time vectors
 
 % X_ch_fast:
 subplot(3,2,3)
-plot(tMinor,STATES(:,5),'DisplayName','true',...
+plot(tKF,STATES(:,5),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(tKF,xEKFDeNorm(:,5),'DisplayName','estimate',...
@@ -626,7 +602,7 @@ axis tight % draw axis only as long as time vectors
 
 % X_ch_slow:
 subplot(3,2,4)
-plot(tMinor,STATES(:,6),'DisplayName','true',...
+plot(tKF,STATES(:,6),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(tKF,xEKFDeNorm(:,6),'DisplayName','estimate',...
@@ -644,7 +620,7 @@ axis tight % draw axis only as long as time vectors
 
 % X_bac:
 subplot(3,2,5)
-plot(tMinor,STATES(:,9),'DisplayName','true',...
+plot(tKF,STATES(:,9),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(tKF,xEKFDeNorm(:,9),'DisplayName','estimate',...
@@ -662,7 +638,7 @@ axis tight % draw axis only as long as time vectors
 
 % X_ash:
 subplot(3,2,6)
-plot(tMinor,STATES(:,10),'DisplayName','true',...
+plot(tKF,STATES(:,10),'DisplayName','true',...
      'LineStyle','-.', 'Color', colorPaletteHexMagma(2), 'LineWidth',1.5); 
 hold on; 
 plot(tKF,xEKFDeNorm(:,10),'DisplayName','estimate',...
@@ -681,21 +657,21 @@ axis tight % draw axis only as long as time vectors
 sgtitle('Comparison of true and EKF-estimates of states')
 fontsize(figStates, 14, 'points')
 
-%% export data for plotting in matplotlib: 
-targetPath = '\\dbfz-user.leipzig.dbfz.de\user$\shellmann\GIT\testFiles\plotting'; 
-
-% tMinor und cleane/Messwerte yCleanExt/yMeasExt: 
-trueValuesTabOn = array2table([tMinor,yCleanExt(:,4),yMeasExt(:,4),yClean(:,5)], 'VariableNames',{'tMinor','volFlowCH4Clean','volFlowCH4Meas','TSClean'});
-trueValuesTabOff = array2table([tOfflineSampleShift, tOfflineArrivalShift, MEASOff(:,2)], 'VariableNames',{'tOffSampleShift','tOffArrShift','TSMeas'});
-fileNameTrueValuesOn = 'trueOnlineValuesR4'; 
-fileNameTrueValuesOff = 'trueOfflineValuesR4'; 
-pathAndFileNameTrueOn = fullfile(targetPath,fileNameTrueValuesOn); 
-pathAndFileNameTrueOff = fullfile(targetPath,fileNameTrueValuesOff); 
-writetable(trueValuesTabOn,pathAndFileNameTrueOn)
-writetable(trueValuesTabOff,pathAndFileNameTrueOff)
-
-% tKF und Schätzwerte yEKFDeNormExt: 
-estValuesTab = array2table([tKF,yEKFDeNormExt(:,4),yEKFDeNormExt(:,7)], 'VariableNames',{'tKF','volFlowCH4Est','TSEst'});
-fileNameEstValues = 'estValuesR4'; 
-pathAndFileNameEst = fullfile(targetPath,fileNameEstValues); 
-writetable(estValuesTab,pathAndFileNameEst) 
+% %% export data for plotting in matplotlib: 
+% targetPath = '\\dbfz-user.leipzig.dbfz.de\user$\shellmann\GIT\testFiles\plotting_/&blaDontOverwrite!'; 
+% 
+% % tMinor und cleane/Messwerte yCleanExt/yMeasExt: 
+% trueValuesTabOn = array2table([tMinor,yCleanExt(:,4),yMeasExt(:,4),yClean(:,5)], 'VariableNames',{'tMinor','volFlowCH4Clean','volFlowCH4Meas','TSClean'});
+% trueValuesTabOff = array2table([tOfflineSampleShift, tOfflineArrivalShift, MEASOff(:,2)], 'VariableNames',{'tOffSampleShift','tOffArrShift','TSMeas'});
+% fileNameTrueValuesOn = 'trueOnlineValuesR4'; 
+% fileNameTrueValuesOff = 'trueOfflineValuesR4'; 
+% pathAndFileNameTrueOn = fullfile(targetPath,fileNameTrueValuesOn); 
+% pathAndFileNameTrueOff = fullfile(targetPath,fileNameTrueValuesOff); 
+% writetable(trueValuesTabOn,pathAndFileNameTrueOn)
+% writetable(trueValuesTabOff,pathAndFileNameTrueOff)
+% 
+% % tKF und Schätzwerte yEKFDeNormExt: 
+% estValuesTab = array2table([tKF,yEKFDeNormExt(:,4),yEKFDeNormExt(:,7)], 'VariableNames',{'tKF','volFlowCH4Est','TSEst'});
+% fileNameEstValues = 'estValuesR4'; 
+% pathAndFileNameEst = fullfile(targetPath,fileNameEstValues); 
+% writetable(estValuesTab,pathAndFileNameEst) 

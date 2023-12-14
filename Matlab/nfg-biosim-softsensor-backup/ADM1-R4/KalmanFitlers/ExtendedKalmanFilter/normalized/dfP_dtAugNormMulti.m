@@ -1,12 +1,12 @@
 %% Version
 % (R2022b) Update 6
 % Erstelldatum: 26.11.2023
-% last modified: 26.11.2023
+% last modified: 14.12.2023
 % Autor: Simon Hellmann
 
 function dxPNormdt = dfP_dtAugNormMulti(xPNorm,uNorm,xiNorm,params,QNorm, ...
-                                   fNorm,dfdxNorm,TxNum,TuNum,...
-                                   nStates,nAug)
+                                        fNorm,dfdxNorm,TxNum,TuNum,...
+                                        nStates,nAug)
 
 % compute right-hand side of ODEs of both normalized (norm.) states and 
 % norm. state error covariance matrix P. Respect all augmentation cases 
@@ -26,6 +26,8 @@ function dxPNormdt = dfP_dtAugNormMulti(xPNorm,uNorm,xiNorm,params,QNorm, ...
 % TxNum, TuNum - normalization vectors of states and inputs
 % nStates - # states (without sample state augmentation)
 % nAug - # of augmentations
+
+% XY: ggf. Nomenklatur anpassen!
 
     % extract constant parameters out of struct: 
     th = params.th; 
