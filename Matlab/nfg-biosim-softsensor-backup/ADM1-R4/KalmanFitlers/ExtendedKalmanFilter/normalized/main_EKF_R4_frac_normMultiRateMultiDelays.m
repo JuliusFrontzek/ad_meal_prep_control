@@ -8,14 +8,15 @@
 % with multiple samples during delay period
 
 close all
-clear all
-clc
+% clear all
+% clc
 
 global counter
 counter = 0; 
 
 % Load Measurement Data:
-load generatedOutput/Messung_ADM1_R4_frac_norm_MultiRate.mat
+% load generatedOutput/Messung_ADM1_R4_frac_norm_MultiRate.mat % single augmentation, in-sequence measurements
+load generatedOutput/Messung_ADM1_R4_frac_norm_MultiRate_aug2.mat % double augmentation, in-sequence measurements
 
 % get numeric values of normalization matrices: 
 TxNum = TNum.Tx; % states
@@ -55,8 +56,8 @@ MEASUnite(:,4+1:4+qOn) = MEASOn;
 % insert major instances (at right timing) in last qOff cols of MEASUnite:
 [~,idxTOfflineArrShift] = ismember(tOfflineArrivalShift,tMinor); % determine correct row positioning of major instances in MEASUnite (right timing)
 MEASUnite(idxTOfflineArrShift,4+qOn+1:4+qOn+qOff) = MEASOff; 
-% insert corresponding offline sample times: 
-MEASUnite(idxTOfflineArrShift,2) = tOfflineSampleShift; 
+% insert sample times corresponding to surviving offline return times:
+MEASUnite(idxTOfflineArrShift,2) = tOfflineSampleShift(idxKeepOfflineMeasurements); 
 % insert corresponding offline arrival times: 
 MEASUnite(idxTOfflineArrShift,3) = tOfflineArrivalShift; 
 % insert a 1 in 4th col whenever there are samples taken: 
@@ -194,9 +195,13 @@ for k = 1:nSamplesMinor
             tActiveSamples = unique([tActiveSamples;tk]);   
         end
         disp(['took new sample at time ',num2str(tk),'. Level of augmentation: ',num2str(nAug)]); 
-        % augment and initialize state x & state err. cov. matrix P:
-        xAugMinusNorm = [xMinusNorm;xMinusNorm]; 
-        PAugMinusNorm = blkdiag(PMinusNorm,PMinusNorm); 
+        % augment and initialize state x & state err. cov. matrix P. For
+        % this purpose, get the original entries of x and P: 
+        xMinusNormCore = xMinusNorm(1:nStates);
+        PMinusNormCore = PMinusNorm(1:nStates,1:nStates); 
+        % perform actual augmentation
+        xAugMinusNorm = [xMinusNorm;xMinusNormCore]; 
+        PAugMinusNorm = blkdiag(PMinusNorm,PMinusNormCore); 
         xMinusNorm = xAugMinusNorm; 
         PMinusNorm = PAugMinusNorm; 
     end
@@ -288,12 +293,12 @@ for k = 1:nSamplesMinor
         [~,idxRemove] = ismember(tk,actSamplesMat(:,2)); 
         tSamplesToBeRemoved = actSamplesMat(idxRemove,1);
         [~,idxSampleRemove] = ismember(tSamplesToBeRemoved,tActiveSamples); 
-        tActiveSamples = tActiveSamples(~idxSampleRemove); 
-        
+        tActiveSamples(idxSampleRemove) = []; 
+
         % ... and remove entries from active arrivals: 
         tArrivalsToBeRemoved = actSamplesMat(idxRemove,2);
         [~,idxArrivalRemove] = ismember(tArrivalsToBeRemoved,tActiveArrivals);
-        tActiveArrivals = tActiveArrivals(~idxArrivalRemove); 
+        tActiveArrivals(idxArrivalRemove) = []; 
         
         % remove augmentation of state and state err. cov. matrix P:
         xMinusUnAugNorm = xMinusNorm(1:nStates*(1 + nAug)); 
