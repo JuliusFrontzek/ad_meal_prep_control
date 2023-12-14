@@ -296,30 +296,43 @@ class Scenario:
     compile_nlp: bool = False
     P_el_chp: float = None
     limited_substrates: list[LimitedSubstrate] = None
-    _state_names: list[str] = field(default_factory=lambda: [
-        "S_ac",
-        "S_ch4",
-        "S_IC",
-        "S_IN",
-        "S_h2o",
-        "X_ch_f",
-        "X_ch_s",
-        "X_pr",
-        "X_li",
-        "X_bac",
-        "X_ac",
-        "X_ash",
-        "S_ion",
-        "S_ac−",
-        "S_hco3−",
-        "S_nh3",
-        "S_ch4_gas",
-        "S_co2_gas",
-        "V_CH4",
-        "V_CO2",
-    ])
+    _state_names: list[str] = field(
+        default_factory=lambda: [
+            "S_ac",
+            "S_ch4",
+            "S_IC",
+            "S_IN",
+            "S_h2o",
+            "X_ch_f",
+            "X_ch_s",
+            "X_pr",
+            "X_li",
+            "X_bac",
+            "X_ac",
+            "X_ash",
+            "S_ion",
+            "S_ac−",
+            "S_hco3−",
+            "S_nh3",
+            "S_ch4_gas",
+            "S_co2_gas",
+            "V_CH4",
+            "V_CO2",
+        ]
+    )
 
-    _meas_names: list[str] = field(default_factory=lambda: ["V´_g", "p_CH4", "p_CO2", "pH", "S_IN", "TS", "VS", "S_ac",])
+    _meas_names: list[str] = field(
+        default_factory=lambda: [
+            "V´_g",
+            "p_CH4",
+            "p_CO2",
+            "pH",
+            "S_IN",
+            "TS",
+            "VS",
+            "S_ac",
+        ]
+    )
 
 
 class ScenarioFactory:
@@ -383,7 +396,7 @@ class ScenarioFactory:
             450.0,
             0.574,
             0.376,
-            7.0,
+            7.4,
             0.850,
             0.0422,
             0.668,
