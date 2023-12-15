@@ -26,13 +26,14 @@ TyNum = TNum.Ty; % outputs
 TuNum = TNum.Tu; % inputs
 
 %% set up time vectors required for multirate measurements:
-tMinor = MESS.tOnline(2:end);   % time grid of minor measurements. no measurement in initial state! 
+tMinor = round(MESS.tOnline(2:end),5);   % time grid of minor measurements. no measurement in initial state! 
 nSamplesMinor = length(tMinor); % number of online measurements taken
 % extend time vector by one instance to account for index shift (Matlab
 % only starts counting at 1, but we start with t0, x0...)
 diff_t = diff(tMinor); 
 dt = diff_t(1);               % sampling time
-tKF = [tMinor(1)-dt;tMinor];  % time vector for Kalman Filter, starting at initial state
+tKF = round([tMinor(1)-dt;tMinor],5);  % time vector for Kalman Filter, 
+% starting at initial state. Round all times to 5 decimal points
 
 % obtain true time instances (ignore the index shift possibly caused by 
 % excluding the first online measurement at t0):
@@ -40,8 +41,8 @@ tOfflineSample = MESS.tOfflineSample;
 tOfflineArrival = MESS.tOfflineArrival; 
 % shift/pad sampling and arrival times of offline measurements into fine 
 % time grid of tMinor: 
-tOfflineSampleShift = interp1(tMinor,tMinor,tOfflineSample,'next'); 
-tOfflineArrivalShiftPre = interp1(tMinor,tMinor,tOfflineArrival,'next'); % includes NaN where extrapolation would be necessary
+tOfflineSampleShift = round(interp1(tMinor,tMinor,tOfflineSample,'next'),5); 
+tOfflineArrivalShiftPre = round(interp1(tMinor,tMinor,tOfflineArrival,'next'),5); % includes NaN where extrapolation would be necessary
 idxKeepOfflineMeasurements = ~isnan(tOfflineArrivalShiftPre); % remove NaNs
 tOfflineArrivalShift = tOfflineArrivalShiftPre(idxKeepOfflineMeasurements); % remove NaNs
 
@@ -75,14 +76,14 @@ nStates = length(x0);
 nTheta = length(params.th); % number of time-variant parameters
 rng('default');         % fix seed for random number generation (for replicable results)
 xHat = x0Init.*abs(randn(nStates,1)); % enforce false estimate in beginning
+% xHat = x0Init;          % XY Rania
 xMinus = xHat;          % to be overwritten
-% xMinus = x0Init;      % XY Rania
 
 % initial estimate in normalized coordinates: 
 xHatNorm = xHat./TxNum; 
 xMinusNorm = xHatNorm;      % to be overwritten
 
-% include parametric plant-model mismatch: 
+% include parametric plant-model mismatch (XY Rania): 
 paramsOfSyntheticMeasData = params.th; 
 perturbedParams = paramsOfSyntheticMeasData.*(1 + abs(randn(size(params.th))));
 perturbedParams(end) = 0.7;     % make sure fracChFast is not too far off
@@ -228,7 +229,7 @@ for k = 1:nSamplesMinor
         if isempty(tActiveArrivals)
             tActiveArrivals = tk;   
         else
-            tActiveArrivals = unique([tActiveArrivals;tk]);   
+           tActiveArrivals = unique([tActiveArrivals;tk]);   
         end
         flagArrival = 1; 
     end
@@ -250,11 +251,11 @@ for k = 1:nSamplesMinor
     %% get feeding information:
     % pass on only relevant feedings during the measurement interval, 
     % because only those would be known in reality:
-    idxRelEvents = find(tEvents >= tkm1 & tEvents <= tk);
+    idxRelEvents = find(tEvents >= tkm1 & tEvents < tk);
     tRelEvents = tEvents(idxRelEvents); % Auswertung anhand Index
     
     % find the critcal last feeding event before current measurement interval:
-    idxLastEvent = find(tEvents < tkm1,1,'last');
+    idxLastEvent = find(tEvents < tk,1,'last');
 
     % Case a: constant feeding during measurement interval:
     if isempty(tRelEvents) 
@@ -263,7 +264,7 @@ for k = 1:nSamplesMinor
     else
         % use all relevant feeding events during measurement interval and 
         % the critical last one before:
-        feedInfoNorm = inputMatNorm([idxLastEvent;idxRelEvents],:); % rel. coordinates
+        feedInfoNorm = inputMatNorm(unique([idxLastEvent;idxRelEvents]),:); % rel. coordinates
     end
 
     %% execute multirate EKF
@@ -272,7 +273,7 @@ for k = 1:nSamplesMinor
     [xPlusNorm,PPlusNorm] = extendedKalmanFilterNormMultiRateMultiDelay(xMinusNorm,PMinusNorm, ...
         feedInfoNorm,yMeas,params,QNorm,RNorm,fNorm,gNorm,dfdxNorm,dhdxNorm, ...
         TxNum,TyNum,TuNum,tSpan,nStates,nAug,actSamplesMat); 
-    disp('executed real EKF step.')
+    disp(['executed real EKF step, tk: ', num2str(tk)])
 
     % save results in normalized coordinates:
     ESTIMATESNorm(k+1,:) = xPlusNorm(1:nStates); 
@@ -567,7 +568,7 @@ yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 hold on
-bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+bar(tOfflineArrivalShift,markerForOfflineReturns,0.1, 'DisplayName','offline returns',...
     'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
@@ -588,7 +589,7 @@ yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 hold on
-bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+bar(tOfflineArrivalShift,markerForOfflineReturns,0.1, 'DisplayName','offline returns',...
     'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
@@ -609,7 +610,7 @@ yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 hold on
-bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+bar(tOfflineArrivalShift,markerForOfflineReturns,0.1, 'DisplayName','offline returns',...
     'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
@@ -630,7 +631,7 @@ yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 hold on
-bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+bar(tOfflineArrivalShift,markerForOfflineReturns,0.1, 'DisplayName','offline returns',...
     'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
@@ -651,7 +652,7 @@ yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 hold on
-bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+bar(tOfflineArrivalShift,markerForOfflineReturns,0.1, 'DisplayName','offline returns',...
     'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
@@ -672,7 +673,7 @@ yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
 hold on
-bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+bar(tOfflineArrivalShift,markerForOfflineReturns,0.1, 'DisplayName','offline returns',...
     'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 

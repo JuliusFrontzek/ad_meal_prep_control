@@ -50,7 +50,7 @@ xPOldNorm = [xOldNorm;reshape(POldNorm,[],1)];  % combined vector of xHat and P
 
 tEvents = feedInfoNorm(:,1);    % feeding time points (an/aus)
 % find relevant feeding events (during current measurement interval):
-filterRelEvents = tEvents >= tSpan(1) & tEvents <= tSpan(2); 
+filterRelEvents = tEvents >= tSpan(1) & tEvents < tSpan(2); 
 tRelEvents = tEvents(filterRelEvents); 
 
 % integrate across intervals with constant feeding:
@@ -67,7 +67,9 @@ if isempty(tRelEvents)
 % Case b: feeding changes during measurement interval:
 else 
     % create fine time grid of relevant feeding events and measurements:
-    tOverall = unique(sort([tSpan;tRelEvents]));
+    % careful with unique: round to 3 decimal points after the 
+    % comma to avoid floating point errors:
+    tOverall = unique(round([tSpan;tRelEvents],3));
     nIntervals = length(tOverall) - 1; 
     xP0Norm = xPOldNorm;    % initial value for first interval
     % integrate each interval sequentially to ensure constant feedings:
@@ -120,7 +122,7 @@ SNorm = HNorm*PMinusNorm*HNorm' + RNorm;% auxiliary matrix [q,q]
 SNormInv = SNorm\eye(size(RNorm));      % efficient least squares (numerically more efficient alternative for inverse)
 KNorm = PMinusNorm*HNorm'*SNormInv;     % Kalman Gain matrix [n,q]
 KvNorm = KNorm*(yMeasNorm - hNorm);     % effective correction of Kalman Gain on state estimate (n,1); 
-% KvNorm = zeros(nStates,1);  % XY Rania
+% KvNorm = zeros(nStates*(1 + nAug),1);  % XY Rania
 
 % build the indicator matrix for partial state updates appropriately:
 if nAug > 0

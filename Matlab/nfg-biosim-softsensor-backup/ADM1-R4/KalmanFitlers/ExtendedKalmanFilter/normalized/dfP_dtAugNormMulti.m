@@ -27,8 +27,6 @@ function dxPNormdt = dfP_dtAugNormMulti(xPNorm,uNorm,xiNorm,params,QNorm, ...
 % nStates - # states (without sample state augmentation)
 % nAug - # of augmentations
 
-% XY: ggf. Nomenklatur anpassen!
-
     % extract constant parameters out of struct: 
     th = params.th; 
     c = params.c; 
@@ -74,7 +72,7 @@ function dxPNormdt = dfP_dtAugNormMulti(xPNorm,uNorm,xiNorm,params,QNorm, ...
         % augment F- and Q-matrix:
         FNorms = zeros(nStates*nAug);       % for normalized sample-states
         FAugNorm = blkdiag(FNorm,FNorms);   % augmented, normalized F-matrix
-%         Q = zeros(nStates);   % XY Rania
+%         QNorm = zeros(nStates);             % XY Rania
         QNorms = zeros(nStates*nAug);       % for sample-states
         QAugNorm = blkdiag(QNorm,QNorms);   % augmented Q-matrix
         
@@ -82,7 +80,7 @@ function dxPNormdt = dfP_dtAugNormMulti(xPNorm,uNorm,xiNorm,params,QNorm, ...
         % reshape matrix as long column vector and append values dxPdt:
         dxPNormdt(nStates*(1+nAug)+1:end) = reshape(dPAugNormdt,[],1);
     else 
-%         Q = zeros(nStates);   % XY Rania
+%         QNorm = zeros(nStates);             % XY Rania
         dPNormdt = FNorm*PNorm + PNorm*FNorm' + QNorm;  % dynamics of state error covariance matrix
         % reshape matrix as long column vector and append values dxPdt:
         dxPNormdt(nStates+1:end) = reshape(dPNormdt,[],1);
