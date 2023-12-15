@@ -1,13 +1,13 @@
 %% Version
 % (R2022b) Update 6
 % Erstelldatum: 23.11.2023
-% last modified: 14.12.2023
+% last modified: 15.12.2023
 % Autor: Simon Hellmann
 
 %% DAS Kalman Filter fürs ADM1-R4-frac-norm mit Online/Offline Messwerten
 % with multiple samples during delay period
 
-close all
+% close all
 % clear all
 % clc
 
@@ -16,7 +16,9 @@ counter = 0;
 
 % Load Measurement Data:
 % load generatedOutput/Messung_ADM1_R4_frac_norm_MultiRate.mat % single augmentation, in-sequence measurements
-load generatedOutput/Messung_ADM1_R4_frac_norm_MultiRate_aug2.mat % double augmentation, in-sequence measurements
+% load generatedOutput/Messung_ADM1_R4_frac_norm_MultiRate_aug2.mat % double augmentation, in-sequence measurements
+% load generatedOutput/Messung_ADM1_R4_frac_norm_MultiRate_aug2_outOfSeq % double augmentation, out-of-sequence measurements
+load generatedOutput/Messung_ADM1_R4_frac_norm_MultiRate_aug3_outOfSeq % tripple augmentation, out-of-sequence measurements
 
 % get numeric values of normalization matrices: 
 TxNum = TNum.Tx; % states
@@ -369,6 +371,7 @@ yCleanExt = MESS.yCleanExt;
 yCleanOff = MESS.yCleanOff; % clean model outputs without delay (use with tOfflineSampleShift) 
 yMeasExt = MESS.yMeasExt; 
 feedVolFlow = inputMat(:,2);% [m^3/d]
+markerForOfflineReturns = 150*ones(size(tOfflineArrivalShift)); % absolute magnitude irrelevant
 
 colorPaletteHex = ["#fe9f6d","#de4968","#8c2981","#3b0f70","#000004"]; 
 colorPaletteHexMagma = ["#fcfdbf","#fc8961","#b73779","#51127c","#000004"];
@@ -491,7 +494,7 @@ scatter(tOfflineArrivalShift,MEASOff(:,2)*100,'DisplayName','noisy arrival',...
         'Marker','*', 'MarkerEdgeColor',colorPaletteHexMagma(5), 'LineWidth',1);
 plot(tKF,yEKFDeNorm(:,5)*100,'DisplayName','EKF-Output deNorm',...
      'LineStyle','-', 'Color', colorPaletteHexMagma(3), 'LineWidth',0.8)
-ylim([0,0.1]*100)
+ylim([0,0.2]*100)
 ylabel('total solids [%-FM]')
 yyaxis right
 stairs(tEvents, feedVolFlow, 'DisplayName','feeding',...
@@ -563,6 +566,9 @@ ylabel('S_{IN} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
+hold on
+bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+    'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -581,6 +587,9 @@ ylabel('S_{h2o} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
+hold on
+bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+    'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 % xlabel('time [d]')
@@ -599,6 +608,9 @@ ylabel('X_{ch,fast} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
+hold on
+bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+    'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -617,6 +629,9 @@ ylabel('X_{ch,slow} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
+hold on
+bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+    'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -635,6 +650,9 @@ ylabel('X_{bac} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
+hold on
+bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+    'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
@@ -653,6 +671,9 @@ ylabel('X_{ash} [kg/m^3]')
 yyaxis right
 stairs(tEvents, feedVolFlow,'DisplayName','feeding',...
        'LineStyle','-', 'Color', colorPaletteHexMagma(1), 'LineWidth',1.5); 
+hold on
+bar(tOfflineArrivalShift, markerForOfflineReturns,0.5, 'DisplayName','offline returns',...
+    'FaceColor', colorPaletteHexMagma(end)); 
 ylabel('feed vol flow [m^3/d]')
 set(gca, "YColor", 'k')     % make right y-axis black 
 xlabel('time [d]')
