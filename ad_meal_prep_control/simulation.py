@@ -1,17 +1,22 @@
 from dataclasses import dataclass
 import pygame
 import ad_meal_prep_control.visualization as vis
-from mpc import mpc_setup
+from ad_meal_prep_control.mpc import mpc_setup
 import numpy as np
 import do_mpc
-import substrates
-from models import adm1_r3_frac_norm
-from state_estimator import StateFeedback, mhe_setup
-from simulator import simulator_setup
+from ad_meal_prep_control import substrates
+from ad_meal_prep_control.models import adm1_r3_frac_norm
+from ad_meal_prep_control.state_estimator import StateFeedback, mhe_setup
+from ad_meal_prep_control.simulator import simulator_setup
 import copy
 import matplotlib.pyplot as plt
-import params_R3
-from utils import StateObserver, Scenario, typical_ch4_vol_flow_rate, Disturbances
+from ad_meal_prep_control import params_R3
+from ad_meal_prep_control.utils import (
+    StateObserver,
+    Scenario,
+    typical_ch4_vol_flow_rate,
+    Disturbances,
+)
 import os
 from pathlib import Path
 from tqdm import tqdm
@@ -662,7 +667,7 @@ class Simulation:
         scenario_dict = self.scenario.to_dict()
         scenario_dict["aux_var_names"] = self.model.aux.keys()
 
-        with open(f"./results/{self.scenario.name}_scenario_meta_data.pkl", 'wb') as fp:
+        with open(f"./results/{self.scenario.name}_scenario_meta_data.pkl", "wb") as fp:
             pickle.dump(scenario_dict, fp)
 
     def _set_new_Tx_x0(self):

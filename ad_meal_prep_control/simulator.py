@@ -3,7 +3,7 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
-from utils import Disturbances
+from ad_meal_prep_control.utils import Disturbances
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)

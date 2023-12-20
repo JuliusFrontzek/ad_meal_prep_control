@@ -3,8 +3,8 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
-from params_R3 import *
-from antoine_water import vapour_pressure_h2o
+from ad_meal_prep_control.params_R3 import *
+from ad_meal_prep_control.antoine_water import vapour_pressure_h2o
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)

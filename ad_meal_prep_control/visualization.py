@@ -1,7 +1,7 @@
 import pygame
 from dataclasses import dataclass
 import numpy as np
-from utils import Scenario
+from ad_meal_prep_control.utils import Scenario
 import do_mpc
 
 

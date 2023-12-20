@@ -3,8 +3,7 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
-from params_R4 import *
-import substrates
+from ad_meal_prep_control.params_R4 import *
 
 rel_do_mpc_path = os.path.join("..", "..")
 sys.path.append(rel_do_mpc_path)

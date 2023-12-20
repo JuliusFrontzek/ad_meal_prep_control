@@ -3,7 +3,7 @@ from casadi import *
 from casadi.tools import *
 import sys
 import os
-from params_R3 import *
+from ad_meal_prep_control.params_R3 import *
 from ad_meal_prep_control.utils import (
     CostFunction,
     Bound,
@@ -93,10 +93,10 @@ def mpc_setup(
         mpc.set_nl_cons(
             "max_vol_gas_storage",
             model._aux_expression["v_gas_storage"],
-            ub=0.95*V_GAS_STORAGE_MAX,
+            ub=0.95 * V_GAS_STORAGE_MAX,
             soft_constraint=True,
             penalty_term_cons=1e5,
-            maximum_violation=0.05*V_GAS_STORAGE_MAX,
+            maximum_violation=0.05 * V_GAS_STORAGE_MAX,
         )
 
         for i in range(2):

@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 import numpy as np
 from enum import Enum, auto
-import params_R3
+from ad_meal_prep_control import params_R3
 from dataclasses_json import dataclass_json
+from copy import deepcopy
 
 
 @dataclass
@@ -336,10 +337,7 @@ class Scenario:
 
 
 class ScenarioFactory:
-    n_days_steady_state_default = 30
-    n_days_mpc_default = 30
-    t_step_default = 0.5 / 24
-    x0_true_default = np.array(
+    _x0_true_default = np.array(
         [
             0.0494,
             0.0116,
@@ -364,7 +362,7 @@ class ScenarioFactory:
         ]
     )
 
-    Tx_default = np.array(
+    _Tx_default = np.array(
         [
             0.137,
             0.0127,
@@ -389,9 +387,9 @@ class ScenarioFactory:
         ]
     )
 
-    u_max_default = {"solid": 80.0, "liquid": 450.0}
+    _u_max_default = {"solid": 80.0, "liquid": 450.0}
 
-    Ty_default = np.array(
+    _Ty_default = np.array(
         [
             450.0,
             0.574,
@@ -404,50 +402,32 @@ class ScenarioFactory:
         ]
     )
 
-    sub_names_default = [
-        "CORN_SILAGE",
-        "GRASS_SILAGE",
-        "CATTLE_MANURE",
-        "SUGAR_BEET_SILAGE",
-    ]
-
-    state_observer_default = StateObserver.STATEFEEDBACK
-
-    methanation_dict = {
-        "name": "methanation",
-        "external_gas_storage_model": False,
-        "t_step": t_step_default,
-        "n_days_steady_state": n_days_steady_state_default,
-        "n_days_mpc": n_days_mpc_default,
-        "sub_names": sub_names_default,
+    _default_dict = {
+        "t_step": 0.5 / 24,
+        "n_days_steady_state": 30,
+        "n_days_mpc": 30,
+        "sub_names": [
+            "CORN_SILAGE",
+            "GRASS_SILAGE",
+            "CATTLE_MANURE",
+            "SUGAR_BEET_SILAGE",
+        ],
         "disturbances": Disturbances(),
-        "x0_true": x0_true_default,
-        "Tx": Tx_default,
-        "Ty": Ty_default,
-        "u_max": u_max_default,
+        "x0_true": _x0_true_default,
+        "Tx": _Tx_default,
+        "Ty": _Ty_default,
+        "u_max": _u_max_default,
         "plot_vars": [],
-        "state_observer": state_observer_default,
+        "state_observer": StateObserver.STATEFEEDBACK,
         "mhe_n_horizon": 5,
-        "num_std_devs_sim": 1.0,
+        "num_std_devs_sim": 2.0,
     }
 
-    cogeneration_dict = {
-        "name": "cogeneration",
-        "external_gas_storage_model": True,
-        "t_step": t_step_default,
-        "n_days_steady_state": n_days_steady_state_default,
-        "n_days_mpc": n_days_mpc_default,
-        "sub_names": sub_names_default,
-        "disturbances": Disturbances(),
-        "x0_true": x0_true_default,
-        "Tx": Tx_default,
-        "Ty": Ty_default,
-        "u_max": u_max_default,
-        "plot_vars": [],
-        "state_observer": state_observer_default,
-        "mhe_n_horizon": 5,
-        "num_std_devs_sim": 1.0,
-    }
+    methanation_dict = deepcopy(_default_dict)
+    methanation_dict["external_gas_storage_model"] = False
+
+    cogeneration_dict = deepcopy(_default_dict)
+    cogeneration_dict["external_gas_storage_model"] = True
 
     def create_scenario(
         self, scenario_type: str, controller_params: ControllerParams, **kwargs
