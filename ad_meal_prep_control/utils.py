@@ -81,7 +81,7 @@ class Disturbances:
         state_jumps:
                                 Dictionary describing the jump of individual states.
                                 Its keys describe the respective state indices (counting from 0).
-                                Its values are tuples consisting of the time index (counting from 0) at which
+                                Its values are lists of tuples consisting of the time index (counting from 0) at which
                                 the jump shall occure as well as a fraction of its nominal value (used for
                                 normalization) by which it shall jump.
         max_feeding_error:
@@ -105,7 +105,7 @@ class Disturbances:
 
     Example of a 'Disturbances' object initialization:
         disturbances = Disturbances(
-            state_jumps={0: (5, 0.1), 1: (4, 0.2)},
+            state_jumps={0: [(5, 0.1)], 1: [(4, 0.2)]},
             max_feeding_error=(0.1, 0.3, 0.2),
             feed_computation_stuck=(7, 2),
             clogged_feeding={1: (10, 2)},

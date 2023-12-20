@@ -576,9 +576,10 @@ class Simulation:
             self.x0_norm_estimated = self._estimator.make_step(y_next)
 
             if not self.scenario.disturbances.state_jumps is None:
-                for x_idx, val in self.scenario.disturbances.state_jumps.items():
-                    if k == val[0]:
-                        self.x0_norm_estimated[x_idx] += val[1]
+                for x_idx, val_list in self.scenario.disturbances.state_jumps.items():
+                    for val in val_list:
+                        if k == val[0]:
+                            self.x0_norm_estimated[x_idx] += val[1]
 
             if self.scenario.mpc_live_vis:
                 for g in self._graphics.values():
