@@ -1,5 +1,5 @@
-import simulation
-from utils import (
+from ad_meal_prep_control import simulation
+from ad_meal_prep_control.utils import (
     ScenarioFactory,
     CostFunction,
     ControllerParams,
