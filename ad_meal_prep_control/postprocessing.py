@@ -157,12 +157,22 @@ if __name__ == "__main__":
     default_plot_property = PlotVarProperty(
         mpl_properties=default_mpl_properties, label=None
     )
-    post_processing = PostProcessing("Methanation_test_12_12")
+    post_processing = PostProcessing("Scenario_2a")
     post_processing.plot(
         [
             (
                 "States",
                 {
+                    "x_19": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="blue", linewidth=1.0, linestyle="-"
+                        )
+                    ),
+                    "x_20": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="green", linewidth=1.0, linestyle="-"
+                        )
+                    ),
                     "x_2": None,
                     "x_3": PlotVarProperty(
                         mpl_properties=MPLProperties(
