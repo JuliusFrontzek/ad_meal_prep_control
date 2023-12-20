@@ -93,7 +93,7 @@ def mpc_setup(
         mpc.set_nl_cons(
             "max_vol_gas_storage",
             model._aux_expression["v_gas_storage"],
-            ub=0.95 * V_GAS_STORAGE_MAX,
+            ub=0.9 * V_GAS_STORAGE_MAX,
             soft_constraint=True,
             penalty_term_cons=1e5,
             maximum_violation=0.05 * V_GAS_STORAGE_MAX,
@@ -103,7 +103,7 @@ def mpc_setup(
             mpc.set_nl_cons(
                 f"x_{19+i}_lower_bound",
                 -model.x[f"x_{19+i}"],
-                ub=-0.05,
+                ub=-0.1,
                 soft_constraint=True,
                 penalty_term_cons=1e5,
                 maximum_violation=0.05,
@@ -113,10 +113,16 @@ def mpc_setup(
 
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
+            mean_ch4_outflow_rate = np.mean(
+                ch4_outflow_rate[t_now_idx : t_now_idx + n_horizon]
+            )
             for k in range(n_horizon + 1):
                 tvp_template["_tvp", k, "v_ch4_dot_tank_out"] = ch4_outflow_rate[
                     t_now_idx + k
                 ]
+                tvp_template[
+                    "_tvp", k, "v_ch4_dot_tank_out_mean"
+                ] = mean_ch4_outflow_rate
 
             if ch4_set_point_function is not None:
                 tvp_template[

@@ -441,6 +441,7 @@ def adm1_r3_frac_norm(
         v_ch4_dot_tank_out = model.set_variable(
             var_type="_tvp", var_name="v_ch4_dot_tank_out"
         )
+        model.set_variable(var_type="_tvp", var_name="v_ch4_dot_tank_out_mean")
         v_h2o = model.set_expression(
             "V_H2O",
             1.0

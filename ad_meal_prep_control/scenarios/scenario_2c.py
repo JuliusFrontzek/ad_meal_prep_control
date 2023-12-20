@@ -28,12 +28,12 @@ kwargs = {
     "pygame_vis": False,
     "mpc_live_vis": False,
     "P_el_chp": P_el_chp,
-    "plot_vars": [
-        "u_norm",
-        "y_meas_1",
-        "v_ch4_dot_tank_in",
-        "y_meas_4",
-    ],
+    "disturbances": Disturbances(
+        state_jumps={18: [(5, 0.1)], 19: [(4, 0.2)]},
+        dictated_feeding={
+            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.1),
+        },
+    ),
     "n_days_mpc": n_days_mpc,
 }
 

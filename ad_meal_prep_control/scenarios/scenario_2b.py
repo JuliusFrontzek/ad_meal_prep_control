@@ -17,7 +17,7 @@ n_days_mpc = 30
 
 controller_params = ControllerParams(
     mpc_n_horizon=20,
-    mpc_n_robust=0,
+    mpc_n_robust=2,
     num_std_devs=2.0,
     cost_func=cost_func,
     consider_substrate_costs=True,
@@ -28,12 +28,11 @@ kwargs = {
     "pygame_vis": False,
     "mpc_live_vis": False,
     "P_el_chp": P_el_chp,
-    "plot_vars": [
-        "u_norm",
-        "y_meas_1",
-        "v_ch4_dot_tank_in",
-        "y_meas_4",
-    ],
+    "disturbances": Disturbances(
+        dictated_feeding={
+            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.1),
+        }
+    ),
     "n_days_mpc": n_days_mpc,
 }
 
