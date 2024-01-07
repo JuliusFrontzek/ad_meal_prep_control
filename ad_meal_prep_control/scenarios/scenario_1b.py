@@ -8,7 +8,7 @@ from ad_meal_prep_control.utils import (
 )
 import numpy as np
 
-lterm = "30*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
+lterm = "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
 mterm = "300*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
@@ -17,7 +17,14 @@ n_days_mpc = 30
 
 ch4_set_point_function = SetpointFunction(
     setpoints=np.array(
-        [[350.0, 450.0, 550.0] for _ in range(round(n_days_mpc / 3))]
+        [
+            [
+                350.0,
+                550.0,
+                450.0,
+            ]
+            for _ in range(round(n_days_mpc / 3))
+        ]
     ).flatten(),
     time_points=np.array([i for i in range(1, n_days_mpc)]),
 )
@@ -39,7 +46,8 @@ kwargs = {
     "disturbances": Disturbances(
         dictated_feeding={
             "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.1),
-        }
+        },
+        max_feeding_error=0.02,
     ),
     "n_days_mpc": n_days_mpc,
 }

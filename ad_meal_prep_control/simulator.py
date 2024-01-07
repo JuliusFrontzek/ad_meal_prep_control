@@ -18,6 +18,7 @@ def simulator_setup(
     xi_li_norm: np.ndarray,
     ch4_outflow_rate: np.ndarray,
     disturbances: Disturbances,
+    theta: np.ndarray,
 ):
     num_states = model._x.size
     simulator = do_mpc.simulator.Simulator(model)
@@ -48,12 +49,14 @@ def simulator_setup(
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
             tvp_template["v_ch4_dot_tank_out", 0] = ch4_outflow_rate[t_now_idx]
+            tvp_template["theta"] = theta
             dictated_sub_tvp_setup(t_now)
             return tvp_template
 
     else:
 
         def tvp_fun(t_now):
+            tvp_template["theta"] = theta
             dictated_sub_tvp_setup(t_now)
             return tvp_template
 

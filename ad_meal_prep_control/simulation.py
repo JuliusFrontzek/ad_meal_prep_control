@@ -26,6 +26,20 @@ import pickle
 np.random.seed(seed=42)
 
 
+def theta_dummy_tvp_fun(theta: np.ndarray):
+    theta[:, 0] = [
+        params_R3.kchF,
+        params_R3.kchS,
+        params_R3.kpr,
+        params_R3.kli,
+        params_R3.kdec,
+        params_R3.mu_m_ac,
+        params_R3.K_S_ac,
+        params_R3.K_I_nh3,
+        params_R3.fracChFast,
+    ]
+
+
 @dataclass(kw_only=True)
 class Simulation:
     scenario: Scenario
@@ -98,6 +112,8 @@ class Simulation:
             self._suppress_ipopt_output = True
         else:
             self._suppress_ipopt_output = False
+
+        self._theta = np.zeros(shape=(9, 1))
 
     @property
     def x0_norm_true(self) -> np.ndarray:
@@ -191,6 +207,7 @@ class Simulation:
                 rterm=self.scenario.controller_params.rterm,
                 ch4_set_point_function=self.scenario.controller_params.ch4_set_point_function,
                 hsllib=self._hsllib,
+                theta=self._theta,
                 suppress_ipopt_output=self._suppress_ipopt_output,
             )
 
@@ -398,6 +415,7 @@ class Simulation:
             xi_li_norm=self._xi_li_sim_norm,
             ch4_outflow_rate=ch4_outflow_rate,
             disturbances=disturbances,
+            theta=self._theta,
         )
 
         # Set normalized x0
@@ -496,6 +514,8 @@ class Simulation:
     def _run_steady_state_sim(self):
         # Run steady state simulation
         for _ in range(self._n_steps_steady_state):
+            theta_dummy_tvp_fun(self._theta)
+
             if self.scenario.pygame_vis:
                 self._screen.fill("white")
 
@@ -529,6 +549,7 @@ class Simulation:
 
         # MPC
         for k in tqdm(range(self._n_steps_mpc)):
+            theta_dummy_tvp_fun(self._theta)
             # fill the screen with a color to wipe away anything from last frame
             if self.scenario.pygame_vis:
                 self._screen.fill("white")

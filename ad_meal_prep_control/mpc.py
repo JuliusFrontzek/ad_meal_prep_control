@@ -41,6 +41,7 @@ def mpc_setup(
     hsllib: Path = None,
     suppress_ipopt_output: bool = False,
     ch4_set_point_function: SetpointFunction = None,
+    theta: np.ndarray,
     limited_substrates: list[LimitedSubstrate] = None,
 ) -> do_mpc.controller.MPC:
     num_states = model._x.size
@@ -123,6 +124,7 @@ def mpc_setup(
                 tvp_template[
                     "_tvp", k, "v_ch4_dot_tank_out_mean"
                 ] = mean_ch4_outflow_rate
+                tvp_template["_tvp", k, "theta"] = theta
 
             if ch4_set_point_function is not None:
                 tvp_template[
@@ -136,6 +138,8 @@ def mpc_setup(
     else:
 
         def tvp_fun(t_now):
+            for k in range(n_horizon + 1):
+                tvp_template["_tvp", k, "theta"] = theta
             if ch4_set_point_function is not None:
                 tvp_template[
                     "_tvp", :, "v_ch4_dot_tank_in_setpoint"

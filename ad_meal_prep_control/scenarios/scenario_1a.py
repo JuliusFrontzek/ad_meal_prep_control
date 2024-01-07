@@ -8,8 +8,8 @@ from ad_meal_prep_control.utils import (
 )
 import numpy as np
 
-lterm = "30*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
-mterm = "300*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
+lterm = "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
+mterm = "200*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2 + 10*(model.aux['y_1_norm'] - 1.)**2"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
@@ -17,9 +17,16 @@ n_days_mpc = 30
 
 ch4_set_point_function = SetpointFunction(
     setpoints=np.array(
-        [[350.0, 450.0, 550.0] for _ in range(round(n_days_mpc / 3))]
+        [
+            [
+                450.0,
+                550.0,
+                500.0,
+            ]
+            for _ in range(round(n_days_mpc / (2 * 3)))
+        ]
     ).flatten(),
-    time_points=np.array([i for i in range(1, n_days_mpc)]),
+    time_points=np.array([2 * i for i in range(1, int(n_days_mpc / 2))]),
 )
 
 controller_params = ControllerParams(
@@ -36,6 +43,9 @@ kwargs = {
     "name": "Scenario_1a",
     "pygame_vis": False,
     "mpc_live_vis": False,
+    "disturbances": Disturbances(
+        max_feeding_error=0.02,
+    ),
     "n_days_mpc": n_days_mpc,
 }
 

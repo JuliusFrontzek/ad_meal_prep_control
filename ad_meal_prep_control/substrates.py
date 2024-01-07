@@ -6,7 +6,7 @@ from uncertainties import ufloat
 from copy import deepcopy
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Substrate:
     """
     Attributes:

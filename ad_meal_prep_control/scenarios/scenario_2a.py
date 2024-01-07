@@ -34,6 +34,9 @@ kwargs = {
         "v_ch4_dot_tank_in",
         "y_meas_4",
     ],
+    "disturbances": Disturbances(
+        max_feeding_error=0.02,
+    ),
     "n_days_mpc": n_days_mpc,
 }
 

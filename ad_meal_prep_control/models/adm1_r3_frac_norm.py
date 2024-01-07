@@ -78,7 +78,6 @@ def adm1_r3_frac_norm(
     )
 
     # Stoichiometric constants
-
     a = np.array(
         [
             [
@@ -334,7 +333,8 @@ def adm1_r3_frac_norm(
         u_norm = vertcat(u_norm, dictated_sub_feed)
 
     # Time-variant parameters (time-invariant for now -> making them invariant and estimating them: TODO for Simon)
-    theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
+    # theta = np.array([kchF, kchS, kpr, kli, kdec, mu_m_ac, K_S_ac, K_I_nh3, fracChFast])
+    theta = model.set_variable(var_type="_tvp", var_name="theta", shape=(9, 1))
 
     if external_gas_storage_model:
         num_states = 20
@@ -674,7 +674,7 @@ def adm1_r3_frac_norm(
                 / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
                 * (v_ch4_dot_tank_out * (1.0 + y_h2o / (1.0 - y_h2o)))
             )
-            / Tx[18],
+            / Tx[19],
         )  # V_CO2
 
     # Build the model

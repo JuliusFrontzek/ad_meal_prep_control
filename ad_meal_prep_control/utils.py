@@ -113,7 +113,7 @@ class Disturbances:
         )
     """
 
-    state_jumps: dict[int, tuple[int, float]] = None
+    state_jumps: dict[int, list[tuple[int, float]]] = None
     max_feeding_error: tuple[float] = None
     feed_computation_stuck: tuple[int, int] = None
     clogged_feeding: dict[int, tuple[int, int]] = None
