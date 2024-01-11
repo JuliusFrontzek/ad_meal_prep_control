@@ -273,7 +273,7 @@ GRASS_SILAGE = Substrate(
         0.00000000e00,
     ],
     state="solid",
-    cost=40.0,
+    cost=35.0,
 )
 
 
@@ -315,7 +315,7 @@ CATTLE_MANURE = Substrate(
         0.00000000e00,
     ],
     state="liquid",
-    cost=1.0,
+    cost=20.0,
 )
 
 CATTLE_MANURE_VERY_UNCERTAIN = deepcopy(CATTLE_MANURE)
