@@ -58,11 +58,11 @@ class PostProcessing:
     ):
         if plot_inputs:
             subplot_labels_and_vars.insert(0, ("u_norm", {f"u_norm": None}))
-        fig, ax = plt.subplots(len(subplot_labels_and_vars), sharex=True)
+        fig, axes = plt.subplots(len(subplot_labels_and_vars), sharex=True)
 
-        ax[-1].set_xlabel("Time [d]")
+        axes[-1].set_xlabel("Time [d]")
 
-        for ax, subplot_label_and_vars in zip(ax, subplot_labels_and_vars):
+        for ax, subplot_label_and_vars in zip(axes, subplot_labels_and_vars):
             y_label, plot_var_properties = subplot_label_and_vars
 
             labels = []
@@ -147,8 +147,22 @@ class PostProcessing:
             ax.legend(labels=labels)
             ax.set_ylabel(y_label)
 
+        time_start = 0.0
         if time_range is not None:
-            plt.setp(ax, xlim=time_range)
+            plt.setp(axes, xlim=time_range)
+            time_start = time_range[0]
+
+        axes[0].annotate(
+            text="",
+            xy=(
+                self._scenario_meta_data["controller_params"]["mpc_n_horizon"]
+                * self._scenario_meta_data["t_step"],
+                1,
+            ),
+            xytext=(time_start, 1),
+            arrowprops=dict(arrowstyle="->"),
+        )
+
         plt.show()
 
 
@@ -157,28 +171,28 @@ if __name__ == "__main__":
     default_plot_property = PlotVarProperty(
         mpl_properties=default_mpl_properties, label=None
     )
-    post_processing = PostProcessing("Scenario_1a_weird_end")
+    post_processing = PostProcessing("Scenario_2a_test")
     post_processing.plot(
         [
             (
                 "States",
                 {
-                    # "x_19": PlotVarProperty(
-                    #     mpl_properties=MPLProperties(
-                    #         color="blue", linewidth=1.0, linestyle="-"
-                    #     )
-                    # ),
-                    # "x_20": PlotVarProperty(
-                    #     mpl_properties=MPLProperties(
-                    #         color="green", linewidth=1.0, linestyle="-"
-                    #     )
-                    # ),
-                    "x_2": None,
-                    "x_3": PlotVarProperty(
+                    "x_19": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="blue", linewidth=1.0, linestyle="-"
+                        )
+                    ),
+                    "x_20": PlotVarProperty(
                         mpl_properties=MPLProperties(
                             color="green", linewidth=1.0, linestyle="-"
                         )
                     ),
+                    # "x_2": None,
+                    # "x_3": PlotVarProperty(
+                    #     mpl_properties=MPLProperties(
+                    #         color="green", linewidth=1.0, linestyle="-"
+                    #     )
+                    # ),
                 },
             ),
             ("V'g", {"y_1": default_plot_property}),
