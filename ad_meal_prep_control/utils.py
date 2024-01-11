@@ -58,13 +58,52 @@ class CHP:
         return ch4_outflow_rate * 60 * 60 * 24
 
 
-def typical_ch4_vol_flow_rate(max_power: float, n_steps: int):
+@dataclass(order=True)
+class Time:
+    hour: int
+    minute: int = 0
+
+
+@dataclass
+class TimeSlot:
+    start_time: Time
+    end_time: Time
+
+
+def typical_ch4_vol_flow_rate(max_power: float, n_steps: int, t_step: float):
+    schedule = {
+        0: (TimeSlot(Time(7), Time(15)), TimeSlot(Time(16), Time(22))),
+        1: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
+        2: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(22))),
+        3: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
+        4: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(23))),
+        5: (TimeSlot(Time(9), Time(12)), TimeSlot(Time(17), Time(23))),
+        6: (
+            TimeSlot(Time(0), Time(1)),
+            TimeSlot(Time(11), Time(12)),
+            TimeSlot(Time(17), Time(23, 59)),
+        ),
+    }
+
     # Set up CHP
     chp = CHP(max_power=max_power)
     chp_load = np.zeros(n_steps)
-    for i in range(12):
-        chp_load[i::48] = 1.0  # 6:00 - 12:00
-        chp_load[18 + i :: 48] = 1.0  # 15:00 - 21:00
+    for i in range(n_steps):
+        day_floating_point = (i * t_step) % 7
+        total_minutes = round(day_floating_point * 24 * 60)
+
+        day = total_minutes // (24 * 60)
+        hour = (total_minutes % (24 * 60)) // 60
+        minute = total_minutes % 60
+
+        time_slots = schedule[day]
+        for slot in time_slots:
+            if (
+                Time(hour, minute) >= slot.start_time
+                and Time(hour, minute) < slot.end_time
+            ):
+                chp_load[i] = 0.55  # 1.0
+                break
 
     return chp.ch4_vol_flow_rate(
         load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
@@ -357,8 +396,8 @@ class ScenarioFactory:
             0.0223,
             0.358,
             0.660,
-            0.44 * params_R3.V_GAS_STORAGE_MAX,  # m^3
-            0.4 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+            0.25 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+            0.25 * params_R3.V_GAS_STORAGE_MAX,  # m^3
         ]
     )
 

@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 from tqdm import tqdm
 import pickle
-
+import sys
 
 np.random.seed(seed=42)
 
@@ -106,6 +106,7 @@ class Simulation:
                 max_power=self.scenario.P_el_chp,
                 n_steps=self._n_steps_mpc
                 + self.scenario.controller_params.mpc_n_horizon,
+                t_step=self.scenario.t_step,
             )
 
         if not self.scenario.mpc_live_vis and not self.scenario.pygame_vis:
@@ -548,133 +549,148 @@ class Simulation:
         u_norm_computed = None
 
         # MPC
-        for k in tqdm(range(self._n_steps_mpc)):
-            theta_dummy_tvp_fun(self._theta)
-            # fill the screen with a color to wipe away anything from last frame
-            if self.scenario.pygame_vis:
-                self._screen.fill("white")
+        try:
+            for k in tqdm(range(self._n_steps_mpc)):
+                theta_dummy_tvp_fun(self._theta)
+                # fill the screen with a color to wipe away anything from last frame
+                if self.scenario.pygame_vis:
+                    self._screen.fill("white")
 
-            u_norm_computed_old = copy.copy(u_norm_computed)
-            u_norm_computed = self._mpc.make_step(self.x0_norm_estimated)
+                u_norm_computed_old = copy.copy(u_norm_computed)
+                u_norm_computed = self._mpc.make_step(self.x0_norm_estimated)
 
-            u_norm_actual = np.copy(u_norm_computed)
+                u_norm_actual = np.copy(u_norm_computed)
 
-            # Manipulate the actual feed to the biogas plant 'u_norm_actual'
-            # based on the set disturbances
-            if not self.scenario.disturbances.feed_computation_stuck is None:
-                stuck_start_idx = self.scenario.disturbances.feed_computation_stuck[0]
-                stuck_end_idx = (
-                    stuck_start_idx
-                    + self.scenario.disturbances.feed_computation_stuck[1]
-                )
-                if k in range(stuck_start_idx, stuck_end_idx):
-                    u_norm_actual = copy.copy(u_norm_computed_old)
-                    u_norm_computed = copy.copy(u_norm_computed_old)
+                # Manipulate the actual feed to the biogas plant 'u_norm_actual'
+                # based on the set disturbances
+                if not self.scenario.disturbances.feed_computation_stuck is None:
+                    stuck_start_idx = self.scenario.disturbances.feed_computation_stuck[
+                        0
+                    ]
+                    stuck_end_idx = (
+                        stuck_start_idx
+                        + self.scenario.disturbances.feed_computation_stuck[1]
+                    )
+                    if k in range(stuck_start_idx, stuck_end_idx):
+                        u_norm_actual = copy.copy(u_norm_computed_old)
+                        u_norm_computed = copy.copy(u_norm_computed_old)
 
-            if not self.scenario.disturbances.clogged_feeding is None:
-                for (
-                    sub_idx,
-                    val,
-                ) in self.scenario.disturbances.clogged_feeding.items():
-                    if k in range(val[0], val[0] + val[1]):
-                        u_norm_actual[sub_idx, 0] = 0.0
+                if not self.scenario.disturbances.clogged_feeding is None:
+                    for (
+                        sub_idx,
+                        val,
+                    ) in self.scenario.disturbances.clogged_feeding.items():
+                        if k in range(val[0], val[0] + val[1]):
+                            u_norm_actual[sub_idx, 0] = 0.0
 
-            if not self.scenario.disturbances.max_feeding_error is None:
-                u_norm_actual *= (
-                    1.0
-                    + np.array(
-                        [
-                            np.random.uniform(
-                                low=-1.0, high=1.0, size=u_norm_actual.shape[0]
-                            )
-                            * self.scenario.disturbances.max_feeding_error
-                        ]
-                    ).T
-                )
+                if not self.scenario.disturbances.max_feeding_error is None:
+                    u_norm_actual *= (
+                        1.0
+                        + np.array(
+                            [
+                                np.random.uniform(
+                                    low=-1.0, high=1.0, size=u_norm_actual.shape[0]
+                                )
+                                * self.scenario.disturbances.max_feeding_error
+                            ]
+                        ).T
+                    )
 
-            y_next = self._simulator.make_step(u_norm_actual)
-            self.x0_norm_true = np.array(self._simulator.x0.master)
-            self.x0_norm_estimated = self._estimator.make_step(y_next)
+                y_next = self._simulator.make_step(u_norm_actual)
+                self.x0_norm_true = np.array(self._simulator.x0.master)
+                self.x0_norm_estimated = self._estimator.make_step(y_next)
 
-            if not self.scenario.disturbances.state_jumps is None:
-                for x_idx, val_list in self.scenario.disturbances.state_jumps.items():
-                    for val in val_list:
-                        if k == val[0]:
-                            self.x0_norm_estimated[x_idx] += val[1]
+                if not self.scenario.disturbances.state_jumps is None:
+                    for (
+                        x_idx,
+                        val_list,
+                    ) in self.scenario.disturbances.state_jumps.items():
+                        for val in val_list:
+                            if k == val[0]:
+                                self.x0_norm_estimated[x_idx] += val[1]
 
-            if self.scenario.mpc_live_vis:
-                for g in self._graphics.values():
-                    g.plot_results(t_ind=k)
-                self._graphics["mpc_graphics"].plot_predictions(t_ind=k)
-                self._graphics["mpc_graphics"].reset_axes()
-                self._graphics["sim_graphics"].reset_axes()
-                for idx, var in enumerate(self.scenario.plot_vars):
-                    if var[0] == "y":
-                        y_num = int(var.split("_")[-1])
+                if self.scenario.mpc_live_vis:
+                    for g in self._graphics.values():
+                        g.plot_results(t_ind=k)
+                    self._graphics["mpc_graphics"].plot_predictions(t_ind=k)
+                    self._graphics["mpc_graphics"].reset_axes()
+                    self._graphics["sim_graphics"].reset_axes()
+                    for idx, var in enumerate(self.scenario.plot_vars):
+                        if var[0] == "y":
+                            y_num = int(var.split("_")[-1])
 
-                        self._ax[idx].scatter(
-                            self._t_mpc[k],
-                            self._simulator.data._y[
-                                -1,
-                                self.model.u.size + y_num + self._num_dictated_subs - 1,
-                            ],
-                            color="red",
-                        )
-                        self._ax[idx].set_ylabel(
-                            self.scenario._meas_names[int(var.split("_")[-1]) - 1]
-                        )
-                    elif var.startswith("dictated_sub_feed"):
-                        feed_num = int(var.split("_")[-1])
-
-                        self._ax[idx].scatter(
-                            self._t_mpc[k],
-                            self._simulator.data._y[
-                                -1, self.model.u.size + feed_num - 1
-                            ],
-                            color="red",
-                        )
-                        self._ax[idx].set_ylabel(f"Dictated substrate num. {feed_num}")
-                    elif var[0] != "u" and var[0] != "x":
-                        try:
-                            aux_expression_idx = np.where(
-                                np.array(self.model.aux.keys()) == var
-                            )[0][0]
                             self._ax[idx].scatter(
                                 self._t_mpc[k],
-                                self._simulator.data._aux[-1, aux_expression_idx],
+                                self._simulator.data._y[
+                                    -1,
+                                    self.model.u.size
+                                    + y_num
+                                    + self._num_dictated_subs
+                                    - 1,
+                                ],
                                 color="red",
                             )
-                            self._ax[idx].set_ylabel(var)
-                        except IndexError:
-                            raise ValueError(
-                                f"'{var}' was detected as an aux expression. However, it was either wrongly identified or is not defined as an aux expression in the do-mpc model."
+                            self._ax[idx].set_ylabel(
+                                self.scenario._meas_names[int(var.split("_")[-1]) - 1]
                             )
+                        elif var.startswith("dictated_sub_feed"):
+                            feed_num = int(var.split("_")[-1])
 
-                if self.scenario.external_gas_storage_model:
-                    self._ax[-1].scatter(
-                        self._t_mpc[k],
-                        self._ch4_outflow_rate[k],
-                        color="red",
+                            self._ax[idx].scatter(
+                                self._t_mpc[k],
+                                self._simulator.data._y[
+                                    -1, self.model.u.size + feed_num - 1
+                                ],
+                                color="red",
+                            )
+                            self._ax[idx].set_ylabel(
+                                f"Dictated substrate num. {feed_num}"
+                            )
+                        elif var[0] != "u" and var[0] != "x":
+                            try:
+                                aux_expression_idx = np.where(
+                                    np.array(self.model.aux.keys()) == var
+                                )[0][0]
+                                self._ax[idx].scatter(
+                                    self._t_mpc[k],
+                                    self._simulator.data._aux[-1, aux_expression_idx],
+                                    color="red",
+                                )
+                                self._ax[idx].set_ylabel(var)
+                            except IndexError:
+                                raise ValueError(
+                                    f"'{var}' was detected as an aux expression. However, it was either wrongly identified or is not defined as an aux expression in the do-mpc model."
+                                )
+
+                    if self.scenario.external_gas_storage_model:
+                        self._ax[-1].scatter(
+                            self._t_mpc[k],
+                            self._ch4_outflow_rate[k],
+                            color="red",
+                        )
+                        self._ax[-1].set_ylabel(
+                            f"CH4 outflow\nvolume flow {r'$[m^3/d]$'}"
+                        )
+
+                    plt.show()
+                    plt.pause(0.01)
+
+                if self.scenario.pygame_vis:
+                    vis.visualize(
+                        self.scenario,
+                        self._bga,
+                        self._data,
+                        self.x0_norm_true,
+                        self.Tx,
+                        self._simulator,
+                        u_norm_actual,
+                        model=self.model,
                     )
-                    self._ax[-1].set_ylabel(f"CH4 outflow\nvolume flow {r'$[m^3/d]$'}")
-
-                plt.show()
-                plt.pause(0.01)
-
-            if self.scenario.pygame_vis:
-                vis.visualize(
-                    self.scenario,
-                    self._bga,
-                    self._data,
-                    self.x0_norm_true,
-                    self.Tx,
-                    self._simulator,
-                    u_norm_actual,
-                    model=self.model,
-                )
-
-        if self.scenario.save_results:
-            self._save_results()
+        except (KeyboardInterrupt, SystemError):
+            pass
+        finally:
+            if self.scenario.save_results:
+                self._save_results()
 
     def _save_results(self):
         # Save do_mpc data
