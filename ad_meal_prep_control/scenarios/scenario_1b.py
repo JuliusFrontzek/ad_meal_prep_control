@@ -7,35 +7,62 @@ from ad_meal_prep_control.utils import (
     Disturbances,
 )
 import numpy as np
+import math
 
 lterm = "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
-mterm = "300*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
+mterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
-n_days_mpc = 30
+# n_days_mpc = 31
+# setpoints = np.array(
+#     [
+#         [
+#             450.0,
+#             650.0,
+#             550.0,
+#         ]
+#         for _ in range(round(n_days_mpc / (1 * 3)))
+#     ]
+# ).flatten()
+# setpoints = np.append(setpoints, 450.0)
+
+# ch4_set_point_function = SetpointFunction(
+#     setpoints=setpoints,
+#     time_points=np.array([1 * i for i in range(1, math.floor(n_days_mpc / 1))]),
+# )
+
+n_days_mpc = 31
+setpoints = np.array(
+    [
+        [
+            450.0,
+            650.0,
+            550.0,
+        ]
+        for _ in range(round(n_days_mpc / (3 * 3)))
+    ]
+).flatten()
+setpoints = np.append(setpoints, 450.0)
 
 ch4_set_point_function = SetpointFunction(
-    setpoints=np.array(
-        [
-            [
-                350.0,
-                550.0,
-                450.0,
-            ]
-            for _ in range(round(n_days_mpc / 3))
-        ]
-    ).flatten(),
-    time_points=np.array([i for i in range(1, n_days_mpc)]),
+    setpoints=setpoints,
+    time_points=np.array([3 * i for i in range(1, math.floor(n_days_mpc / 3))]),
 )
+
+rterms = [
+    f"5.*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
+]
+rterm = " + ".join(rterms)
 
 controller_params = ControllerParams(
     mpc_n_horizon=15,
-    mpc_n_robust=2,
+    mpc_n_robust=1,
     num_std_devs=2.0,
     cost_func=cost_func,
     consider_substrate_costs=True,
     ch4_set_point_function=ch4_set_point_function,
+    rterm=rterm,
 )
 
 
@@ -47,7 +74,7 @@ kwargs = {
         dictated_feeding={
             "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.1),
         },
-        max_feeding_error=0.02,
+        max_feeding_error=0.05,
     ),
     "n_days_mpc": n_days_mpc,
 }

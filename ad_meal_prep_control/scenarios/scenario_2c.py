@@ -7,29 +7,70 @@ from ad_meal_prep_control.utils import (
 )
 from ad_meal_prep_control.params_R3 import P_el_chp
 import numpy as np
+from numpy.random import default_rng
+import random
 
-lterm = "30*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
-mterm = "300*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
+np.random.seed(seed=42)
+
+# lterm = "30*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
+# mterm = "300*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
+
+lterm = "1*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
+mterm = "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2 + 5*(model.aux['y_1_norm'] - 1.)**2"
+
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 n_days_mpc = 30
 
+rterms = [
+    f"0.03*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
+]
+rterm = " + ".join(rterms)
+
 controller_params = ControllerParams(
     mpc_n_horizon=20,
-    mpc_n_robust=0,
+    mpc_n_robust=1,
     num_std_devs=2.0,
     cost_func=cost_func,
     consider_substrate_costs=True,
+    rterm=rterm,
 )
 
+t_step = 0.25 / 24.0
+
+rng = default_rng()
+mpc_t_steps = int(n_days_mpc / t_step)
+
+# time_indices_jump_ch4 = np.sort(rng.choice(mpc_t_steps, size=100, replace=False))
+# time_indices_jump_co2 = np.sort(rng.choice(mpc_t_steps, size=100, replace=False))
+
+state_jumps_ch4 = []
+state_jumps_co2 = []
+
+for i in range(mpc_t_steps):
+    if i % int(5 / t_step / 24) == 0:
+        state_jumps_ch4.append((i, random.random() * 0.1 - 0.05))
+        state_jumps_co2.append((i, random.random() * 0.1 - 0.05))
+    else:
+        state_jumps_ch4.append((i, random.random() * 0.02 - 0.01))
+        state_jumps_co2.append((i, random.random() * 0.02 - 0.01))
+
+
 kwargs = {
-    "name": "Scenario_2a",
+    "name": "Scenario_2c",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "P_el_chp": P_el_chp,
+    "t_step": t_step,
+    "plot_vars": [
+        "u_norm",
+        "y_meas_1",
+        "v_ch4_dot_tank_in",
+        "y_meas_4",
+    ],
     "disturbances": Disturbances(
-        state_jumps={18: [(5, 0.1)], 19: [(4, 0.2)]},
+        state_jumps={18: state_jumps_ch4, 19: state_jumps_co2},
         dictated_feeding={
             "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.1),
         },
