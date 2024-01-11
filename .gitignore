@@ -3,7 +3,7 @@
 
 # Directories
 __pycache__
-coinhsl*
+*coinhsl*
 *.egg-info/
 
 # File types
