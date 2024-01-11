@@ -58,12 +58,13 @@ def mpc_setup(
         "collocation_deg": 2,
         "collocation_ni": 1,
         "store_full_solution": store_full_solution,
+        # "nl_cons_check_colloc_points": True,
     }
 
     if hsllib is not None:
         # Use MA27 linear solver in ipopt for faster calculations:
         setup_mpc["nlpsol_opts"] = {
-            "ipopt.linear_solver": "MA27",
+            "ipopt.linear_solver": "MA86",
             "ipopt.hsllib": str(hsllib),
         }
     else:
@@ -93,30 +94,39 @@ def mpc_setup(
     if num_states == 20:  # i.e. if we consider the gas storage
         mpc.set_nl_cons(
             "max_vol_gas_storage",
-            model._aux_expression["v_gas_storage"],
-            ub=0.9 * V_GAS_STORAGE_MAX,
+            model._aux_expression["v_gas_storage"] / V_GAS_STORAGE_MAX,
+            ub=0.95,
             soft_constraint=True,
-            penalty_term_cons=1e5,
-            maximum_violation=0.05 * V_GAS_STORAGE_MAX,
+            penalty_term_cons=1e3,
+            maximum_violation=0.05,
         )
 
         for i in range(2):
             mpc.set_nl_cons(
                 f"x_{19+i}_lower_bound",
                 -model.x[f"x_{19+i}"],
-                ub=-0.1,
+                ub=-0.05,
                 soft_constraint=True,
-                penalty_term_cons=1e5,
+                penalty_term_cons=1e4,
                 maximum_violation=0.05,
             )
         # mpc.bounds["lower", "_x", "x_19"] = 0.0
         # mpc.bounds["lower", "_x", "x_20"] = 0.0
 
+        # mpc.set_nl_cons(
+        #     f"pH_lower_bound",
+        #     -model.aux[f"y_4"],
+        #     ub=-6.0,
+        #     soft_constraint=True,
+        #     penalty_term_cons=1e3,
+        #     maximum_violation=0.2,
+        # )
+
         def tvp_fun(t_now):
             t_now_idx = int(np.round(t_now / t_step))
             mean_ch4_outflow_rate = np.mean(
-                ch4_outflow_rate[t_now_idx : t_now_idx + n_horizon]
-            )
+                ch4_outflow_rate
+            )  # [t_now_idx : t_now_idx + n_horizon]
             for k in range(n_horizon + 1):
                 tvp_template["_tvp", k, "v_ch4_dot_tank_out"] = ch4_outflow_rate[
                     t_now_idx + k
@@ -159,14 +169,14 @@ def mpc_setup(
 
         sub_cost_rterms = []
         for idx, cost in enumerate(substrate_costs):
-            sub_cost_rterms.append(f"{cost} * model.u['u_norm'][{idx}]")
+            sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}])**2")
 
         sub_cost_rterm = " + ".join(sub_cost_rterms)
 
         if rterm is None:
             rterm = sub_cost_rterm
         else:
-            rterm += sub_cost_rterm
+            rterm += f" + {sub_cost_rterm}"
 
     if rterm is not None:
         mpc.set_rterm(rterm=eval(rterm))
