@@ -22,12 +22,12 @@ rterms = [
 rterm = " + ".join(rterms)
 
 controller_params = ControllerParams(
-    mpc_n_horizon=48,
+    mpc_n_horizon=24,
     mpc_n_robust=0,
     num_std_devs=2.0,
     cost_func=cost_func,
     consider_substrate_costs=True,
-    rterm=rterm,
+    # rterm=rterm,
 )
 
 kwargs = {

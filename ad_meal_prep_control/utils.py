@@ -72,17 +72,24 @@ class TimeSlot:
 
 def typical_ch4_vol_flow_rate(max_power: float, n_steps: int, t_step: float):
     schedule = {
-        0: (TimeSlot(Time(7), Time(15)), TimeSlot(Time(16), Time(22))),
-        1: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
-        2: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(22))),
-        3: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
-        4: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(23))),
-        5: (TimeSlot(Time(9), Time(12)), TimeSlot(Time(17), Time(23))),
-        6: (
-            TimeSlot(Time(0), Time(1)),
-            TimeSlot(Time(11), Time(12)),
-            TimeSlot(Time(17), Time(23, 59)),
-        ),
+        # 0: (TimeSlot(Time(7), Time(15)), TimeSlot(Time(16), Time(22))),
+        # 1: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
+        # 2: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(22))),
+        # 3: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
+        # 4: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(23))),
+        # 5: (TimeSlot(Time(9), Time(12)), TimeSlot(Time(17), Time(23))),
+        # 6: (
+        #     TimeSlot(Time(0), Time(1)),
+        #     TimeSlot(Time(11), Time(12)),
+        #     TimeSlot(Time(17), Time(23, 59)),
+        # ),
+        0: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        1: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        2: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        3: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        4: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        5: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        6: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
     }
 
     # Set up CHP

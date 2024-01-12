@@ -195,6 +195,16 @@ if __name__ == "__main__":
                     # ),
                 },
             ),
+            (
+                "Gas storage fill volume",
+                {
+                    "v_gas_storage": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="red", linewidth=1.0, linestyle="-"
+                        )
+                    )
+                },
+            ),
             ("V'g", {"y_1": default_plot_property}),
             # (
             #     "Forced substrates",
