@@ -203,6 +203,7 @@ class Simulation:
                 substrate_cost_formulation=self.scenario.controller_params.substrate_cost_formulation,
                 store_full_solution=self.scenario.mpc_live_vis,
                 disturbances=self.scenario.disturbances,
+                gas_storage_bound_fraction=self.scenario.controller_params.gas_storage_bound_fraction,
                 bounds=self.scenario.controller_params.bounds,
                 nl_cons=self.scenario.controller_params.nl_cons,
                 rterm=self.scenario.controller_params.rterm,
@@ -524,8 +525,10 @@ class Simulation:
             u_norm_steady_state = np.array(
                 [
                     [
-                        0.01 if sub.state == "solid" else 0.02
-                        for sub in self._subs_controlled
+                        2.0 / _tu / len(self._subs_controlled)
+                        if sub.state == "solid"
+                        else 3.0 / _tu / len(self._subs_controlled)
+                        for _tu, sub in zip(self.Tu, self._subs_controlled)
                     ]
                 ]
             ).T

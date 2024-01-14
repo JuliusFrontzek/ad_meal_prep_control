@@ -35,6 +35,7 @@ def mpc_setup(
     substrate_cost_formulation: str,
     store_full_solution: bool,
     disturbances: Disturbances,
+    gas_storage_bound_fraction: float,
     bounds: list[Bound] = None,
     nl_cons: list[NlConstraint] = None,
     rterm: str = None,
@@ -100,19 +101,19 @@ def mpc_setup(
         mpc.set_nl_cons(
             "max_vol_gas_storage",
             model._aux_expression["v_gas_storage"] / V_GAS_STORAGE_MAX,
-            ub=0.95,
+            ub=1.0 - gas_storage_bound_fraction,
             soft_constraint=True,
-            penalty_term_cons=1e2,
-            maximum_violation=0.05,
+            penalty_term_cons=1e1,
+            maximum_violation=gas_storage_bound_fraction,
         )
 
         mpc.set_nl_cons(
             "min_vol_gas_storage",
             -model._aux_expression["v_gas_storage"] / V_GAS_STORAGE_MAX,
-            ub=-0.05,
+            ub=-gas_storage_bound_fraction,
             soft_constraint=True,
-            penalty_term_cons=1e2,
-            maximum_violation=0.05,
+            penalty_term_cons=1e1,
+            maximum_violation=gas_storage_bound_fraction,
         )
 
         # for i in range(2):

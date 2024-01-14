@@ -72,24 +72,24 @@ class TimeSlot:
 
 def typical_ch4_vol_flow_rate(max_power: float, n_steps: int, t_step: float):
     schedule = {
-        # 0: (TimeSlot(Time(7), Time(15)), TimeSlot(Time(16), Time(22))),
-        # 1: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
-        # 2: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(22))),
-        # 3: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
-        # 4: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(23))),
-        # 5: (TimeSlot(Time(9), Time(12)), TimeSlot(Time(17), Time(23))),
-        # 6: (
-        #     TimeSlot(Time(0), Time(1)),
-        #     TimeSlot(Time(11), Time(12)),
-        #     TimeSlot(Time(17), Time(23, 59)),
-        # ),
-        0: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
-        1: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
-        2: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
-        3: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
-        4: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
-        5: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
-        6: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        0: (TimeSlot(Time(7), Time(15)), TimeSlot(Time(16), Time(22))),
+        1: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
+        2: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(22))),
+        3: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
+        4: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(23))),
+        5: (TimeSlot(Time(9), Time(12)), TimeSlot(Time(17), Time(23))),
+        6: (
+            TimeSlot(Time(0), Time(1)),
+            TimeSlot(Time(11), Time(12)),
+            TimeSlot(Time(17), Time(23, 59)),
+        ),
+        # 0: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        # 1: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        # 2: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        # 3: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        # 4: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        # 5: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
+        # 6: (TimeSlot(Time(6), Time(12)), TimeSlot(Time(15), Time(21))),
     }
 
     # Set up CHP
@@ -109,7 +109,7 @@ def typical_ch4_vol_flow_rate(max_power: float, n_steps: int, t_step: float):
                 Time(hour, minute) >= slot.start_time
                 and Time(hour, minute) < slot.end_time
             ):
-                chp_load[i] = 0.6  # 1.0
+                chp_load[i] = 1.0
                 break
 
     return chp.ch4_vol_flow_rate(
@@ -309,6 +309,7 @@ class ControllerParams:
     mpc_n_robust: int
     num_std_devs: float
     cost_func: CostFunction
+    gas_storage_bound_fraction: float = 0.05
     substrate_cost_formulation: str = "quadratic"
     bounds: list[Bound] = None
     nl_cons: list[NlConstraint] = None
@@ -405,8 +406,8 @@ class ScenarioFactory:
             0.0223,
             0.358,
             0.660,
-            0.25 * params_R3.V_GAS_STORAGE_MAX,  # m^3
-            0.25 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+            0.20 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+            0.20 * params_R3.V_GAS_STORAGE_MAX,  # m^3
         ]
     )
 

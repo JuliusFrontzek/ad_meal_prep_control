@@ -8,7 +8,7 @@ from ad_meal_prep_control.utils import (
 from ad_meal_prep_control.params_R3 import P_el_chp
 import numpy as np
 
-lterm = "10.*(0.5*(model.x['x_19'] + model.x['x_20'] - 0.5)**2 + 25.*(model.x['x_19'] + model.x['x_20'] - 0.5)**4)"  # "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
+lterm = "(0.5*(model.x['x_19'] + model.x['x_20'] - 0.5)**2 + 50.*(model.x['x_19'] + model.x['x_20'] - 0.5)**4)"  # "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
 mterm = "model.tvp['dummy_tvp']"  # "(model.x['x_19'] + model.x['x_20'] - 0.5)**2"  # "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
 
 
@@ -17,22 +17,23 @@ cost_func = CostFunction(lterm=lterm, mterm=mterm)
 n_days_mpc = 30
 
 controller_params = ControllerParams(
-    mpc_n_horizon=24,
+    mpc_n_horizon=40,
     mpc_n_robust=1,
     num_std_devs=2.0,
     cost_func=cost_func,
-    substrate_cost_formulation="quadratic",
+    substrate_cost_formulation="linear",
+    gas_storage_bound_fraction=0.05,
 )
 
 kwargs = {
-    "name": "Scenario_2b_whatever",
+    "name": "Scenario_2b_dynamic",
     "pygame_vis": False,
     "mpc_live_vis": False,
-    "P_el_chp": P_el_chp,
+    "P_el_chp": 0.6 * P_el_chp,
     "t_step": 0.5 / 24.0,
     "disturbances": Disturbances(
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.05),
+            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.01),
         },
         max_feeding_error=0.05,
     ),
