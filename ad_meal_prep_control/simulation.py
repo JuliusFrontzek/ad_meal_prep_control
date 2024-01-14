@@ -200,7 +200,7 @@ class Simulation:
                 ch4_outflow_rate=self._ch4_outflow_rate,
                 cost_func=self.scenario.controller_params.cost_func,
                 substrate_costs=[sub.cost for sub in self._subs_controlled],
-                consider_substrate_costs=self.scenario.controller_params.consider_substrate_costs,
+                substrate_cost_formulation=self.scenario.controller_params.substrate_cost_formulation,
                 store_full_solution=self.scenario.mpc_live_vis,
                 disturbances=self.scenario.disturbances,
                 bounds=self.scenario.controller_params.bounds,
@@ -392,6 +392,7 @@ class Simulation:
             self.Tx = self.Tx[:18]
 
         self.Tu = np.array([self.scenario.u_max[sub.state] for sub in self._subs_all])
+        self.scenario.Tu = self.Tu
 
     def _model_setup(self):
         # Model

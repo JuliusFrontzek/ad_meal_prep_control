@@ -26,7 +26,7 @@ controller_params = ControllerParams(
     mpc_n_robust=0,
     num_std_devs=2.0,
     cost_func=cost_func,
-    consider_substrate_costs=True,
+    substrate_cost_formulation="quadratic",
     # rterm=rterm,
 )
 

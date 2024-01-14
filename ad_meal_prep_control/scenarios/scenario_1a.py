@@ -42,14 +42,14 @@ controller_params = ControllerParams(
     mpc_n_robust=0,
     num_std_devs=2.0,
     cost_func=cost_func,
-    consider_substrate_costs=True,
+    substrate_cost_formulation="quadratic",
     ch4_set_point_function=ch4_set_point_function,
     rterm=rterm,
 )
 
 
 kwargs = {
-    "name": "Scenario_1a_test2",
+    "name": "Scenario_1a_quadratic",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "disturbances": Disturbances(

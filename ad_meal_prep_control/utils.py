@@ -109,7 +109,7 @@ def typical_ch4_vol_flow_rate(max_power: float, n_steps: int, t_step: float):
                 Time(hour, minute) >= slot.start_time
                 and Time(hour, minute) < slot.end_time
             ):
-                chp_load[i] = 0.55  # 1.0
+                chp_load[i] = 0.6  # 1.0
                 break
 
     return chp.ch4_vol_flow_rate(
@@ -309,7 +309,7 @@ class ControllerParams:
     mpc_n_robust: int
     num_std_devs: float
     cost_func: CostFunction
-    consider_substrate_costs: bool = True
+    substrate_cost_formulation: str = "quadratic"
     bounds: list[Bound] = None
     nl_cons: list[NlConstraint] = None
     rterm: str = None
@@ -380,6 +380,8 @@ class Scenario:
             "S_ac",
         ]
     )
+
+    Tu: np.ndarray = None
 
 
 class ScenarioFactory:

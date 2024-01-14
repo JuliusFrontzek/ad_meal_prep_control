@@ -12,11 +12,8 @@ import random
 
 np.random.seed(seed=42)
 
-# lterm = "30*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
-# mterm = "300*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2 + 1*(model.aux['y_1_norm'] - 1.)**2"
-
-lterm = "1*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
-mterm = "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2 + 5*(model.aux['y_1_norm'] - 1.)**2"
+lterm = "10.*(0.5*(model.x['x_19'] + model.x['x_20'] - 0.5)**2 + 25.*(model.x['x_19'] + model.x['x_20'] - 0.5)**4)"  # "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
+mterm = "model.tvp['dummy_tvp']"  # "(model.x['x_19'] + model.x['x_20'] - 0.5)**2"  # "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
 
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
@@ -29,21 +26,18 @@ rterms = [
 rterm = " + ".join(rterms)
 
 controller_params = ControllerParams(
-    mpc_n_horizon=20,
+    mpc_n_horizon=24,
     mpc_n_robust=1,
     num_std_devs=2.0,
     cost_func=cost_func,
-    consider_substrate_costs=True,
+    substrate_cost_formulation="quadratic",
     rterm=rterm,
 )
 
-t_step = 0.25 / 24.0
+t_step = 0.5 / 24.0
 
 rng = default_rng()
 mpc_t_steps = int(n_days_mpc / t_step)
-
-# time_indices_jump_ch4 = np.sort(rng.choice(mpc_t_steps, size=100, replace=False))
-# time_indices_jump_co2 = np.sort(rng.choice(mpc_t_steps, size=100, replace=False))
 
 state_jumps_ch4 = []
 state_jumps_co2 = []
@@ -72,7 +66,7 @@ kwargs = {
     "disturbances": Disturbances(
         state_jumps={18: state_jumps_ch4, 19: state_jumps_co2},
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.1),
+            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.05),
         },
         max_feeding_error=0.02,
     ),

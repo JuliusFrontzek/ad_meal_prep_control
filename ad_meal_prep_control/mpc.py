@@ -32,7 +32,7 @@ def mpc_setup(
     ch4_outflow_rate: np.ndarray,
     cost_func: CostFunction,
     substrate_costs: list[float],
-    consider_substrate_costs: bool,
+    substrate_cost_formulation: str,
     store_full_solution: bool,
     disturbances: Disturbances,
     bounds: list[Bound] = None,
@@ -64,11 +64,16 @@ def mpc_setup(
     if hsllib is not None:
         # Use MA27 linear solver in ipopt for faster calculations:
         setup_mpc["nlpsol_opts"] = {
-            "ipopt.linear_solver": "MA86",
+            "ipopt.linear_solver": "MA27",
             "ipopt.hsllib": str(hsllib),
         }
     else:
         setup_mpc["nlpsol_opts"] = {}
+
+    # setup_mpc["nlpsol_opts"] = {
+    #     "ipopt.linear_solver": "spral",
+    #     "ipopt.hsllib": str(hsllib),
+    # }
 
     if suppress_ipopt_output:
         setup_mpc["nlpsol_opts"]["ipopt.print_level"] = 0
@@ -97,21 +102,30 @@ def mpc_setup(
             model._aux_expression["v_gas_storage"] / V_GAS_STORAGE_MAX,
             ub=0.95,
             soft_constraint=True,
-            penalty_term_cons=1e3,
+            penalty_term_cons=1e2,
             maximum_violation=0.05,
         )
 
-        for i in range(2):
-            mpc.set_nl_cons(
-                f"x_{19+i}_lower_bound",
-                -model.x[f"x_{19+i}"],
-                ub=-0.05,
-                soft_constraint=True,
-                penalty_term_cons=1e4,
-                maximum_violation=0.05,
-            )
-        # mpc.bounds["lower", "_x", "x_19"] = 0.0
-        # mpc.bounds["lower", "_x", "x_20"] = 0.0
+        mpc.set_nl_cons(
+            "min_vol_gas_storage",
+            -model._aux_expression["v_gas_storage"] / V_GAS_STORAGE_MAX,
+            ub=-0.05,
+            soft_constraint=True,
+            penalty_term_cons=1e2,
+            maximum_violation=0.05,
+        )
+
+        # for i in range(2):
+        #     mpc.set_nl_cons(
+        #         f"x_{19+i}_lower_bound",
+        #         -model.x[f"x_{19+i}"],
+        #         ub=-0.05,
+        #         soft_constraint=True,
+        #         penalty_term_cons=1e4,
+        #         maximum_violation=0.05,
+        #     )
+        mpc.bounds["lower", "_x", "x_19"] = 0.0
+        mpc.bounds["lower", "_x", "x_20"] = 0.0
 
         # mpc.set_nl_cons(
         #     f"pH_lower_bound",
@@ -163,13 +177,18 @@ def mpc_setup(
 
     mpc.set_objective(lterm=eval(cost_func.lterm), mterm=eval(cost_func.mterm))
 
-    if consider_substrate_costs:
+    if substrate_cost_formulation in ["linear", "quadratic"]:
         substrate_costs = np.array(substrate_costs)
         substrate_costs /= np.max(substrate_costs[substrate_costs > 0])
 
         sub_cost_rterms = []
-        for idx, cost in enumerate(substrate_costs):
-            sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}])**2")
+
+        if substrate_cost_formulation == "linear":
+            for idx, cost in enumerate(substrate_costs):
+                sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}])")
+        else:
+            for idx, cost in enumerate(substrate_costs):
+                sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}])**2")
 
         sub_cost_rterm = " + ".join(sub_cost_rterms)
 
