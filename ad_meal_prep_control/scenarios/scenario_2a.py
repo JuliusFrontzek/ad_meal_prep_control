@@ -8,18 +8,13 @@ from ad_meal_prep_control.utils import (
 from ad_meal_prep_control.params_R3 import P_el_chp
 import numpy as np
 
-lterm = "(0.5*(model.x['x_19'] + model.x['x_20'] - 0.5)**2 + 50.*(model.x['x_19'] + model.x['x_20'] - 0.5)**4)"  # "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
-mterm = "model.tvp['dummy_tvp']"  # "(model.x['x_19'] + model.x['x_20'] - 0.5)**2"  # "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_out_mean'])/model.tvp['v_ch4_dot_tank_out_mean'])**2"
-
+lterm = "(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.5)**2 + 50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.5)**4)"
+mterm = "model.tvp['dummy_tvp']"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 n_days_mpc = 30
 
-rterms = [
-    f"0.03*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
-]
-rterm = " + ".join(rterms)
 
 controller_params = ControllerParams(
     mpc_n_horizon=24,
@@ -28,7 +23,6 @@ controller_params = ControllerParams(
     cost_func=cost_func,
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
-    # rterm=rterm,
 )
 
 kwargs = {

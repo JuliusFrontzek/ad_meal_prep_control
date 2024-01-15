@@ -9,7 +9,7 @@ import sys
 
 post_processing = PostProcessing(
     result_directory="/home/julius/Projects/ad_meal_prep_control/results",
-    scenario_name="Scenario_2a_dynamic",
+    scenario_name="Scenario_2c_dynamic",
 )
 
 try:
@@ -21,6 +21,19 @@ except IndexError:
 
 post_processing.plot(
     [
+        (
+            r"$\dot d_{feed}$" + "\n" + r"$[m^3/d]$",
+            {
+                "dictated_sub_feed_1": PlotVarProperty(
+                    mpl_properties=MPLProperties(
+                        color=post_processing.MEASUREMENT_COLOR,
+                        linewidth=1.5,
+                        linestyle="-",
+                    ),
+                    label="cattle manure\nwith large uncertainty",
+                ),
+            },
+        ),
         (
             r"$x$" + "\n" + r"$[1]$",
             {
@@ -86,11 +99,11 @@ post_processing.plot(
             },
         ),
     ],
-    plot_save_name="scenario_2a",
+    plot_save_name="scenario_2c",
     constraints=[
-        Constraint(value=0.0, ax_idx=1),
         Constraint(value=0.0, ax_idx=2),
-        Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
+        Constraint(value=0.0, ax_idx=3),
+        Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=3),
     ],
     dpi=dpi,
     show_plot=show_plot,

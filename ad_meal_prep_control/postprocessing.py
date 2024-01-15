@@ -6,7 +6,6 @@ import pickle
 import numpy as np
 from pathlib import Path
 
-plt.rcParams["axes.grid"] = True
 plt.rcParams["text.usetex"]
 
 
@@ -23,6 +22,12 @@ class MPLProperties:
 class PlotVarProperty:
     mpl_properties: MPLProperties
     label: str = None
+
+
+@dataclass
+class Constraint:
+    value: float
+    ax_idx: int
 
 
 @dataclass(kw_only=True)
@@ -75,6 +80,9 @@ class PostProcessing:
         plot_inputs: bool = True,
         time_range: tuple[float] = None,
         plot_save_name: str = None,
+        constraints: list[Constraint] = None,
+        dpi: int = 600,
+        show_plot: bool = True,
     ):
         if plot_inputs:
             subplot_labels_and_vars.insert(
@@ -84,10 +92,13 @@ class PostProcessing:
 
         axes[-1].set_xlabel("Time [d]")
 
-        for ax, subplot_label_and_vars in zip(axes, subplot_labels_and_vars):
+        for ax_idx, (ax, subplot_label_and_vars) in enumerate(
+            zip(axes, subplot_labels_and_vars)
+        ):
             y_label, plot_var_properties = subplot_label_and_vars
 
             labels = []
+            constraints_drawn = False
             for plot_var_name, plot_var_property in plot_var_properties.items():
                 try:
                     if plot_var_property.label is not None:
@@ -149,10 +160,27 @@ class PostProcessing:
                             **plt_kwargs,
                         )
 
+                    # Add constraints to plot
+                    ax.hlines(
+                        min(self._scenario_meta_data["Tu"]),
+                        xmin=0,
+                        xmax=self._scenario_meta_data["n_days_mpc"],
+                        color="black",
+                        linestyle="--",
+                    )
+
+                    ax.hlines(
+                        max(self._scenario_meta_data["Tu"]),
+                        xmin=0,
+                        xmax=self._scenario_meta_data["n_days_mpc"],
+                        color="blue",
+                        linestyle="--",
+                    )
+
                     labels = [
                         sub.lower().replace("_", " ")
                         for sub in self._scenario_meta_data["sub_names"]
-                    ]
+                    ] + [r"$u_{max,solid}$", r"$u_{max,liquid}$"]
 
                 elif plot_var_name.startswith("dictated_sub_feed"):
                     feed_num = int(plot_var_name.split("_")[-1])
@@ -190,10 +218,25 @@ class PostProcessing:
                         if not label_set:
                             labels.append(plot_var_name)
 
+            if constraints is not None:
+                for constraint in constraints:
+                    if constraint.ax_idx == ax_idx:
+                        ax.hlines(
+                            constraint.value,
+                            0.0,
+                            self._scenario_meta_data["n_days_mpc"],
+                            color="red",
+                            linestyle="--",
+                        )
+                        constraints_drawn = True
+
+            if constraints_drawn:
+                labels.append(r"$constraints$")
             if labels:
                 ax.legend(labels=labels)
             ax.yaxis.set_label_coords(-0.1, 0)
             ax.set_ylabel(y_label, rotation=0)
+            ax.grid(True, linestyle="--")
 
         time_start = 0.0
         if time_range is not None:
@@ -213,15 +256,17 @@ class PostProcessing:
 
         fig.set_size_inches(w=10, h=2.5 * len(axes))
 
+        plt.tight_layout()
         if plot_save_name is not None:
             plt.savefig(
                 fname=str(
                     Path(self.result_directory, "plots", f"{plot_save_name}.png")
                 ),
-                dpi=600,
+                dpi=dpi,
                 format="png",
             )
-        plt.show()
+        if show_plot:
+            plt.show()
 
 
 if __name__ == "__main__":
@@ -234,51 +279,11 @@ if __name__ == "__main__":
     )
     post_processing.plot(
         [
-            (
-                "States",
-                {
-                    "x_19": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="blue", linewidth=1.0, linestyle="-"
-                        )
-                    ),
-                    "x_20": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="green", linewidth=1.0, linestyle="-"
-                        )
-                    ),
-                    # "x_2": None,
-                    # "x_3": PlotVarProperty(
-                    #     mpl_properties=MPLProperties(
-                    #         color="green", linewidth=1.0, linestyle="-"
-                    #     )
-                    # ),
-                },
-            ),
-            # (
-            #     "Gas storage fill volume",
-            #     {
-            #         "v_gas_storage": PlotVarProperty(
-            #             mpl_properties=MPLProperties(
-            #                 color="red", linewidth=1.0, linestyle="-"
-            #             )
-            #         )
-            #     },
-            # ),
             ("V'g", {"y_1": default_plot_property}),
-            # (
-            #     "Forced substrates",
-            #     {"dictated_sub_feed_1": None, "dictated_sub_feed_2": None},
-            # ),
             (
                 "Volume flow ch4",
                 {
                     "v_ch4_dot_tank_in": None,
-                    # "v_ch4_dot_tank_in_setpoint": PlotVarProperty(
-                    #     mpl_properties=MPLProperties(
-                    #         color="orange", linewidth=1.0, linestyle="-."
-                    #     )
-                    # ),
                 },
             ),
             ("pH", {"y_4": default_plot_property}),

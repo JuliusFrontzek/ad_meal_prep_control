@@ -4,6 +4,7 @@ from ad_meal_prep_control.postprocessing import (
     PostProcessing,
 )
 import matplotlib.pyplot as plt
+import sys
 
 scenario_names = ["Scenario_1a_linear", "Scenario_1a_quadratic"]
 plot_save_names = [
@@ -11,7 +12,13 @@ plot_save_names = [
     "Scenario_1a_quadratic_substrate_costs",
 ]
 
-cmap = plt.colormaps.get_cmap("plasma_r").resampled(7).colors
+try:
+    dpi = int(sys.argv[1])
+    show_plot = int(sys.argv[2])
+except IndexError:
+    dpi = 600
+    show_plot = True
+
 
 for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     post_processing = PostProcessing(
@@ -61,4 +68,6 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         ],
         plot_save_name=plot_save_name,
         time_range=(0.0, 30.0),
+        dpi=dpi,
+        show_plot=show_plot,
     )

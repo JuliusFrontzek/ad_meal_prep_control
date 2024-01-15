@@ -100,7 +100,7 @@ def mpc_setup(
     if num_states == 20:  # i.e. if we consider the gas storage
         mpc.set_nl_cons(
             "max_vol_gas_storage",
-            model._aux_expression["v_gas_storage"] / V_GAS_STORAGE_MAX,
+            model.x["x_19"] + model.x["x_20"] + model.aux["V_H2O"] / V_GAS_STORAGE_MAX,
             ub=1.0 - gas_storage_bound_fraction,
             soft_constraint=True,
             penalty_term_cons=1e1,
@@ -109,7 +109,11 @@ def mpc_setup(
 
         mpc.set_nl_cons(
             "min_vol_gas_storage",
-            -model._aux_expression["v_gas_storage"] / V_GAS_STORAGE_MAX,
+            -(
+                model.x["x_19"]
+                + model.x["x_20"]
+                + model.aux["V_H2O"] / V_GAS_STORAGE_MAX
+            ),
             ub=-gas_storage_bound_fraction,
             soft_constraint=True,
             penalty_term_cons=1e1,
