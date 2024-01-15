@@ -19,6 +19,7 @@ setup(
         "pygame",
         "tqdm",
         "dataclasses-json",
+        "pandas",
     ],
 )
 

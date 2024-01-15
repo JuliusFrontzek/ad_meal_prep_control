@@ -1,0 +1,72 @@
+from ad_meal_prep_control import simulation
+from ad_meal_prep_control.utils import (
+    ScenarioFactory,
+    CostFunction,
+    ControllerParams,
+    SetpointFunction,
+    Disturbances,
+)
+import numpy as np
+import math
+
+lterm = "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
+mterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
+
+cost_func = CostFunction(lterm=lterm, mterm=mterm)
+
+n_days_mpc = 12
+setpoints = np.array(
+    [
+        [
+            450.0,
+            650.0,
+            550.0,
+        ]
+        for _ in range(round(n_days_mpc / (3 * 3)))
+    ]
+).flatten()
+setpoints = np.append(setpoints, 450.0)
+
+ch4_set_point_function = SetpointFunction(
+    setpoints=setpoints,
+    time_points=np.array([3 * i for i in range(1, math.floor(n_days_mpc / 3))]),
+)
+
+rterms = [
+    f"0.1*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
+]
+rterm = " + ".join(rterms)
+
+
+for n_horizon in [5, 10, 15]:
+    for n_robust in [0, 1]:
+        controller_params = ControllerParams(
+            mpc_n_horizon=n_horizon,
+            mpc_n_robust=n_robust,
+            num_std_devs=2.0,
+            cost_func=cost_func,
+            substrate_cost_formulation="quadratic",
+            ch4_set_point_function=ch4_set_point_function,
+            rterm=rterm,
+        )
+
+        kwargs = {
+            "name": f"Scenario_1b_nc_{n_horizon}_nr_{n_robust}",
+            "pygame_vis": False,
+            "mpc_live_vis": False,
+            "disturbances": Disturbances(
+                dictated_feeding={
+                    "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.05),
+                },
+                max_feeding_error=0.05,
+            ),
+            "n_days_mpc": n_days_mpc,
+        }
+
+        scenario = ScenarioFactory().create_scenario(
+            "methanation", controller_params=controller_params, **kwargs
+        )
+
+        sim = simulation.Simulation(scenario=scenario)
+        sim.setup()
+        sim.run()

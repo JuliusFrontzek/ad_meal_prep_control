@@ -22,6 +22,7 @@ from pathlib import Path
 from tqdm import tqdm
 import pickle
 import sys
+import time
 
 np.random.seed(seed=42)
 
@@ -115,6 +116,8 @@ class Simulation:
             self._suppress_ipopt_output = False
 
         self._theta = np.zeros(shape=(9, 1))
+
+        self._mpc_computation_times_mikro_secs = np.zeros(self._n_steps_mpc)
 
     @property
     def x0_norm_true(self) -> np.ndarray:
@@ -555,6 +558,7 @@ class Simulation:
         # MPC
         try:
             for k in tqdm(range(self._n_steps_mpc)):
+                time_start_mikro_secs = time.time_ns() / 1000
                 theta_dummy_tvp_fun(self._theta)
                 # fill the screen with a color to wipe away anything from last frame
                 if self.scenario.pygame_vis:
@@ -679,6 +683,12 @@ class Simulation:
                     plt.show()
                     plt.pause(0.01)
 
+                time_stop_mikro_secs = time.time_ns() / 1000
+
+                self._mpc_computation_times_mikro_secs[k] = (
+                    time_stop_mikro_secs - time_start_mikro_secs
+                )
+
                 if self.scenario.pygame_vis:
                     vis.visualize(
                         self.scenario,
@@ -711,6 +721,11 @@ class Simulation:
 
         with open(f"./results/{self.scenario.name}_scenario_meta_data.pkl", "wb") as fp:
             pickle.dump(scenario_dict, fp)
+
+        np.savetxt(
+            fname=f"./results/{self.scenario.name}_mpc_computation_times_mikro_secs.txt",
+            X=self._mpc_computation_times_mikro_secs,
+        )
 
     def _set_new_Tx_x0(self):
         """

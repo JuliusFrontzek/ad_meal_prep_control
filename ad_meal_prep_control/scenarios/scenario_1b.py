@@ -33,7 +33,7 @@ ch4_set_point_function = SetpointFunction(
 )
 
 rterms = [
-    f"5.*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
+    f"0.1*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
 ]
 rterm = " + ".join(rterms)
 
