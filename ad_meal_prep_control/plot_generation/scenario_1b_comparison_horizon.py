@@ -62,7 +62,7 @@ for n_horizon in control_horizons:
         ax[0].plot(
             data_simulator._time,
             data_simulator._aux[:, aux_expression_idx],
-            label=r"$N_c=$" + str(n_horizon) + r"$N_r=$" + str(n_robust),
+            label=r"$N_c=$" + str(n_horizon) + ", " + r"$N_r=$" + str(n_robust),
             color=color,
         )
         # axins.plot(
@@ -125,11 +125,11 @@ for ax_ in ax:
 
 fig.set_size_inches(w=10, h=7.5)
 plt.tight_layout()
-# plt.savefig(
-#     fname=str(Path(result_directory, "plots", f"scenario_1b_horizon_comparison.png")),
-#     dpi=dpi,
-#     format="png",
-# )
+plt.savefig(
+    fname=str(Path(result_directory, "plots", f"scenario_1b_horizon_comparison.png")),
+    dpi=dpi,
+    format="png",
+)
 
 if show_plot:
     plt.show()

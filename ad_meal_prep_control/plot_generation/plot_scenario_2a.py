@@ -22,19 +22,21 @@ except IndexError:
 post_processing.plot(
     [
         (
-            r"$x$" + "\n" + r"$[1]$",
+            "Gas storage\nlevel" + r" $[\%]$",
             {
                 "x_19": PlotVarProperty(
                     mpl_properties=MPLProperties(
                         color="green", linewidth=1.5, linestyle="-"
                     ),
                     label=r"$V_{CH_4,tank}$",
+                    scaling=100.0,
                 ),
                 "x_20": PlotVarProperty(
                     mpl_properties=MPLProperties(
                         color="black", linewidth=1.5, linestyle="-"
                     ),
                     label=r"$V_{CO_2,tank}$",
+                    scaling=100.0,
                 ),
             },
         ),

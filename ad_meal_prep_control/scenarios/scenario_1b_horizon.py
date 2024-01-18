@@ -56,7 +56,7 @@ for n_horizon in [5, 10, 15]:
             "mpc_live_vis": False,
             "disturbances": Disturbances(
                 dictated_feeding={
-                    "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.05),
+                    "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 10.0, 0.05)],
                 },
                 max_feeding_error=0.05,
             ),

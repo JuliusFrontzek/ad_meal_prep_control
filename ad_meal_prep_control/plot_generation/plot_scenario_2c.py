@@ -35,19 +35,21 @@ post_processing.plot(
             },
         ),
         (
-            r"$x$" + "\n" + r"$[1]$",
+            "Gas storage\nlevel" + r" $[\%]$",
             {
                 "x_19": PlotVarProperty(
                     mpl_properties=MPLProperties(
                         color="green", linewidth=1.5, linestyle="-"
                     ),
                     label=r"$V_{CH_4,tank}$",
+                    scaling=100.0,
                 ),
                 "x_20": PlotVarProperty(
                     mpl_properties=MPLProperties(
                         color="black", linewidth=1.5, linestyle="-"
                     ),
                     label=r"$V_{CO_2,tank}$",
+                    scaling=100.0,
                 ),
             },
         ),
@@ -64,7 +66,7 @@ post_processing.plot(
             },
         ),
         (
-            r"$\dot V_{CH_4,AD}$" + "\n" + r"$[m^3/d]$",
+            r"$\dot V$" + "\n" + r"$[m^3/d]$",
             {
                 "v_ch4_dot_tank_in": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -72,21 +74,16 @@ post_processing.plot(
                         linewidth=1.5,
                         linestyle="-",
                     ),
-                    label="",
+                    label=r"$\dot V_{CH_4,AD}$",
                 ),
-            },
-        ),
-        (
-            r"$\dot V_{g, AD}$" + "\n" + r"$[m^3/d]$",
-            {
                 "y_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color=post_processing.MEASUREMENT_COLOR,
+                        color="blue",
                         linewidth=1.5,
                         linestyle="-",
                     ),
-                    label="",
-                )
+                    label=r"$\dot V_{g, AD}$",
+                ),
             },
         ),
         (

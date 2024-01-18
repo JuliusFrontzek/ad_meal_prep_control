@@ -5,8 +5,16 @@ from ad_meal_prep_control.postprocessing import (
 )
 import sys
 
-scenario_names = ["Scenario_1b_multi_stage", "Scenario_1b_non_robust"]
-plot_save_names = ["scenario_1b_multi_stage", "scenario_1b_non_robust"]
+scenario_names = [
+    "Scenario_1b_multi_stage",
+    "Scenario_1b_non_robust",
+    "Scenario_1b_multi_stage_nv_3",
+]
+plot_save_names = [
+    "scenario_1b_multi_stage",
+    "scenario_1b_non_robust",
+    "scenario_1b_multi_stage_nv_3",
+]
 
 try:
     dpi = int(sys.argv[1])
@@ -37,13 +45,13 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 },
             ),
             (
-                r"$\dot V_{CH_4}$" + "\n" + r"$[m^3/d]$",
+                r"$\dot V$" + "\n" + r"$[m^3/d]$",
                 {
                     "v_ch4_dot_tank_in_setpoint": PlotVarProperty(
                         mpl_properties=MPLProperties(
                             color="orange", linewidth=1.5, linestyle="-."
                         ),
-                        label="Reference",
+                        label=r"Reference ($\dot V_{CH_4}$)",
                     ),
                     "v_ch4_dot_tank_in": PlotVarProperty(
                         mpl_properties=MPLProperties(
@@ -51,17 +59,14 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                             linewidth=1.5,
                             linestyle="-",
                         ),
-                        label="Actual",
+                        label=r"$\dot V_{CH_4}$",
                     ),
-                },
-            ),
-            (
-                r"$\dot V_g$" + "\n" + r"$[m^3/d]$",
-                {
                     "y_1": PlotVarProperty(
-                        mpl_properties=MPLProperties(linewidth=1.5, linestyle="-"),
-                        label="",
-                    )
+                        mpl_properties=MPLProperties(
+                            color="blue", linewidth=1.5, linestyle="-"
+                        ),
+                        label=r"$\dot V_g$",
+                    ),
                 },
             ),
             (

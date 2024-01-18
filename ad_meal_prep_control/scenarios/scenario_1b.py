@@ -14,23 +14,14 @@ mterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_set
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
-n_days_mpc = 31
-setpoints = np.array(
-    [
-        [
-            450.0,
-            650.0,
-            550.0,
-        ]
-        for _ in range(round(n_days_mpc / (3 * 3)))
-    ]
-).flatten()
-setpoints = np.append(setpoints, 450.0)
+n_days_mpc = 30
+setpoints = np.array([450.0, 650.0, 550.0, 450.0])
 
 ch4_set_point_function = SetpointFunction(
     setpoints=setpoints,
-    time_points=np.array([3 * i for i in range(1, math.floor(n_days_mpc / 3))]),
+    time_points=np.array([3, 6, 9]),
 )
+
 
 rterms = [
     f"0.1*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
@@ -54,7 +45,7 @@ kwargs = {
     "mpc_live_vis": False,
     "disturbances": Disturbances(
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.05),
+            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 10.0, 0.05), (15.0, 20.0, 0.08)],
         },
         max_feeding_error=0.05,
     ),

@@ -60,7 +60,7 @@ kwargs = {
     "disturbances": Disturbances(
         state_jumps={18: state_jumps_ch4, 19: state_jumps_co2},
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.01),
+            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 10.0, 0.01)],
         },
         max_feeding_error=0.05,
     ),

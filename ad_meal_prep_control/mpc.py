@@ -85,17 +85,23 @@ def mpc_setup(
 
     def dictated_sub_tvp_setup(t_now: float):
         if disturbances.dictated_feeding is not None:
-            for feed_idx, dictated_sub in enumerate(
+            for feed_idx, dictated_sub_properties in enumerate(
                 disturbances.dictated_feeding.values()
             ):
                 for k in range(n_horizon + 1):
-                    time_k = t_now + t_step * k
-                    if time_k >= dictated_sub[0] and time_k < dictated_sub[1]:
-                        tvp_template[
-                            "_tvp", k, "dictated_sub_feed", feed_idx
-                        ] = dictated_sub[2]
-                    else:
-                        tvp_template["_tvp", k, "dictated_sub_feed", feed_idx] = 0.0
+                    for dictated_sub in dictated_sub_properties:
+                        start_time = dictated_sub[0]
+                        end_time = dictated_sub[1]
+                        feed_amount = dictated_sub[2]
+
+                        time_k = t_now + t_step * k
+                        if time_k >= start_time and time_k < end_time:
+                            tvp_template[
+                                "_tvp", k, "dictated_sub_feed", feed_idx
+                            ] = feed_amount
+                            break
+                        else:
+                            tvp_template["_tvp", k, "dictated_sub_feed", feed_idx] = 0.0
 
     if num_states == 20:  # i.e. if we consider the gas storage
         mpc.set_nl_cons(

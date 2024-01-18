@@ -36,13 +36,18 @@ def simulator_setup(
 
     def dictated_sub_tvp_setup(t_now: float):
         if disturbances.dictated_feeding is not None:
-            for feed_idx, dictated_sub in enumerate(
+            for feed_idx, dictated_sub_properties in enumerate(
                 disturbances.dictated_feeding.values()
             ):
-                if t_now >= dictated_sub[0] and t_now < dictated_sub[1]:
-                    tvp_template["dictated_sub_feed", feed_idx] = dictated_sub[2]
-                else:
-                    tvp_template["dictated_sub_feed", feed_idx] = 0.0
+                for dictated_sub in dictated_sub_properties:
+                    start_time = dictated_sub[0]
+                    end_time = dictated_sub[1]
+                    feed_amount = dictated_sub[2]
+                    if t_now >= start_time and t_now < end_time:
+                        tvp_template["dictated_sub_feed", feed_idx] = feed_amount
+                        break
+                    else:
+                        tvp_template["dictated_sub_feed", feed_idx] = 0.0
 
     if num_states == 20:  # i.e. if we consider the gas storage
 

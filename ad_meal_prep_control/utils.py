@@ -147,7 +147,7 @@ class Disturbances:
         dictated_feeding:
                                 Dictionary describing the substrates whose feed is dictated.
                                 Keys: Strings that correspond to substrate names.
-                                Values: Tuple consisting of start time, end time and normalized feed volume flow.
+                                Values: List of tuples consisting of start time, end time and normalized feed volume flow.
 
     Example of a 'Disturbances' object initialization:
         disturbances = Disturbances(
@@ -155,7 +155,7 @@ class Disturbances:
             max_feeding_error=(0.1, 0.3, 0.2),
             feed_computation_stuck=(7, 2),
             clogged_feeding={1: (10, 2)},
-            dictated_feeding={"CATTLE_MANURE": (0.5, 1.2, 0.3)},
+            dictated_feeding={"CATTLE_MANURE": [(0.5, 1.2, 0.3)]},
         )
     """
 
@@ -163,7 +163,7 @@ class Disturbances:
     max_feeding_error: tuple[float] = None
     feed_computation_stuck: tuple[int, int] = None
     clogged_feeding: dict[int, tuple[int, int]] = None
-    dictated_feeding: dict[str, tuple[float, float, float]] = None
+    dictated_feeding: dict[str, list[tuple[float, float, float]]] = None
 
 
 @dataclass(kw_only=True)
@@ -469,7 +469,7 @@ class ScenarioFactory:
         "plot_vars": [],
         "state_observer": StateObserver.STATEFEEDBACK,
         "mhe_n_horizon": 5,
-        "num_std_devs_sim": 2.0,
+        "num_std_devs_sim": 1.5,
     }
 
     methanation_dict = deepcopy(_default_dict)

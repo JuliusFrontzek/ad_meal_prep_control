@@ -313,7 +313,7 @@ class Simulation:
             self._xi_ch_sim = np.array(
                 [
                     xi_ch_nom
-                    + np.random.choice([-1, 1])
+                    + np.random.choice([-1, 1], size=xi_ch_nom.size)
                     * self.scenario.num_std_devs_sim
                     * xi_ch_std_dev
                 ]
@@ -321,7 +321,7 @@ class Simulation:
             self._xi_pr_sim = np.array(
                 [
                     xi_pr_nom
-                    + np.random.choice([-1, 1])
+                    + np.random.choice([-1, 1], size=xi_pr_nom.size)
                     * self.scenario.num_std_devs_sim
                     * xi_pr_std_dev
                 ]
@@ -329,7 +329,7 @@ class Simulation:
             self._xi_li_sim = np.array(
                 [
                     xi_li_nom
-                    + np.random.choice([-1, 1])
+                    + np.random.choice([-1, 1], size=xi_li_nom.size)
                     * self.scenario.num_std_devs_sim
                     * xi_li_std_dev
                 ]

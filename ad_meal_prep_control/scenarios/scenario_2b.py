@@ -32,7 +32,7 @@ kwargs = {
     "t_step": 0.5 / 24.0,
     "disturbances": Disturbances(
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": (5.0, 10.0, 0.01),
+            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 10.0, 0.01)],
         },
         max_feeding_error=0.05,
     ),
