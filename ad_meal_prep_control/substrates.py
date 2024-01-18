@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from ad_meal_prep_control import substrate_uncertainties
 from uncertainties import ufloat
 from copy import deepcopy
+import pandas as pd
+from params_R3 import fracChFast
 
 
 @dataclass(kw_only=True)
@@ -48,6 +50,27 @@ class Substrate:
     xi: list
     state: str
     cost: float
+
+    xi_names = [
+        "Sac",
+        "Sch4",
+        "SIC",
+        "SIN",
+        "Sh2o",
+        "Xch,f",
+        "Xch,s",
+        "Xpr",
+        "Xli",
+        "Xbac",
+        "Xac",
+        "Xash",
+        "Sion",
+        "Sac-",
+        "Shco3-",
+        "Snh3",
+        "Sch4,gas",
+        "Sco2,gas",
+    ]
 
     def __post_init__(self):
         assert self.state in [
@@ -148,6 +171,35 @@ class Substrate:
 
         self.u_target = self.amount_remaining / n_steps_total
         self.limited = True
+
+    def to_latex(self):
+        xi = deepcopy(self.xi)
+        uncertain_xis = self.get_uncertain_xi_ch_pr_li()
+        xi[5] = uncertain_xis[0].nominal_value
+        xi[6] = xi[5] * (1.0 - fracChFast)
+        xi[5] *= fracChFast
+        xi[7] = uncertain_xis[1].nominal_value
+        xi[8] = uncertain_xis[2].nominal_value
+
+        # xi = [str(round(xi, 3)) for xi in xi]
+
+        xi_names = deepcopy(self.xi_names)
+
+        xi_names = [r"$\xi_{" + xi_name[1:] + r"}$" for xi_name in xi_names]
+
+        df_dict = {r"$\xi$": xi_names, r"$[g/kg_{TS}]$": xi}
+        df = pd.DataFrame(df_dict)
+        df = df.loc[(df != 0).all(axis=1)]
+
+        df = df.round(decimals=3)
+        df[r"$[g/kg_{TS}]$"] = df[r"$[g/kg_{TS}]$"].astype(str)
+        df.index.name = None
+        df.to_latex(
+            buf=f"./tables/{self.name}.tex",
+            caption=f"{self.name.lower().replace('_', ' ')}" + r"$\xi$ values",
+            label=f"tab:{self.name}",
+            index=False,
+        )
 
 
 STANDARD_SUBSTRATE = Substrate(
@@ -319,6 +371,7 @@ CATTLE_MANURE = Substrate(
 )
 
 CATTLE_MANURE_VERY_UNCERTAIN = deepcopy(CATTLE_MANURE)
+CATTLE_MANURE_VERY_UNCERTAIN.name = "CATTLE_MANURE_VERY_UNCERTAIN"
 CATTLE_MANURE_VERY_UNCERTAIN.std_devs *= 2.5
 
 SUGAR_BEET_SILAGE = Substrate(
@@ -361,3 +414,10 @@ SUGAR_BEET_SILAGE = Substrate(
     state="solid",
     cost=50.0,
 )
+
+if __name__ == "__main__":
+    CATTLE_MANURE.to_latex()
+    CORN_SILAGE.to_latex()
+    GRASS_SILAGE.to_latex()
+    SUGAR_BEET_SILAGE.to_latex()
+    CATTLE_MANURE_VERY_UNCERTAIN.to_latex()
