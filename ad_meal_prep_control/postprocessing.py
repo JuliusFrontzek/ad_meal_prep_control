@@ -6,6 +6,7 @@ import pickle
 import numpy as np
 from pathlib import Path
 import math
+from ad_meal_prep_control import substrates
 
 plt.rcParams["text.usetex"]
 
@@ -52,9 +53,7 @@ class PostProcessing:
 
     def __post_init__(self):
         self._data_simulation = do_mpc.data.load_results(
-            str(
-                Path(self.result_directory, f"{self.scenario_name}_mpc_results.pkl")
-            )  # "./results/{self.scenario_name}_mpc_results.pkl"
+            str(Path(self.result_directory, f"{self.scenario_name}_mpc_results.pkl"))
         )
         self._data_simulator = self._data_simulation["simulator"]
         self._data_mpc = self._data_simulation["mpc"]
@@ -86,10 +85,12 @@ class PostProcessing:
         dpi: int = 600,
         show_plot: bool = True,
         height_ratios: list[float] = None,
+        input_inset_axis: dict[str, tuple] = None,
+        other_inset_axes: list[dict[str, tuple]] = None,
     ):
         if plot_inputs:
             subplot_labels_and_vars.insert(
-                0, (r"$u_{feed}$" + "\n" + r"$[m^3/d]$", {f"u_norm": None})
+                0, (r"$u_{feed,silage}$" + "\n" + r"$[m^3/d]$", {f"u_norm": None})
             )
 
         if height_ratios is None:
@@ -99,33 +100,55 @@ class PostProcessing:
             sharex=True,
             gridspec_kw={"height_ratios": height_ratios},
         )
-        fig_two_cols, axes_two_cols = plt.subplots(
-            math.ceil(len(subplot_labels_and_vars) / 2.0), ncols=2, sharex=True
-        )
+
+        if plot_inputs:
+            ax_inputs_liquid = axes[0].twinx()
+
+            if input_inset_axis is not None:
+                x1, x2, y1, y2 = (
+                    *input_inset_axis["days"],
+                    *input_inset_axis["ylimit"],
+                )
+                axins_input_feed = axes[0].inset_axes(
+                    input_inset_axis["inset_axis_specs"],
+                    xlim=(x1, x2),
+                    ylim=(y1, y2),
+                    # xticklabels=[],
+                    # yticklabels=[],
+                )
+                axins_input_feed_liquid = axins_input_feed.twinx()
+
+                axins_input_feed.grid(True, linestyle="--")
+
+            if other_inset_axes is not None:
+                inset_axes = {}
+                for inset_ax in other_inset_axes:
+                    x1, x2, y1, y2 = (
+                        *inset_ax["days"],
+                        *inset_ax["ylimit"],
+                    )
+                    _inset_ax = axes[inset_ax["plot_idx"]].inset_axes(
+                        inset_ax["inset_axis_specs"],
+                        xlim=(x1, x2),
+                        ylim=(y1, y2),
+                        # xticklabels=[],
+                        # yticklabels=[],
+                    )
+                    _inset_ax.grid(True, linestyle="--")
+
+                    inset_axes[inset_ax["plot_idx"]] = _inset_ax
 
         axes[-1].set_xlabel("Time [d]")
 
-        for ax_idx, (axis, ax_two_cols, subplot_label_and_vars) in enumerate(
-            zip(axes, axes_two_cols.reshape(-1), subplot_labels_and_vars)
+        for ax_idx, (axis, subplot_label_and_vars) in enumerate(
+            zip(axes, subplot_labels_and_vars)
         ):
-            axes_stacked = [axis, ax_two_cols]
+            axes_stacked = [axis]
 
             for ax in axes_stacked:
                 y_label, plot_var_properties = subplot_label_and_vars
 
-                labels = []
-                constraints_drawn = False
                 for plot_var_name, plot_var_property in plot_var_properties.items():
-                    try:
-                        if plot_var_property.label is not None:
-                            if not plot_var_property.label == "":
-                                labels.append(plot_var_property.label)
-                            label_set = True
-                        else:
-                            raise AttributeError
-                    except AttributeError:
-                        label_set = False
-
                     plt_kwargs = (
                         plot_var_property.mpl_properties.to_dict()
                         if isinstance(plot_var_property, PlotVarProperty)
@@ -138,14 +161,21 @@ class PostProcessing:
                             self._data_simulator._time,
                             self._data_simulator._x[:, x_num - 1]
                             * plot_var_property.scaling,
+                            label=plot_var_property.label,
                             **plt_kwargs,
                         )
 
-                        x_num = int(plot_var_name.split("_")[-1])
-                        if not label_set:
-                            labels.append(
-                                self._scenario_meta_data["_state_names"][x_num - 1]
+                        if ax_idx in inset_axes:
+                            inset_axes[ax_idx].plot(
+                                self._data_simulator._time,
+                                self._data_simulator._x[:, x_num - 1]
+                                * plot_var_property.scaling,
+                                label=plot_var_property.label,
+                                **plt_kwargs,
                             )
+
+                        x_num = int(plot_var_name.split("_")[-1])
+
                     elif plot_var_name[0] == "y":
                         y_num = int(plot_var_name.split("_")[-1])
 
@@ -157,11 +187,18 @@ class PostProcessing:
                             self._data_simulator._y[
                                 :, self._num_u + y_num + self._num_dictated_subs - 1
                             ],
+                            label=plot_var_property.label,
                             **plt_kwargs,
                         )
-                        if not label_set:
-                            labels.append(
-                                self._scenario_meta_data["_meas_names"][y_num - 1]
+
+                        if ax_idx in inset_axes:
+                            inset_axes[ax_idx].plot(
+                                self._data_simulator._time,
+                                self._data_simulator._y[
+                                    :, self._num_u + y_num + self._num_dictated_subs - 1
+                                ],
+                                label=plot_var_property.label,
+                                **plt_kwargs,
                             )
                     elif plot_var_name[0] == "u":
                         colors = [
@@ -171,34 +208,71 @@ class PostProcessing:
 
                         for i in range(self._num_u):
                             plt_kwargs["color"] = colors[i]
-                            ax.plot(
-                                self._data_simulator._time,
-                                self._data_simulator._u[:, i]
-                                * self._scenario_meta_data["Tu"][i],
-                                **plt_kwargs,
-                            )
+
+                            sub_name = self._scenario_meta_data["sub_names"][i]
+                            sub = getattr(substrates, sub_name)
+
+                            if sub.state == "solid":
+                                if input_inset_axis is not None:
+                                    axins_input_feed.plot(
+                                        self._data_simulator._time,
+                                        self._data_simulator._u[:, i]
+                                        * self._scenario_meta_data["Tu"][i],
+                                        # * self._scenario_meta_data["u_max"]["solid"]
+                                        # / self._scenario_meta_data["u_max"][sub.state],
+                                        **plt_kwargs,
+                                    )
+                                ax.plot(
+                                    self._data_simulator._time,
+                                    self._data_simulator._u[:, i]
+                                    * self._scenario_meta_data["Tu"][i],
+                                    label=sub_name.lower().replace("_", " "),
+                                    **plt_kwargs,
+                                )
+
+                            else:
+                                ax_inputs_liquid.plot(
+                                    self._data_simulator._time,
+                                    self._data_simulator._u[:, i]
+                                    * self._scenario_meta_data["Tu"][i],
+                                    label=sub_name.lower().replace("_", " "),
+                                    **plt_kwargs,
+                                )
+                                if input_inset_axis is not None:
+                                    axins_input_feed_liquid.plot(
+                                        self._data_simulator._time,
+                                        self._data_simulator._u[:, i]
+                                        * self._scenario_meta_data["Tu"][i],
+                                        **plt_kwargs,
+                                    )
+
+                                    axins_input_feed_liquid.set_ylim(
+                                        axins_input_feed.get_ylim()
+                                    )
+
+                            if input_inset_axis is not None:
+                                ax.indicate_inset_zoom(
+                                    axins_input_feed, edgecolor="black", linewidth=2.0
+                                )
 
                         # Add constraints to plot
                         ax.hlines(
-                            min(self._scenario_meta_data["Tu"]),
+                            self._scenario_meta_data["u_max"]["solid"],
                             xmin=0,
                             xmax=self._scenario_meta_data["n_days_mpc"],
-                            color="black",
+                            color="red",
                             linestyle="--",
+                            label=r"$u_{max}$",
                         )
 
-                        ax.hlines(
-                            max(self._scenario_meta_data["Tu"]),
+                        ax_inputs_liquid.hlines(
+                            self._scenario_meta_data["u_max"]["liquid"],
                             xmin=0,
                             xmax=self._scenario_meta_data["n_days_mpc"],
-                            color="blue",
+                            color="red",
                             linestyle="--",
+                            label=r"$u_{max}$",
                         )
-
-                        labels = [
-                            sub.lower().replace("_", " ")
-                            for sub in self._scenario_meta_data["sub_names"]
-                        ] + [r"$u_{max,solid}$", r"$u_{max,liquid}$"]
 
                     elif plot_var_name.startswith("dictated_sub_feed"):
                         feed_num = int(plot_var_name.split("_")[-1])
@@ -211,10 +285,25 @@ class PostProcessing:
                             * self._scenario_meta_data["Tu"][
                                 self._num_u + feed_num - 1
                             ],
+                            label=plot_var_property.label,
                             **plt_kwargs,
                         )
-                        if not label_set:
-                            labels.append(f"Dictated substrate num. {feed_num}")
+
+                        if ax_idx in inset_axes:
+                            inset_axes[ax_idx].plot(
+                                self._data_simulator._time,
+                                self._data_simulator._tvp[:, feed_num - 1]
+                                * self._scenario_meta_data["Tu"][
+                                    self._num_u + feed_num - 1
+                                ],
+                                label=plot_var_property.label,
+                                **plt_kwargs,
+                            )
+
+                            ax.indicate_inset_zoom(
+                                inset_axes[ax_idx], edgecolor="black", linewidth=2.0
+                            )
+
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":
                         if plot_var_name in self._scenario_meta_data["aux_var_names"]:
                             aux_expression_idx = np.where(
@@ -224,19 +313,43 @@ class PostProcessing:
                             ax.plot(
                                 self._data_simulator._time,
                                 self._data_simulator._aux[:, aux_expression_idx],
+                                label=plot_var_property.label,
                                 **plt_kwargs,
                             )
-                            if not label_set:
-                                labels.append(plot_var_name)
+
+                            if ax_idx in inset_axes:
+                                inset_axes[ax_idx].plot(
+                                    self._data_simulator._time,
+                                    self._data_simulator._aux[:, aux_expression_idx],
+                                    label=plot_var_property.label,
+                                    **plt_kwargs,
+                                )
+
+                                ax.indicate_inset_zoom(
+                                    inset_axes[ax_idx], edgecolor="black", linewidth=2.0
+                                )
+
                         else:
                             self._graphics_mpc.add_line(
                                 var_type=f"_tvp",
                                 var_name=plot_var_name,
                                 axis=ax,
+                                label=plot_var_property.label,
                                 **plt_kwargs,
                             )
-                            if not label_set:
-                                labels.append(plot_var_name)
+
+                            if ax_idx in inset_axes:
+                                self._graphics_mpc.add_line(
+                                    var_type=f"_tvp",
+                                    var_name=plot_var_name,
+                                    axis=inset_axes[ax_idx],
+                                    label=plot_var_property.label,
+                                    **plt_kwargs,
+                                )
+
+                                ax.indicate_inset_zoom(
+                                    inset_axes[ax_idx], edgecolor="black", linewidth=2.0
+                                )
 
                 if constraints is not None:
                     for constraint in constraints:
@@ -247,58 +360,55 @@ class PostProcessing:
                                 self._scenario_meta_data["n_days_mpc"],
                                 color="red",
                                 linestyle="--",
+                                label=r"$constraints$",
                             )
-                            constraints_drawn = True
 
-            if constraints_drawn:
-                labels.append(r"$constraints$")
+                            if ax_idx in inset_axes:
+                                inset_axes[ax_idx].hlines(
+                                    constraint.value,
+                                    0.0,
+                                    self._scenario_meta_data["n_days_mpc"],
+                                    color="red",
+                                    linestyle="--",
+                                    label=r"$constraints$",
+                                )
+
+                            ax.indicate_inset_zoom(
+                                inset_axes[ax_idx], edgecolor="black", linewidth=2.0
+                            )
 
             for ax in axes_stacked:
-                if labels:
-                    ax.legend(labels=labels, ncol=max(1, len(labels) // 3))
-
+                if plot_var_name[0] == "u":
+                    loc = 2
+                else:
+                    loc = 0
+                labels = [line.get_label() for line in ax.get_lines()]
+                if not labels[0].startswith("_"):
+                    ax.legend(ncol=max(1, len(labels) // 3), loc=loc)
+                    ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3))
                 ax.grid(True, linestyle="--")
 
             axis.yaxis.set_label_coords(-0.1, 0)
             axis.set_ylabel(y_label, rotation=0)
 
-            ax_two_cols.yaxis.set_label_coords(-0.15, 0)
-            ax_two_cols.set_ylabel(y_label, rotation=0, labelpad=0.05)
+            if plot_inputs:
+                # ax_inputs_liquid.yaxis.set_label_coords(0.1, 0)
+                ax_inputs_liquid.set_ylabel(
+                    r"$u_{feed,manure}$" + "\n" + r"$[m^3/d]$",
+                    rotation=0,
+                    labelpad=30.0,
+                )
 
-        time_start = 0.0
         if time_range is not None:
             plt.setp(axes, xlim=time_range)
-            time_start = time_range[0]
-
-        # axes[0].annotate(
-        #     text="",
-        #     xy=(
-        #         self._scenario_meta_data["controller_params"]["mpc_n_horizon"]
-        #         * self._scenario_meta_data["t_step"],
-        #         1,
-        #     ),
-        #     xytext=(time_start, 1),
-        #     arrowprops=dict(arrowstyle="->"),
-        # )
 
         fig.set_size_inches(w=8, h=2 * len(axes))
-        fig_two_cols.set_size_inches(w=12, h=1.3 * len(axes))
 
         fig.tight_layout()
-        fig_two_cols.tight_layout(w_pad=5.0)
         if plot_save_name is not None:
             fig.savefig(
                 fname=str(
                     Path(self.result_directory, "plots", f"{plot_save_name}.png")
-                ),
-                dpi=dpi,
-                format="png",
-            )
-            fig_two_cols.savefig(
-                fname=str(
-                    Path(
-                        self.result_directory, "plots", f"{plot_save_name}_two_cols.png"
-                    )
                 ),
                 dpi=dpi,
                 format="png",

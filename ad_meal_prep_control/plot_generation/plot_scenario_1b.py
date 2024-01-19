@@ -25,7 +25,7 @@ except IndexError:
 
 for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     post_processing = PostProcessing(
-        result_directory="/home/julius/Projects/ad_meal_prep_control/results",
+        result_directory="/home/julius/Documents/Studium/Master/Masterarbeit/ad_meal_prep_control/results",
         scenario_name=scenario_name,
     )
 
@@ -74,7 +74,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 {
                     "y_4": PlotVarProperty(
                         mpl_properties=MPLProperties(linewidth=1.5, linestyle="-"),
-                        label="",
+                        label=None,
                     )
                 },
             ),
@@ -83,4 +83,18 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         time_range=(0.0, 30.0),
         dpi=dpi,
         show_plot=show_plot,
+        height_ratios=[2, 1, 3, 1],
+        input_inset_axis={
+            "days": (14, 21),
+            "ylimit": (-1.0, 5.0),
+            "inset_axis_specs": (0.4, 0.4, 0.4, 0.3),
+        },
+        other_inset_axes=[
+            {
+                "plot_idx": 2,
+                "days": (14, 21),
+                "ylimit": (430, 470),
+                "inset_axis_specs": (0.37, 0.7, 0.3, 0.2),
+            }
+        ],
     )
