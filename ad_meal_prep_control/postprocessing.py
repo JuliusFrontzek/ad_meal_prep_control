@@ -49,6 +49,7 @@ class PostProcessing:
         "GRASS_SILAGE": "green",
         "CATTLE_MANURE": "brown",
         "SUGAR_BEET_SILAGE": "orange",
+        "SUGAR_BEET_SILAGE_VERY_UNCERTAIN": "orange",
     }
 
     def __post_init__(self):
@@ -120,8 +121,8 @@ class PostProcessing:
 
                 axins_input_feed.grid(True, linestyle="--")
 
+            inset_axes = {}
             if other_inset_axes is not None:
-                inset_axes = {}
                 for inset_ax in other_inset_axes:
                     x1, x2, y1, y2 = (
                         *inset_ax["days"],
@@ -136,7 +137,10 @@ class PostProcessing:
                     )
                     _inset_ax.grid(True, linestyle="--")
 
-                    inset_axes[inset_ax["plot_idx"]] = _inset_ax
+                    if inset_ax["plot_idx"] in inset_axes.keys():
+                        inset_axes[inset_ax["plot_idx"]].append(_inset_ax)
+                    else:
+                        inset_axes[inset_ax["plot_idx"]] = [_inset_ax]
 
         axes[-1].set_xlabel("Time [d]")
 
@@ -166,13 +170,20 @@ class PostProcessing:
                         )
 
                         if ax_idx in inset_axes:
-                            inset_axes[ax_idx].plot(
-                                self._data_simulator._time,
-                                self._data_simulator._x[:, x_num - 1]
-                                * plot_var_property.scaling,
-                                label=plot_var_property.label,
-                                **plt_kwargs,
-                            )
+                            for inset_ax in inset_axes[ax_idx]:
+                                inset_ax.plot(
+                                    self._data_simulator._time,
+                                    self._data_simulator._x[:, x_num - 1]
+                                    * plot_var_property.scaling,
+                                    label=plot_var_property.label,
+                                    **plt_kwargs,
+                                )
+
+                                ax.indicate_inset_zoom(
+                                    inset_ax,
+                                    edgecolor="black",
+                                    linewidth=2.0,
+                                )
 
                         x_num = int(plot_var_name.split("_")[-1])
 
@@ -192,14 +203,26 @@ class PostProcessing:
                         )
 
                         if ax_idx in inset_axes:
-                            inset_axes[ax_idx].plot(
-                                self._data_simulator._time,
-                                self._data_simulator._y[
-                                    :, self._num_u + y_num + self._num_dictated_subs - 1
-                                ],
-                                label=plot_var_property.label,
-                                **plt_kwargs,
-                            )
+                            for inset_ax in inset_axes[ax_idx]:
+                                inset_ax.plot(
+                                    self._data_simulator._time,
+                                    self._data_simulator._y[
+                                        :,
+                                        self._num_u
+                                        + y_num
+                                        + self._num_dictated_subs
+                                        - 1,
+                                    ],
+                                    label=plot_var_property.label,
+                                    **plt_kwargs,
+                                )
+
+                                ax.indicate_inset_zoom(
+                                    inset_ax,
+                                    edgecolor="black",
+                                    linewidth=2.0,
+                                )
+
                     elif plot_var_name[0] == "u":
                         colors = [
                             self._SUBSTRATE_COLORS[sub_name]
@@ -274,6 +297,13 @@ class PostProcessing:
                             label=r"$u_{max}$",
                         )
 
+                        ax.set_ylim(
+                            0.0, self._scenario_meta_data["u_max"]["solid"] * 1.1
+                        )
+                        ax_inputs_liquid.set_ylim(
+                            0.0, self._scenario_meta_data["u_max"]["liquid"] * 1.1
+                        )
+
                     elif plot_var_name.startswith("dictated_sub_feed"):
                         feed_num = int(plot_var_name.split("_")[-1])
 
@@ -290,19 +320,22 @@ class PostProcessing:
                         )
 
                         if ax_idx in inset_axes:
-                            inset_axes[ax_idx].plot(
-                                self._data_simulator._time,
-                                self._data_simulator._tvp[:, feed_num - 1]
-                                * self._scenario_meta_data["Tu"][
-                                    self._num_u + feed_num - 1
-                                ],
-                                label=plot_var_property.label,
-                                **plt_kwargs,
-                            )
+                            for inset_ax in inset_axes[ax_idx]:
+                                inset_ax.plot(
+                                    self._data_simulator._time,
+                                    self._data_simulator._tvp[:, feed_num - 1]
+                                    * self._scenario_meta_data["Tu"][
+                                        self._num_u + feed_num - 1
+                                    ],
+                                    label=plot_var_property.label,
+                                    **plt_kwargs,
+                                )
 
-                            ax.indicate_inset_zoom(
-                                inset_axes[ax_idx], edgecolor="black", linewidth=2.0
-                            )
+                                ax.indicate_inset_zoom(
+                                    inset_ax,
+                                    edgecolor="black",
+                                    linewidth=2.0,
+                                )
 
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":
                         if plot_var_name in self._scenario_meta_data["aux_var_names"]:
@@ -318,16 +351,19 @@ class PostProcessing:
                             )
 
                             if ax_idx in inset_axes:
-                                inset_axes[ax_idx].plot(
-                                    self._data_simulator._time,
-                                    self._data_simulator._aux[:, aux_expression_idx],
-                                    label=plot_var_property.label,
-                                    **plt_kwargs,
-                                )
+                                for inset_ax in inset_axes[ax_idx]:
+                                    inset_ax.plot(
+                                        self._data_simulator._time,
+                                        self._data_simulator._aux[
+                                            :, aux_expression_idx
+                                        ],
+                                        label=plot_var_property.label,
+                                        **plt_kwargs,
+                                    )
 
-                                ax.indicate_inset_zoom(
-                                    inset_axes[ax_idx], edgecolor="black", linewidth=2.0
-                                )
+                                    ax.indicate_inset_zoom(
+                                        inset_ax, edgecolor="black", linewidth=2.0
+                                    )
 
                         else:
                             self._graphics_mpc.add_line(
@@ -339,17 +375,20 @@ class PostProcessing:
                             )
 
                             if ax_idx in inset_axes:
-                                self._graphics_mpc.add_line(
-                                    var_type=f"_tvp",
-                                    var_name=plot_var_name,
-                                    axis=inset_axes[ax_idx],
-                                    label=plot_var_property.label,
-                                    **plt_kwargs,
-                                )
+                                for inset_ax in inset_axes[ax_idx]:
+                                    self._graphics_mpc.add_line(
+                                        var_type=f"_tvp",
+                                        var_name=plot_var_name,
+                                        axis=inset_ax,
+                                        label=plot_var_property.label,
+                                        **plt_kwargs,
+                                    )
 
-                                ax.indicate_inset_zoom(
-                                    inset_axes[ax_idx], edgecolor="black", linewidth=2.0
-                                )
+                                    ax.indicate_inset_zoom(
+                                        inset_ax,
+                                        edgecolor="black",
+                                        linewidth=2.0,
+                                    )
 
                 if constraints is not None:
                     for constraint in constraints:
@@ -364,18 +403,19 @@ class PostProcessing:
                             )
 
                             if ax_idx in inset_axes:
-                                inset_axes[ax_idx].hlines(
-                                    constraint.value,
-                                    0.0,
-                                    self._scenario_meta_data["n_days_mpc"],
-                                    color="red",
-                                    linestyle="--",
-                                    label=r"$constraints$",
-                                )
+                                for inset_ax in inset_axes[ax_idx]:
+                                    inset_ax.hlines(
+                                        constraint.value,
+                                        0.0,
+                                        self._scenario_meta_data["n_days_mpc"],
+                                        color="red",
+                                        linestyle="--",
+                                        label=r"$constraints$",
+                                    )
 
-                            ax.indicate_inset_zoom(
-                                inset_axes[ax_idx], edgecolor="black", linewidth=2.0
-                            )
+                                    ax.indicate_inset_zoom(
+                                        inset_ax, edgecolor="black", linewidth=2.0
+                                    )
 
             for ax in axes_stacked:
                 if plot_var_name[0] == "u":
@@ -388,8 +428,12 @@ class PostProcessing:
                     ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3))
                 ax.grid(True, linestyle="--")
 
-            axis.yaxis.set_label_coords(-0.1, 0)
-            axis.set_ylabel(y_label, rotation=0)
+            # axis.yaxis.set_label_coords(-0.1, 0)
+            axis.set_ylabel(
+                y_label,
+                rotation=0,
+                labelpad=30.0,
+            )
 
             if plot_inputs:
                 # ax_inputs_liquid.yaxis.set_label_coords(0.1, 0)
