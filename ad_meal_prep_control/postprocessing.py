@@ -424,8 +424,10 @@ class PostProcessing:
                     loc = 0
                 labels = [line.get_label() for line in ax.get_lines()]
                 if not labels[0].startswith("_"):
-                    ax.legend(ncol=max(1, len(labels) // 3), loc=loc)
+                    temp_legend = ax.legend(ncol=max(1, len(labels) // 3), loc=loc)
+                    temp_legend.remove()
                     ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3))
+                    ax_inputs_liquid.add_artist(temp_legend)
                 ax.grid(True, linestyle="--")
 
             # axis.yaxis.set_label_coords(-0.1, 0)
