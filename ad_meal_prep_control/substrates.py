@@ -5,7 +5,6 @@ from ad_meal_prep_control import substrate_uncertainties
 from uncertainties import ufloat
 from copy import deepcopy
 import pandas as pd
-from params_R3 import fracChFast
 
 
 @dataclass(kw_only=True)
@@ -176,29 +175,25 @@ class Substrate:
         xi = deepcopy(self.xi)
         uncertain_xis = self.get_uncertain_xi_ch_pr_li()
         xi[5] = uncertain_xis[0].nominal_value
-        xi[6] = xi[5] * (1.0 - fracChFast)
-        xi[5] *= fracChFast
         xi[7] = uncertain_xis[1].nominal_value
         xi[8] = uncertain_xis[2].nominal_value
 
-        # xi = [str(round(xi, 3)) for xi in xi]
+        xi_names = [r"$\xi_{" + str(i + 1) + r"}$" for i in range(len(self.xi_names))]
 
-        xi_names = deepcopy(self.xi_names)
-
-        xi_names = [r"$\xi_{" + xi_name[1:] + r"}$" for xi_name in xi_names]
-
-        df_dict = {r"$\xi$": xi_names, r"$[g/kg_{TS}]$": xi}
+        df_dict = {r"$\xi$": xi_names, r"$[g/l]$": xi}
         df = pd.DataFrame(df_dict)
         df = df.loc[(df != 0).all(axis=1)]
 
         df = df.round(decimals=3)
-        df[r"$[g/kg_{TS}]$"] = df[r"$[g/kg_{TS}]$"].astype(str)
+        df[r"$[g/l]$"] = df[r"$[g/l]$"].astype(str)
         df.index.name = None
-        df.to_latex(
+        df.T.to_latex(
             buf=f"./tables/{self.name}.tex",
-            caption=f"{self.name.lower().replace('_', ' ')}" + r"$\xi$ values",
+            caption=f"{self.name.lower().replace('_', ' ')}" + r" $\xi$ values",
             label=f"tab:{self.name}",
-            index=False,
+            header=False,
+            index=True,
+            position="H",
         )
 
 
@@ -415,9 +410,89 @@ SUGAR_BEET_SILAGE = Substrate(
     cost=50.0,
 )
 
+
+def multiple_substrates_to_latex(subs: list[Substrate]):
+
+    column_names = [r"$\xi_{" + f"{i}" + r"}$" for i in range(1, 19)]
+
+    df = pd.DataFrame(columns=column_names)
+
+    for sub in subs:
+        xi = deepcopy(sub.xi)
+        uncertain_xis = sub.get_uncertain_xi_ch_pr_li()
+        xi[5] = uncertain_xis[0].nominal_value
+        xi[7] = uncertain_xis[1].nominal_value
+        xi[8] = uncertain_xis[2].nominal_value
+
+        xi_names = deepcopy(sub.xi_names)
+
+        xi_names = [r"$\xi_{" + xi_name[1:] + r"}$" for xi_name in xi_names]
+
+        df_dict = {}
+        for col_name, xi_ in zip(column_names, xi):
+            df_dict[col_name] = xi_
+
+        sub_name = sub.name.lower()
+        if sub_name == "cattle_manure":
+            sub_name = "manure"
+        elif sub_name == "cattle_manure_very_uncertain":
+            sub_name = "dictated_cattle_manure"
+        sub_name = sub_name
+
+        sub_name_list = sub_name.split("_")
+
+        sub_name = (
+            r"\begin{tabular}[c]{@{}l@{}}"
+            + r"\\".join(sub_name_list)
+            + r"\end{tabular}"
+        )
+
+        # sub_name = r"\begin{tabular}[c]{@{}l@{}}corresponding\\ state\end{tabular}"
+
+        df_temp = pd.DataFrame(df_dict, index=[sub_name])
+        df = pd.concat([df, df_temp])
+
+    df = df.loc[:, (df != 0).all(axis=0)]
+    df = df.round(decimals=3)
+
+    df_dict = {}
+    for col_name, xi_name in zip(column_names, subs[0].xi_names):
+        xi_name = "$" + xi_name[0] + "_\mathrm{" + xi_name[1:] + "}$"
+        df_dict[col_name] = xi_name
+    df_temp = pd.DataFrame(
+        df_dict,
+        index=[r"\begin{tabular}[c]{@{}l@{}}corresponding\\ state\end{tabular}"],
+    )
+
+    df = pd.concat([df_temp, df])
+
+    df = df.dropna(axis=1)
+
+    df = df.T
+    df = df.astype(str)
+    df.index.name = None
+    df.to_latex(
+        buf=f"./tables/xi_values.tex",
+        caption=r"Values of inlet concentrations '$\xi$' [\SI{}{\gram \per \liter}]",
+        label=f"tab:xi_values",
+        header=True,
+        index=True,
+        position="H",
+    )
+
+
 if __name__ == "__main__":
-    CATTLE_MANURE.to_latex()
-    CORN_SILAGE.to_latex()
-    GRASS_SILAGE.to_latex()
-    SUGAR_BEET_SILAGE.to_latex()
-    CATTLE_MANURE_VERY_UNCERTAIN.to_latex()
+    multiple_substrates_to_latex(
+        [
+            CORN_SILAGE,
+            GRASS_SILAGE,
+            SUGAR_BEET_SILAGE,
+            CATTLE_MANURE,
+            CATTLE_MANURE_VERY_UNCERTAIN,
+        ]
+    )
+    # CATTLE_MANURE.to_latex()
+    # CORN_SILAGE.to_latex()
+    # GRASS_SILAGE.to_latex()
+    # SUGAR_BEET_SILAGE.to_latex()
+    # CATTLE_MANURE_VERY_UNCERTAIN.to_latex()
