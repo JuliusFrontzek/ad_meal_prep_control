@@ -82,7 +82,9 @@ for idx, (means, std_devs, ax) in enumerate(
 # fig.suptitle("Normalverteilung")
 
 for ax, nutrient_name in zip(axes, means_all.keys()):
-    ax.set_xlabel(r"$\xi" + "_" + "{" + f"{nutrient_name}" + "}$ $[g/kg_{TS}]$")
+    ax.set_xlabel(
+        r"$\xi" + "_" + "{" + f"{nutrient_name}" + "}$ $[\mathrm{g} \mathrm{L}^{-1}]$"
+    )
     ax.set_ylabel("density")
 
 axes[-1].legend(ncols=2)
