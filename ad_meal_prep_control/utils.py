@@ -4,6 +4,7 @@ from enum import Enum, auto
 from ad_meal_prep_control import params_R3
 from dataclasses_json import dataclass_json
 from copy import deepcopy
+import pandas as pd
 
 
 @dataclass
@@ -346,26 +347,26 @@ class Scenario:
     limited_substrates: list[LimitedSubstrate] = None
     _state_names: list[str] = field(
         default_factory=lambda: [
-            "S_ac",
-            "S_ch4",
-            "S_IC",
-            "S_IN",
-            "S_h2o",
-            "X_ch_f",
-            "X_ch_s",
-            "X_pr",
-            "X_li",
-            "X_bac",
-            "X_ac",
-            "X_ash",
-            "S_ion",
-            "S_ac−",
-            "S_hco3−",
-            "S_nh3",
-            "S_ch4_gas",
-            "S_co2_gas",
-            "V_CH4",
-            "V_CO2",
+            "Sac",
+            "Sch4",
+            "SIC",
+            "SIN",
+            "Sh2o",
+            "Xch,f",
+            "Xch,s",
+            "Xpr",
+            "Xli",
+            "Xbac",
+            "Xac",
+            "Xash",
+            "Sion",
+            "Sac-",
+            "Shco3-",
+            "Snh3",
+            "Sch4,gas",
+            "Sco2,gas",
+            "Vch4",
+            "Vco2",
         ]
     )
 
@@ -453,7 +454,7 @@ class ScenarioFactory:
 
     _default_dict = {
         "t_step": 0.5 / 24,
-        "n_days_steady_state": 30,
+        "n_days_steady_state": 300,
         "n_days_mpc": 30,
         "sub_names": [
             "CORN_SILAGE",
@@ -494,3 +495,26 @@ class ScenarioFactory:
         for key, value in kwargs.items():
             scenario_dict[key] = value
         return Scenario(**scenario_dict)
+
+
+if __name__ == "__main__":
+    scenario_factory = ScenarioFactory()
+    scenario = scenario_factory.create_scenario("methanation", controller_params=None)
+    scenario._state_names
+
+    df_dict = {
+        "State": scenario._state_names,
+        "Normalization value $[\SI{}{\gram \per \liter}]$": scenario_factory._Tx_default,
+    }
+    df = pd.DataFrame(df_dict)
+    df = df.loc[(df != 0).all(axis=1)]
+
+    df = df.round(decimals=3)
+    df = df.astype(str)
+    df.index.name = None
+    df.to_latex(
+        buf=f"./tables/Tx.tex",
+        caption=r"State normalization vector \V{T}_x",
+        label=f"tab:Tx",
+        index=False,
+    )

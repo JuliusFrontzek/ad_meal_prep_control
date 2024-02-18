@@ -5,7 +5,8 @@ from ad_meal_prep_control import substrate_uncertainties
 from uncertainties import ufloat
 from copy import deepcopy
 import pandas as pd
-from params_R3 import fracChFast
+
+# from params_R3 import fracChFast
 
 
 @dataclass(kw_only=True)
@@ -187,12 +188,14 @@ class Substrate:
 
         xi_names = [r"$\xi_{" + xi_name[1:] + r"}$" for xi_name in xi_names]
 
-        df_dict = {r"$\xi$": xi_names, r"$[g/kg_{TS}]$": xi}
+        df_dict = {r"$\xi$": xi_names, r"$[\SI{}{\gram \per \liter}]$": xi}
         df = pd.DataFrame(df_dict)
         df = df.loc[(df != 0).all(axis=1)]
 
         df = df.round(decimals=3)
-        df[r"$[g/kg_{TS}]$"] = df[r"$[g/kg_{TS}]$"].astype(str)
+        df[r"$[\SI{}{\gram \per \liter}]$"] = df[
+            r"$[\SI{}{\gram \per \liter}]$"
+        ].astype(str)
         df.index.name = None
         df.to_latex(
             buf=f"./tables/{self.name}.tex",
