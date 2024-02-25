@@ -30,7 +30,7 @@ rterm = " + ".join(rterms)
 
 controller_params = ControllerParams(
     mpc_n_horizon=15,
-    mpc_n_robust=1,
+    mpc_n_robust=0,
     num_std_devs=2.0,
     cost_func=cost_func,
     substrate_cost_formulation="quadratic",
@@ -40,12 +40,16 @@ controller_params = ControllerParams(
 
 
 kwargs = {
-    "name": "Scenario_1b_multi_stage",
+    "name": "Scenario_1b",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "disturbances": Disturbances(
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 10.0, 0.05), (15.0, 20.0, 0.08)],
+            "CATTLE_MANURE_VERY_UNCERTAIN": [
+                (5.0, 10.0, 0.05),
+                (13.0, 17.0, 0.08),
+                (22.0, 26.0, 0.03),
+            ],
         },
         max_feeding_error=0.05,
     ),

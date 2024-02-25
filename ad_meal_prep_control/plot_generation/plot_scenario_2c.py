@@ -35,7 +35,7 @@ post_processing.plot(
             },
         ),
         (
-            "Gas storage\nlevel" + r" $[\%]$",
+            "Gas storage  \nlevel" + r" $[\%]$",
             {
                 "x_19": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -101,7 +101,10 @@ post_processing.plot(
         Constraint(value=0.0, ax_idx=2),
         Constraint(value=0.0, ax_idx=3),
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=3),
+        Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="blue"),
+        Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="blue"),
     ],
     dpi=dpi,
     show_plot=show_plot,
+    height_ratios=[2, 1, 2, 2, 2, 1],
 )

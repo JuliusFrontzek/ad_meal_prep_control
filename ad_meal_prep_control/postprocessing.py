@@ -31,6 +31,7 @@ class PlotVarProperty:
 class Constraint:
     value: float
     ax_idx: int
+    color: str = None
 
 
 @dataclass(kw_only=True)
@@ -285,7 +286,7 @@ class PostProcessing:
                             xmax=self._scenario_meta_data["n_days_mpc"],
                             color="red",
                             linestyle="--",
-                            label=r"$u_{max}$",
+                            # label=r"$u_{max}$",
                         )
 
                         ax_inputs_liquid.hlines(
@@ -294,7 +295,7 @@ class PostProcessing:
                             xmax=self._scenario_meta_data["n_days_mpc"],
                             color="red",
                             linestyle="--",
-                            label=r"$u_{max}$",
+                            # label=r"$u_{max}$",
                         )
 
                         ax.set_ylim(
@@ -392,14 +393,18 @@ class PostProcessing:
 
                 if constraints is not None:
                     for constraint in constraints:
+                        if constraint.color is None:
+                            color = "red"
+                        else:
+                            color = constraint.color
+
                         if constraint.ax_idx == ax_idx:
                             ax.hlines(
                                 constraint.value,
                                 0.0,
                                 self._scenario_meta_data["n_days_mpc"],
-                                color="red",
+                                color=color,
                                 linestyle="--",
-                                label=r"$constraints$",
                             )
 
                             if ax_idx in inset_axes:
@@ -408,9 +413,8 @@ class PostProcessing:
                                         constraint.value,
                                         0.0,
                                         self._scenario_meta_data["n_days_mpc"],
-                                        color="red",
+                                        color=color,
                                         linestyle="--",
-                                        label=r"$constraints$",
                                     )
 
                                     ax.indicate_inset_zoom(

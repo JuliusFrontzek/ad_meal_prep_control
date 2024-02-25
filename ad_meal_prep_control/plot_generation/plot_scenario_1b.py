@@ -6,14 +6,10 @@ from ad_meal_prep_control.postprocessing import (
 import sys
 
 scenario_names = [
-    "Scenario_1b_multi_stage",
-    "Scenario_1b_non_robust",
-    "Scenario_1b_multi_stage_nv_3",
+    "Scenario_1b",
 ]
 plot_save_names = [
-    "scenario_1b_multi_stage",
-    "scenario_1b_non_robust",
-    "scenario_1b_multi_stage_nv_3",
+    "scenario_1b",
 ]
 
 try:
@@ -25,7 +21,7 @@ except IndexError:
 
 for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     post_processing = PostProcessing(
-        result_directory="/home/julius/Documents/Studium/Master/Masterarbeit/ad_meal_prep_control/results",
+        result_directory="/home/julius/Projects/ad_meal_prep_control/results",
         scenario_name=scenario_name,
     )
 
@@ -85,16 +81,22 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         show_plot=show_plot,
         height_ratios=[2, 1, 3, 1],
         input_inset_axis={
-            "days": (14, 21),
+            "days": (12, 18),
             "ylimit": (-1.0, 5.0),
             "inset_axis_specs": (0.4, 0.4, 0.4, 0.3),
         },
         other_inset_axes=[
             {
                 "plot_idx": 2,
-                "days": (14, 21),
+                "days": (12, 18),
                 "ylimit": (430, 470),
                 "inset_axis_specs": (0.37, 0.7, 0.3, 0.2),
-            }
+            },
+            {
+                "plot_idx": 2,
+                "days": (21, 27),
+                "ylimit": (447, 453),
+                "inset_axis_specs": (0.7, 0.35, 0.25, 0.2),
+            },
         ],
     )

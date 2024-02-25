@@ -22,7 +22,7 @@ except IndexError:
 post_processing.plot(
     [
         (
-            "Gas storage\nlevel" + r" $[\%]$",
+            "Gas storage  \nlevel" + r" $[\%]$",
             {
                 "x_19": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -53,7 +53,7 @@ post_processing.plot(
             },
         ),
         (
-            r"$\dot V_{CH_4,AD}$" + "\n" + r"$[m^3/d]$",
+            r"$\dot V$" + "\n" + r"$[m^3/d]$",
             {
                 "v_ch4_dot_tank_in": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -61,21 +61,16 @@ post_processing.plot(
                         linewidth=1.5,
                         linestyle="-",
                     ),
-                    label="",
+                    label=r"$\dot V_{CH_4,AD}$",
                 ),
-            },
-        ),
-        (
-            r"$\dot V_{g, AD}$" + "\n" + r"$[m^3/d]$",
-            {
                 "y_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color=post_processing.MEASUREMENT_COLOR,
+                        color="blue",
                         linewidth=1.5,
                         linestyle="-",
                     ),
-                    label="",
-                )
+                    label=r"$\dot V_{g, AD}$",
+                ),
             },
         ),
         (
@@ -93,7 +88,10 @@ post_processing.plot(
         Constraint(value=0.0, ax_idx=1),
         Constraint(value=0.0, ax_idx=2),
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
+        Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="blue"),
+        Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="blue"),
     ],
     dpi=dpi,
     show_plot=show_plot,
+    height_ratios=[2, 2, 2, 2, 1],
 )

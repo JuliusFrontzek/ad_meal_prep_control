@@ -96,9 +96,9 @@ def mpc_setup(
 
                         time_k = t_now + t_step * k
                         if time_k >= start_time and time_k < end_time:
-                            tvp_template[
-                                "_tvp", k, "dictated_sub_feed", feed_idx
-                            ] = feed_amount
+                            tvp_template["_tvp", k, "dictated_sub_feed", feed_idx] = (
+                                feed_amount
+                            )
                             break
                         else:
                             tvp_template["_tvp", k, "dictated_sub_feed", feed_idx] = 0.0
@@ -156,15 +156,15 @@ def mpc_setup(
                 tvp_template["_tvp", k, "v_ch4_dot_tank_out"] = ch4_outflow_rate[
                     t_now_idx + k
                 ]
-                tvp_template[
-                    "_tvp", k, "v_ch4_dot_tank_out_mean"
-                ] = mean_ch4_outflow_rate
+                tvp_template["_tvp", k, "v_ch4_dot_tank_out_mean"] = (
+                    mean_ch4_outflow_rate
+                )
                 tvp_template["_tvp", k, "theta"] = theta
 
             if ch4_set_point_function is not None:
-                tvp_template[
-                    "_tvp", :, "v_ch4_dot_tank_in_setpoint"
-                ] = ch4_set_point_function.get_current_setpoint(t_now)
+                tvp_template["_tvp", :, "v_ch4_dot_tank_in_setpoint"] = (
+                    ch4_set_point_function.get_current_setpoint(t_now)
+                )
 
             dictated_sub_tvp_setup(t_now)
 
@@ -176,9 +176,9 @@ def mpc_setup(
             for k in range(n_horizon + 1):
                 tvp_template["_tvp", k, "theta"] = theta
             if ch4_set_point_function is not None:
-                tvp_template[
-                    "_tvp", :, "v_ch4_dot_tank_in_setpoint"
-                ] = ch4_set_point_function.get_current_setpoint(t_now)
+                tvp_template["_tvp", :, "v_ch4_dot_tank_in_setpoint"] = (
+                    ch4_set_point_function.get_current_setpoint(t_now)
+                )
 
             dictated_sub_tvp_setup(t_now)
 
@@ -217,9 +217,9 @@ def mpc_setup(
 
     if bounds is not None:
         for bound in bounds:
-            mpc.bounds[
-                bound.direction, bound.variable_type, bound.variable
-            ] = bound.value
+            mpc.bounds[bound.direction, bound.variable_type, bound.variable] = (
+                bound.value
+            )
 
     # # Soft constraints with slack variables
     if nl_cons is not None:

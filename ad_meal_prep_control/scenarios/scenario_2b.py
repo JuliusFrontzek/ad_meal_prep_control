@@ -8,7 +8,8 @@ from ad_meal_prep_control.utils import (
 from ad_meal_prep_control.params_R3 import P_el_chp
 import numpy as np
 
-lterm = "(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.5)**2 + 50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.5)**4)"
+lterm = "(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.43)**2 + 50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.43)**4)"
+
 mterm = "model.tvp['dummy_tvp']"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
@@ -28,7 +29,7 @@ kwargs = {
     "name": "Scenario_2b_dynamic",
     "pygame_vis": False,
     "mpc_live_vis": False,
-    "P_el_chp": 0.6 * P_el_chp,
+    "P_el_chp": 50.0,
     "t_step": 0.5 / 24.0,
     "disturbances": Disturbances(
         dictated_feeding={

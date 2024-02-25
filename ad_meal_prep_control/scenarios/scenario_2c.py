@@ -12,7 +12,8 @@ import random
 
 np.random.seed(seed=42)
 
-lterm = "(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.5)**2 + 50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.5)**4)"
+lterm = "(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.43)**2 + 50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.43)**4)"
+
 mterm = "model.tvp['dummy_tvp']"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
@@ -38,18 +39,18 @@ state_jumps_co2 = []
 
 for i in range(mpc_t_steps):
     if i % int(5 / t_step / 24) == 0:
-        state_jumps_ch4.append((i, random.random() * 0.1 - 0.05))
-        state_jumps_co2.append((i, random.random() * 0.1 - 0.05))
+        state_jumps_ch4.append((i, random.random() * 0.06 - 0.03))
+        state_jumps_co2.append((i, random.random() * 0.06 - 0.03))
     else:
         state_jumps_ch4.append((i, random.random() * 0.02 - 0.01))
         state_jumps_co2.append((i, random.random() * 0.02 - 0.01))
 
 
 kwargs = {
-    "name": "Scenario_2c_dynamic",
+    "name": "Scenario_2c_dynamic_test",
     "pygame_vis": False,
     "mpc_live_vis": False,
-    "P_el_chp": 0.6 * P_el_chp,
+    "P_el_chp": 50.0,
     "t_step": t_step,
     "plot_vars": [
         "u_norm",
