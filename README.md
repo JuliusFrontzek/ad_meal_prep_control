@@ -1,5 +1,7 @@
 # Description
-Multi-stage Model Predictive Control algorithm and simulation for a biogas plant (anaerobic digestion) with an optional external gas storage. Considers uncertainties in macronutrients of the fed substrates.
+Multi-stage Model Predictive Control algorithm and simulation for a biogas plant (anaerobic digestion) with an optional external gas storage. Considers uncertainties in macronutrients of the fed substrates. 
+
+Status of Julius' master's thesis submitted at Feb. 26, 2024.
 
 # Install
 ## Regular install
