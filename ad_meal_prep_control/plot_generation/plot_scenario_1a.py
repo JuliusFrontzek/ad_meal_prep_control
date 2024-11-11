@@ -5,11 +5,19 @@ from ad_meal_prep_control.postprocessing import (
 )
 import sys
 
-scenario_names = ["Scenario_1a_linear", "Scenario_1a_quadratic"]
-plot_save_names = [
-    "scenario_1a_linear_substrate_costs",
-    "Scenario_1a_quadratic_substrate_costs",
-]
+#scenario_names = ["Scenario_1a_quadratic_no_feedback_mismatch_1std_ch",
+#                  'Scenario_1a_quadratic_no_feedback_mismatch_1std_pr',
+#                  'Scenario_1a_quadratic_no_feedback_mismatch_1std_li']
+#plot_save_names = ["Scenario_1a_quadratic_no_feedback_mismatch_1std_ch_substrate_costs",
+#                   'Scenario_1a_quadratic_no_feedback_mismatch_1std_pr_substrate_costs',
+#                   'Scenario_1a_quadratic_no_feedback_mismatch_1std_li_substrate_costs']
+
+scenario_names = ["Scenario_1a_quadratic_feedback_mismatch_5std_3tsap",
+                  'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap',
+                  'Scenario_1a_quadratic_robust_feedback_mismatch_5std_3tsap']
+plot_save_names = ["Scenario_1a_quadratic_feedback_mismatch_5std_3tsap_substrate_costs",
+                   'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap_substrate_costs',
+                   'Scenario_1a_quadratic_robust_feedback_mismatch_5std_3tsap_substrate_costs']
 
 try:
     dpi = int(sys.argv[1])
@@ -21,7 +29,7 @@ except IndexError:
 
 for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     post_processing = PostProcessing(
-        result_directory="/home/julius/Projects/ad_meal_prep_control/results",
+        result_directory="./results",
         scenario_name=scenario_name,
     )
 
@@ -31,8 +39,8 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 r"$pH$" + "\n" + r"$[1]$",
                 {
                     "y_4": PlotVarProperty(
-                        mpl_properties=MPLProperties(linewidth=1.5, linestyle="-"),
-                        label="",
+                        mpl_properties=MPLProperties(linewidth=1, linestyle="-"),
+                        label="$pH_{plant}$",
                     )
                 },
             ),
@@ -41,23 +49,23 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 {
                     "v_ch4_dot_tank_in_setpoint": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="orange", linewidth=1.5, linestyle="-."
+                            color="orange", linewidth=1, linestyle="-."
                         ),
-                        label=r"Reference ($\dot V_{CH_4}$)",
+                        label=r"Reference" "\n" "($\dot V_{CH_4}$)",
                     ),
                     "v_ch4_dot_tank_in": PlotVarProperty(
                         mpl_properties=MPLProperties(
                             color=post_processing.MEASUREMENT_COLOR,
-                            linewidth=1.5,
+                            linewidth=1,
                             linestyle="-",
                         ),
-                        label=r"$\dot V_{CH_4}$",
+                        label=r"$\dot V_{CH_4, plant}$",
                     ),
                     "y_1": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="blue", linewidth=1.5, linestyle="-"
+                            color="blue", linewidth=1, linestyle="-"
                         ),
-                        label=r"$\dot V_g$",
+                        label=r"$\dot V_{g, plant}$",
                     ),
                 },
             ),

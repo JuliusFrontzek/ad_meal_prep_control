@@ -30,7 +30,6 @@ def mhe_setup(
     P_v: np.ndarray,
     ch4_outflow_rate: np.ndarray,
     store_full_solution: bool,
-    hsllib: Path = None,
     suppress_ipopt_output: bool = False,
 ) -> do_mpc.estimator.MHE:
     """
@@ -46,13 +45,8 @@ def mhe_setup(
         "n_horizon": n_horizon,
         "store_full_solution": store_full_solution,
         "meas_from_data": True,
+        'nlpsol_opts': {"ipopt.linear_solver": "ma27", "ipopt.hsllib": "/usr/local/lib/libcoinhsl.so.2.2.5"}
     }
-
-    if hsllib is not None:
-        setup_mhe["nlpsol_opts"] = {
-            "ipopt.linear_solver": "MA27",
-            "ipopt.hsllib": str(hsllib),
-        }
 
     if suppress_ipopt_output:
         setup_mhe["nlpsol_opts"]["ipopt.print_level"] = 0

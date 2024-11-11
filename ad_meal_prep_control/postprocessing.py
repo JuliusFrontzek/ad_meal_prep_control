@@ -38,7 +38,7 @@ class Constraint:
 class PostProcessing:
     result_directory: str
     scenario_name: str
-    _default_mpl_properties = MPLProperties(color=None, linewidth=2.0, linestyle="-")
+    _default_mpl_properties = MPLProperties(color=None, linewidth=1.0, linestyle="-")
     _default_plot_var_properties = PlotVarProperty(
         mpl_properties=_default_mpl_properties
     )
@@ -431,7 +431,7 @@ class PostProcessing:
                     temp_legend = ax.legend(ncol=max(1, len(labels) // 3), loc=loc)
                     temp_legend.remove()
                     ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3))
-                    ax_inputs_liquid.add_artist(temp_legend)
+                    #ax_inputs_liquid.add_artist(temp_legend)
                 ax.grid(True, linestyle="--")
 
             # axis.yaxis.set_label_coords(-0.1, 0)
@@ -463,6 +463,9 @@ class PostProcessing:
                 dpi=dpi,
                 format="png",
             )
+            #Save plot to a pickle so we can add the plant output later
+            with open(Path(self.result_directory, "plots", f"{plot_save_name}.pkl"), 'wb') as file:
+                pickle.dump(fig, file)
         if show_plot:
             plt.show()
 

@@ -39,7 +39,6 @@ def mpc_setup(
     bounds: list[Bound] = None,
     nl_cons: list[NlConstraint] = None,
     rterm: str = None,
-    hsllib: Path = None,
     suppress_ipopt_output: bool = False,
     ch4_set_point_function: SetpointFunction = None,
     theta: np.ndarray,
@@ -60,16 +59,8 @@ def mpc_setup(
         "collocation_ni": 1,
         "store_full_solution": store_full_solution,
         # "nl_cons_check_colloc_points": True,
+        'nlpsol_opts': {"ipopt.linear_solver": "ma27", "ipopt.hsllib": "/usr/local/lib/libcoinhsl.so.2.2.5"}
     }
-
-    if hsllib is not None:
-        # Use MA27 linear solver in ipopt for faster calculations:
-        setup_mpc["nlpsol_opts"] = {
-            "ipopt.linear_solver": "MA27",
-            "ipopt.hsllib": str(hsllib),
-        }
-    else:
-        setup_mpc["nlpsol_opts"] = {}
 
     # setup_mpc["nlpsol_opts"] = {
     #     "ipopt.linear_solver": "spral",

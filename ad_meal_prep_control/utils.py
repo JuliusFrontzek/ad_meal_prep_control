@@ -344,6 +344,9 @@ class Scenario:
     compile_nlp: bool = False
     P_el_chp: float = None
     limited_substrates: list[LimitedSubstrate] = None
+    feedback: bool = True
+    mismatch: bool = True
+    t_stp_ahead_pred: int = 1
     _state_names: list[str] = field(
         default_factory=lambda: [
             "S_ac",
@@ -470,6 +473,9 @@ class ScenarioFactory:
         "state_observer": StateObserver.STATEFEEDBACK,
         "mhe_n_horizon": 5,
         "num_std_devs_sim": 1.5,
+        "feedback": True,
+        "mismatch": True,
+        "t_stp_ahead_pred": 1
     }
 
     methanation_dict = deepcopy(_default_dict)
@@ -494,3 +500,32 @@ class ScenarioFactory:
         for key, value in kwargs.items():
             scenario_dict[key] = value
         return Scenario(**scenario_dict)
+
+def remove_duplicate_labels(fig, axis_index, legend_location='best', bbox_to_anchor=None):
+    """
+    Removes duplicate labels from the legend of the specified axis in a matplotlib figure.
+    The corresponding plot elements will remain visible, but their labels will be omitted from the legend.
+
+    Parameters:
+        fig (matplotlib.figure.Figure): The figure containing the axes.
+        axis_index (int): The index of the axis to modify.
+        legend_location (str): The location of the legend (e.g., 'best', 'upper right', etc.). Default is 'best'.
+        bbox_to_anchor (tuple or None): The bounding box for the legend to position it more precisely. Default is None.
+
+    Returns:
+        None: The function modifies the legend in place.
+    """
+    # Retrieve handles and labels
+    handles, labels = fig.axes[axis_index].get_legend_handles_labels()
+
+    # Dictionary to track unique labels
+    unique_labels = {}
+
+    # Iterate through the labels and handles
+    for handle, label in zip(handles, labels):
+        if label not in unique_labels:  # If label is not a duplicate, add it
+            unique_labels[label] = handle
+
+    # Set the legend with only the unique labels and specified location and bbox_to_anchor
+    fig.axes[axis_index].legend(unique_labels.values(), unique_labels.keys(),
+                                loc=legend_location, bbox_to_anchor=bbox_to_anchor)

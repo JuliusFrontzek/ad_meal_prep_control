@@ -8,6 +8,7 @@ from ad_meal_prep_control import substrates
 from ad_meal_prep_control.models import adm1_r3_frac_norm
 from ad_meal_prep_control.state_estimator import StateFeedback, mhe_setup
 from ad_meal_prep_control.simulator import simulator_setup
+from ad_meal_prep_control.simulator_plant import simulator_plant_setup
 import copy
 import matplotlib.pyplot as plt
 from ad_meal_prep_control import params_R3
@@ -74,15 +75,6 @@ class Simulation:
             self._v_co2_norm_estimated_0 = self.x0_norm_estimated[19]
             self._Tx_gas_storage_states = np.copy(self.Tx[18:])
 
-        # Look for HSL solver
-        self._hsllib = None
-        for x in os.listdir("./"):
-            if x.startswith("coinhsl") and os.path.isdir(x):
-                path_to_check = Path(x, "builddir", "libcoinhsl.so")
-                if path_to_check.exists():
-                    self._hsllib = path_to_check
-                    break
-
         if self.scenario.disturbances.dictated_feeding is not None:
             self._num_dictated_subs = len(self.scenario.disturbances.dictated_feeding)
         else:
@@ -111,7 +103,7 @@ class Simulation:
             )
 
         if not self.scenario.mpc_live_vis and not self.scenario.pygame_vis:
-            self._suppress_ipopt_output = True
+            self._suppress_ipopt_output = False
         else:
             self._suppress_ipopt_output = False
 
@@ -204,14 +196,13 @@ class Simulation:
                 cost_func=self.scenario.controller_params.cost_func,
                 substrate_costs=[sub.cost for sub in self._subs_controlled],
                 substrate_cost_formulation=self.scenario.controller_params.substrate_cost_formulation,
-                store_full_solution=self.scenario.mpc_live_vis,
+                store_full_solution=True,
                 disturbances=self.scenario.disturbances,
                 gas_storage_bound_fraction=self.scenario.controller_params.gas_storage_bound_fraction,
                 bounds=self.scenario.controller_params.bounds,
                 nl_cons=self.scenario.controller_params.nl_cons,
                 rterm=self.scenario.controller_params.rterm,
                 ch4_set_point_function=self.scenario.controller_params.ch4_set_point_function,
-                hsllib=self._hsllib,
                 theta=self._theta,
                 suppress_ipopt_output=self._suppress_ipopt_output,
             )
@@ -275,6 +266,7 @@ class Simulation:
         if (
             self.scenario.controller_params.num_std_devs == 0.0
             or self.scenario.controller_params.mpc_n_robust == 0
+            or not self.scenario.mismatch
         ):
             self._xi_ch_mpc_mhe = np.array([xi_ch_nom])
             self._xi_pr_mpc_mhe = np.array([xi_pr_nom])
@@ -291,21 +283,24 @@ class Simulation:
             self._xi_pr_mpc_mhe = np.array(
                 [
                     xi_pr_nom
-                    - self.scenario.controller_params.num_std_devs * xi_pr_std_dev,
-                    xi_pr_nom
-                    + self.scenario.controller_params.num_std_devs * xi_pr_std_dev,
+                    #- self.scenario.controller_params.num_std_devs * xi_pr_std_dev,
+                    #xi_pr_nom
+                    #+ self.scenario.controller_params.num_std_devs * xi_pr_std_dev,
                 ]
             )
             self._xi_li_mpc_mhe = np.array(
                 [
                     xi_li_nom
-                    - self.scenario.controller_params.num_std_devs * xi_li_std_dev,
-                    xi_li_nom
-                    + self.scenario.controller_params.num_std_devs * xi_li_std_dev,
+                    #- self.scenario.controller_params.num_std_devs * xi_li_std_dev,
+                    #xi_li_nom
+                    #+ self.scenario.controller_params.num_std_devs * xi_li_std_dev,
                 ]
             )
 
-        if self.scenario.num_std_devs_sim == 0.0:
+        if (
+            self.scenario.num_std_devs_sim == 0.0
+            or not self.scenario.mismatch
+        ):
             self._xi_ch_sim = np.array([xi_ch_nom])
             self._xi_pr_sim = np.array([xi_pr_nom])
             self._xi_li_sim = np.array([xi_li_nom])
@@ -313,25 +308,25 @@ class Simulation:
             self._xi_ch_sim = np.array(
                 [
                     xi_ch_nom
-                    + np.random.choice([-1, 1], size=xi_ch_nom.size)
-                    * self.scenario.num_std_devs_sim
+                    #+ np.random.choice([-1, 1], size=xi_ch_nom.size)
+                    + self.scenario.num_std_devs_sim
                     * xi_ch_std_dev
                 ]
             )
             self._xi_pr_sim = np.array(
                 [
                     xi_pr_nom
-                    + np.random.choice([-1, 1], size=xi_pr_nom.size)
-                    * self.scenario.num_std_devs_sim
-                    * xi_pr_std_dev
+                    #+ np.random.choice([-1, 1], size=xi_pr_nom.size)
+                    #+ self.scenario.num_std_devs_sim
+                    #* xi_pr_std_dev
                 ]
             )
             self._xi_li_sim = np.array(
                 [
                     xi_li_nom
-                    + np.random.choice([-1, 1], size=xi_li_nom.size)
-                    * self.scenario.num_std_devs_sim
-                    * xi_li_std_dev
+                    #+ np.random.choice([-1, 1], size=xi_li_nom.size)
+                    #+ self.scenario.num_std_devs_sim
+                    #* xi_li_std_dev
                 ]
             )
 
@@ -375,8 +370,7 @@ class Simulation:
                 P_x=np.diag((self.x0_norm_estimated - self.x0_norm_true) ** 2),
                 P_v=0.0001 * np.ones((8, 8)),
                 ch4_outflow_rate=self._ch4_outflow_rate,
-                store_full_solution=self.scenario.mpc_live_vis,
-                hsllib=self._hsllib,
+                store_full_solution=True,
                 suppress_ipopt_output=self._suppress_ipopt_output,
             )
 
@@ -427,6 +421,34 @@ class Simulation:
         # Set normalized x0
         self._simulator.x0 = np.copy(self.x0_norm_true)
         self._simulator.set_initial_guess()
+
+        if not self.scenario.feedback:
+            #Plant
+            # Compute the uncertain xis (ch, pr and li)
+            uncertain_xis = [sub.get_uncertain_xi_ch_pr_li() for sub in self._subs_all]
+
+            # Get nominal values and standard deviations for uncertain xis of all substrates
+            xi_ch_nom = np.array([un_xi[0].nominal_value for un_xi in uncertain_xis])
+            xi_pr_nom = np.array([un_xi[1].nominal_value for un_xi in uncertain_xis])
+            xi_li_nom = np.array([un_xi[2].nominal_value for un_xi in uncertain_xis])
+
+            # Here we compute the output of the simulator for the nominal value, so what the plant output
+            # would be if there were no mismatch
+
+            self._simulator_plant = simulator_plant_setup(
+                model=self.model,
+                t_step=self.scenario.t_step,
+                xi_ch_norm=xi_ch_nom/self.Tx[5],
+                xi_pr_norm=xi_pr_nom/self.Tx[7],
+                xi_li_norm=xi_li_nom/self.Tx[8],
+                ch4_outflow_rate=ch4_outflow_rate,
+                disturbances=disturbances,
+                theta=self._theta,
+            )
+
+            # Set normalized x0
+            self._simulator_plant.x0 = np.copy(self.x0_norm_true)
+            self._simulator_plant.set_initial_guess()
 
     def _graphics_setup(self):
         # Initialize graphic:
@@ -548,6 +570,16 @@ class Simulation:
         )
 
     def _run_mpc(self):
+        # Initialize variables
+        vg_ch4_model = self._mpc.data.prediction(('_aux', 'v_ch4_dot_tank_in'))[0][0]
+        vg_model = self._mpc.data.prediction(('_aux', 'y_1'))[0][0]
+        ph_model = self._mpc.data.prediction(('_aux', 'y_4'))[0][0]
+
+        if '2' in self.scenario.name:
+            vg_ch4_tank_model = self._mpc.data.prediction(('_x', 'x_19'))[0][0]
+            vg_co2_tank_model = self._mpc.data.prediction(('_x', 'x_20'))[0][0]
+            vg_tank_model = self._mpc.data.prediction(('_aux', 'v_gas_storage'))[0][0]
+
         # Initialize simulator and controller
         self._mpc.x0 = np.copy(self.x0_norm_estimated)
         self._mpc.u0 = np.ones(len(self._subs_controlled)) * 0.5
@@ -603,6 +635,29 @@ class Simulation:
                             ]
                         ).T
                     )
+                if self.scenario.feedback:
+                    # Prediction of MPC using model
+                    vg_ch4_model = np.column_stack((vg_ch4_model, self._mpc.data.prediction(
+                        ('_aux', 'v_ch4_dot_tank_in'))[0][self.scenario.t_stp_ahead_pred]))
+                    vg_model = np.column_stack((vg_model, self._mpc.data.prediction(
+                        ('_aux', 'y_1'))[0][self.scenario.t_stp_ahead_pred]))
+                    ph_model = np.column_stack((ph_model, self._mpc.data.prediction(
+                        ('_aux', 'y_4'))[0][self.scenario.t_stp_ahead_pred]))
+
+                    if '2' in self.scenario.name:
+                        # Prediction of MPC using model
+                        vg_ch4_tank_model = np.column_stack((vg_ch4_tank_model, self._mpc.data.prediction(
+                            ('_x', 'x_19'))[0][self.scenario.t_stp_ahead_pred]))
+                        vg_co2_tank_model = np.column_stack((vg_co2_tank_model, self._mpc.data.prediction(
+                            ('_x', 'x_20'))[0][self.scenario.t_stp_ahead_pred]))
+                        vg_tank_model = np.column_stack((vg_tank_model, self._mpc.data.prediction(
+                            ('_aux', 'v_gas_storage'))[0][self.scenario.t_stp_ahead_pred]))
+
+                if not self.scenario.feedback:
+                    # Plant results
+                    # y_next order: 4 substrates (CORN_SILAGE, GRASS_SILAGE, CATTLE_MANURE,
+                    # SUGAR_BEET_SILAGE) + 6 measurements
+                    y_next_plant = self._simulator_plant.make_step(u_norm_actual) # Plant output
 
                 y_next = self._simulator.make_step(u_norm_actual)
                 self.x0_norm_true = np.array(self._simulator.x0.master)
@@ -700,11 +755,44 @@ class Simulation:
                         u_norm_actual,
                         model=self.model,
                     )
+
+            if self.scenario.feedback:
+                #save predicted data
+                if '1' in self.scenario.name:
+                    predicted_data = np.concatenate((vg_model, ph_model, vg_ch4_model), axis=0)
+                    np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
+                if '2' in self.scenario.name:
+                    predicted_data = np.concatenate((vg_ch4_tank_model, vg_co2_tank_model, vg_tank_model,
+                                                   vg_ch4_model, vg_model, ph_model), axis=0)
+                    np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
+
+            if not self.scenario.feedback:
+                vg_ch4_model = self._simulator_plant.data['_aux', 'v_ch4_dot_tank_in']
+                vg_model = self._simulator_plant.data['_aux', 'y_1']
+                ph_model = self._simulator_plant.data['_aux', 'y_4']
+
+                if '2' in self.scenario.name:
+                    vg_ch4_tank_model = self._simulator_plant.data['_x', 'x_19']
+                    vg_co2_tank_model = self._simulator_plant.data['_x', 'x_20']
+                    vg_tank_model = self._simulator_plant.data['_aux', 'v_gas_storage']
+
+                #Save plant output
+                if '1' in self.scenario.name:
+                    plant_output = np.concatenate((vg_model, ph_model, vg_ch4_model), axis=1)
+                    np.savetxt(f'./results/Plant Output {self.scenario.name}.csv', plant_output)
+
+                if '2' in self.scenario.name:
+                    plant_output = np.concatenate((vg_ch4_tank_model, vg_co2_tank_model, vg_tank_model,
+                                                   vg_ch4_model, vg_model, ph_model), axis=1)
+
+                    np.savetxt(f'./results/Plant Output {self.scenario.name}.csv', plant_output)
+
         except (KeyboardInterrupt, SystemError):
             pass
         finally:
             if self.scenario.save_results:
                 self._save_results()
+
 
     def _save_results(self):
         # Save do_mpc data
