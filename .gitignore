@@ -9,7 +9,6 @@ __pycache__
 # File types
 *.c
 *.asv
-*.png
 *.DS_Store
 *.so
 *.pkl
