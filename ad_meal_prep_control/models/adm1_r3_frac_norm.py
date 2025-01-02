@@ -355,39 +355,32 @@ def adm1_r3_frac_norm(
         - Tx[13] * x_norm[13] / 60
     )
 
-    # equivalent proton concentration
-    SHPlusNorm = -0.5 * PhiNorm + 0.5 * sqrt(PhiNorm**2 + c[3])
-
-    # overall inhibition factor
-    IacNorm = (
-        c[2]
-        / (c[2] + SHPlusNorm ** (c[1]))
-        * x_norm[3]
-        / (x_norm[3] + c[7] / Tx[3])
-        * theta[7]
-        / (theta[7] + Tx[15] * x_norm[15])
-    )
-
-    # Aux
-    PhiNorm = (
-        Tx[12] * x_norm[12]
-        + (Tx[3] * x_norm[3] - Tx[15] * x_norm[15]) / 17
-        - Tx[14] * x_norm[14] / 44
-        - Tx[13] * x_norm[13] / 60
-    )
-
     # equivalent proton concentration:
     SHPlusNorm = -PhiNorm / 2.0 + 0.5 * np.sqrt(PhiNorm**2 + c[3])
 
-    # overall inhibition factor:
-    IacNorm = (
-        c[2]
-        / (c[2] + SHPlusNorm ** (c[1]))
-        * x_norm[3]
-        / (x_norm[3] + c[7] / Tx[3])
-        * theta[7]
-        / (theta[7] + Tx[15] * x_norm[15])
+    # Inhibition functions
+    inhibitions = []
+
+    inhibitions.append(
+        model.set_expression("inhibition_1", x_norm[3] / (x_norm[3] + c[7] / Tx[3]))
     )
+
+    inhibitions.append(
+        model.set_expression(
+            "inhibition_2",
+            c[2] / (SHPlusNorm ** (3 / (pHULac - pHLLac)) + c[2]),
+        )
+    )
+
+    inhibitions.append(
+        model.set_expression(
+            "inhibition_3",
+            theta[7] / (theta[7] + Tx[15] * x_norm[15]),
+        )
+    )
+
+    # overall inhibition factor
+    IacNorm = inhibitions[0] * inhibitions[1] * inhibitions[2]
 
     # Set measurement equations as expressions
     y_norm = []
