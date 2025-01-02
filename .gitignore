@@ -14,3 +14,6 @@ __pycache__
 *.pkl
 *.csv
 *.txt
+
+# Specific files
+launch.json
