@@ -22,5 +22,3 @@ setup(
         "pandas",
     ],
 )
-
-os.mkdir("./results/")
