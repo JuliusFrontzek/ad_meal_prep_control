@@ -23,6 +23,8 @@ n_substrates = numel(substrates);
 n_states = 18; % ADM1-R3-frac
 adm1_inputs = nan(n_states,n_substrates); 
 n_samples = nan(1,n_substrates); % # samples used for computation
+% bk_numbers = array2table(nan(20,n_substrates), 'VariableNames', substrates); % initialize
+bk_numbers = cell(20,4); % allocate memory
 
 for k = 1:n_substrates
     % get substrate data and compute mean: 
@@ -45,15 +47,18 @@ for k = 1:n_substrates
             model_structure,flag_CH_method); 
 
     n_samples(k) = size(my_sub_table_num,1); 
+    bk_numbers(1:n_samples(k),k) = my_sub_table{:,"Probeneingangsnummer"}; 
 end
 
 % turn arrays into table: 
-adm1_inputs_tab = array2table(adm1_inputs, 'VariableNames', substrates); 
-n_samples_tab = array2table(n_samples, 'VariableNames', substrates); 
+adm1_inputs_tab = array2table(adm1_inputs, 'VariableNames',substrates); 
+n_samples_tab = array2table(n_samples, 'VariableNames',substrates); 
+bk_numbers_tab = cell2table(bk_numbers, 'VariableNames',substrates); 
 
 % save: 
 writetable(adm1_inputs_tab,'../data/data_out/adm1_inputs.xlsx');
 writetable(n_samples_tab,'../data/data_out/n_samples.xlsx');
+writetable(bk_numbers_tab,'../data/data_out/bk_numbers.xlsx');
 
 %% helper functions (thanks youChat) 
 function data_struct = read_exceltabs_to_struct(filename)
