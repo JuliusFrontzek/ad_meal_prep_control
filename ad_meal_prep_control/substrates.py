@@ -79,11 +79,11 @@ class Substrate:
 
         assert self.cost >= 0.0, f"Substrate cost must be larger than or equal to 0"
         # Conversion of percentages to decimal numbers where appropriate
-        if self.nominal_values.shape[0] == 5:
+        if self.nominal_values.shape[0] == 5: # (case 2)
             self.nominal_values /= 100.0  # unit change [%] -> [-]
             self.nominal_values[3] *= 100.0  # undo unit change for BMP
 
-        # Computation of remaining nominal values
+        # Computation of remaining nominal values (case 1)
         else:
             rho_fm = 1000.0
             bmp_nominal = self.nominal_values[0]
