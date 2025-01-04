@@ -12,7 +12,7 @@ flag_delete_rows_with_nan = 1; % 1: do, 0: dont
 flag_CH_method = 1; % 1: compute CH via BMP, 2: via lignin
 
 %% load data of substrate characterization:
-path_name = '../data/data_in/'; 
+path_name = '../../data/data_in/'; 
 file_name = 'substrate_characterization_dbfz.xlsx'; 
 pathNFile = [path_name,file_name]; 
 substrate_characterization_dbfz = read_exceltabs_to_struct(pathNFile);
@@ -56,9 +56,9 @@ n_samples_tab = array2table(n_samples, 'VariableNames',substrates);
 bk_numbers_tab = cell2table(bk_numbers, 'VariableNames',substrates); 
 
 % save: 
-writetable(adm1_inputs_tab,'../data/data_out/adm1_inputs.xlsx');
-writetable(n_samples_tab,'../data/data_out/n_samples.xlsx');
-writetable(bk_numbers_tab,'../data/data_out/bk_numbers.xlsx');
+writetable(adm1_inputs_tab,'../../data/data_out/v2025_overkill/adm1_inputs.xlsx');
+writetable(n_samples_tab,'../../data/data_out/v2025_overkill/n_samples.xlsx');
+writetable(bk_numbers_tab,'../../data/data_out/v2025_overkill/used_bk_numbers.xlsx');
 
 %% helper functions (thanks youChat) 
 function data_struct = read_exceltabs_to_struct(filename)

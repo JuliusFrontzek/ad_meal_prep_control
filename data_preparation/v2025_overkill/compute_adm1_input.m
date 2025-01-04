@@ -20,7 +20,7 @@ function x_inlet_default = compute_adm1_input(substrate_data_means, ...
 % - flag_CH_method:     1: compute carbs via BMP. 2: via Lignin
 
 %% BMP values acc. to KTBL: 
-literature_table = readtable('../data/data_in/literature_values_agr_substrates.xlsx');
+literature_table = readtable('../../data/data_in/literature_values_agr_substrates.xlsx');
 row_idx_sub = strcmp(literature_table.substrate, substrate_name); 
 BMP = literature_table{row_idx_sub,"bmp"}; 
 
