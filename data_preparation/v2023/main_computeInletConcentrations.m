@@ -148,31 +148,44 @@ writetable(inlet_concentrations_tab,'../../data/data_out/v2023/inlet_concentrati
 fileName = '../../data/data_out/v2023/macro_nutrients_concentrations.mat'; 
 save(fileName, 'S_macroNutrients_tables')
 
-%% create csv with min, max, mean, median, q25, q75 and n of all substrates:
-% XY: hier muss eine CSV entstehen, die den Substratnahmen in der ersten
-% Zeile hat und dann untereinander die kondensierten statistischen Größen!
-% Bisher ist das noch falsch und die CSV nicht brauchbar!
-macNutrientsResults = nan(7,3*nSubstrates); % allocate memory
+%% compute descriptive statistics of min, max, mean, median, q25, q75 and n of all substrates:
+% create a struct that has a field for each substrate; each field contains
+% a table with the statistical values (columns) for ch/pr/li (rows); then
+% saved as excel file with different tabs
+macroNutrients_descr_stats = struct(); % allocate memory
+
 for kk = 1:nSubstrates
+    macros_descr_stats_kk = nan(7,3); % allocate memory (7 measures, 3 macro nutrients)
+    
+    % get data: 
     substrateNumber = kk;    % 1...7 for respective substrate
     substrate = agriculturalSubstrates{substrateNumber}; 
-    currMacroNutrientsTab = S_macroNutrients_tables.(substrate); % get table of macronutrient values for one substrate
-    currMacroNutrients = currMacroNutrientsTab{:,:};        % table -> array   
-    nSamples = size(currMacroNutrients,1);
-    minVals = min(currMacroNutrients); 
-    maxVals = max(currMacroNutrients); 
-    meanVals = mean(currMacroNutrients);
-    medianVals = median(currMacroNutrients); 
-    q25 = quantile(currMacroNutrients,0.25); % 25 percent quantile
-    q75 = quantile(currMacroNutrients,0.75); % 75 percent quantile
+    macroNutrientsValues = table2array(S_macroNutrients_tables.(substrate)); % macronutrient values for one substrate
+    
+    % compute statistical measures: 
+    nSamples = size(macroNutrientsValues,1);
+    minVals = min(macroNutrientsValues); 
+    maxVals = max(macroNutrientsValues); 
+    meanVals = mean(macroNutrientsValues);
+    medianVals = median(macroNutrientsValues); 
+    q25 = quantile(macroNutrientsValues,0.25); % 25 percent quantile
+    q75 = quantile(macroNutrientsValues,0.75); % 75 percent quantile
 
-    % put all statistical measures into array: 
-    macNutrientsResults(:,kk*3-2:kk*3) = [minVals;maxVals;meanVals;medianVals;q25;q75;ones(1,3)*nSamples];
+    % put statistical measures into array: 
+    macros_descr_stats_kk(1,:) = repmat(nSamples,[1,3]); 
+    macros_descr_stats_kk(2:end,:) = [minVals;maxVals;meanVals;medianVals;q25;q75];  
+
+    % turn into table and save in struct: 
+    macro_col_names = {'X_ch','X_pr','X_li'}; 
+    macro_row_names = {'n_samples','min','max','mean','median','q25','q75'}; 
+    macros_descr_stats_tab_kk = array2table(macros_descr_stats_kk, ...
+        'VariableNames',macro_col_names, 'RowNames',macro_row_names);
+    macroNutrients_descr_stats.(substrate) = macros_descr_stats_tab_kk; 
+
+    % save as excel: 
+    fileName = '../../data/data_out/v2023/macro_nutrients_descriptive_statistics.xlsx'; 
+    writetable(macros_descr_stats_tab_kk,fileName, 'Sheet',substrate, 'WriteRowNames',true)
 end
-
-% save statistical results as csv: 
-csvFileName = 'macroNutrientsResults.xlsx'; 
-% save(csvFileName, 'macNutrientsResults')
 
 
 
