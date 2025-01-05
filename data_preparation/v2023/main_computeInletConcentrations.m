@@ -148,7 +148,8 @@ writetable(inlet_concentrations_tab,'../../data/data_out/v2023/inlet_concentrati
 fileName = '../../data/data_out/v2023/macro_nutrients_concentrations.mat'; 
 save(fileName, 'S_macroNutrients_tables')
 
-%% compute descriptive statistics of min, max, mean, median, q25, q75 and n of all substrates:
+%% compute descriptive statistics of all substrates 
+% (# samples, min, max, mean, median, q25, q75)
 % create a struct that has a field for each substrate; each field contains
 % a table with the statistical values (columns) for ch/pr/li (rows); then
 % saved as excel file with different tabs
@@ -187,6 +188,48 @@ for kk = 1:nSubstrates
     writetable(macros_descr_stats_tab_kk,fileName, 'Sheet',substrate, 'WriteRowNames',true)
 end
 
+%% draw boxplots of macro nutrients
+close all
+dompc_substrates = agriculturalSubstrates([1,2,4,5]); 
 
+figure
+tiledlayout(3,1)
 
- 
+% carbohydrates: 
+nexttile
+hold on
+for k = 1:4
+    macro_table = S_macroNutrients_tables.(dompc_substrates{k}); 
+    carbs = table2array(macro_table(:,1)); 
+    boxplot(carbs, 'orientation','horizontal','Positions',k)
+end
+xlabel('\xi_{ch} [g/L]'); % Label for the x-axis
+ylabel('Substrate');
+yticks(1:4); 
+yticklabels({'maize','grass','sugar beet','manure'}); % Custom y-tick labels
+
+% proteins: 
+nexttile
+hold on
+for k = 1:4
+    macro_table = S_macroNutrients_tables.(dompc_substrates{k}); 
+    proteins = table2array(macro_table(:,2)); 
+    boxplot(proteins, 'orientation','horizontal','Positions',k)
+end
+xlabel('\xi_{pr} [g/L]'); % Label for the x-axis
+ylabel('Substrate');
+yticks(1:4); 
+yticklabels({'maize','grass','sugar beet','manure'}); % Custom y-tick labels
+
+% lipids: 
+nexttile
+hold on
+for k = 1:4
+    macro_table = S_macroNutrients_tables.(dompc_substrates{k}); 
+    lipids = table2array(macro_table(:,3)); 
+    boxplot(lipids, 'orientation','horizontal','Positions',k)
+end
+xlabel('\xi_{li} [g/L]'); % Label for the x-axis
+ylabel('Substrate');
+yticks(1:4); 
+yticklabels({'maize','grass','sugar beet','manure'}); % Custom y-tick labels
