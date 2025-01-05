@@ -1,15 +1,34 @@
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
 from scipy.stats import norm
 from pathlib import Path
 from matplotlib import colors
 
+# load input concentrations from excel:
+file_path = '../../data/data_out/v2023/inlet_concentrations.xlsx'
+macro_nutrients_data = pd.read_excel(file_path)
+
+# Extract macro nutrients from excel:
+carbs = macro_nutrients_data.loc[5, ['Maissilage','Grassilage','Rinderguelle','Zuckerruebensilage']].values
+proteins = macro_nutrients_data.loc[7, ['Maissilage','Grassilage','Rinderguelle','Zuckerruebensilage']].values
+lipids = macro_nutrients_data.loc[8, ['Maissilage','Grassilage','Rinderguelle','Zuckerruebensilage']].values
+
 means_all = {
-    "ch": [239.75428353, 161.63261293, 18.46756344, 443.44779286, 18.46756344],
-    "pr": [26.3338422, 42.2833745, 13.3134649, 9.57299184, 13.3134649],
-    "li": [7.99171082, 7.63325168, 2.00604756, 0.60788009, 2.00604756],
+    "ch": np.append(carbs, carbs[2]), # append uncertain cattle manure
+    "pr": np.append(proteins, proteins[2]),
+    "li": np.append(lipids, lipids[2]),
 }
+
+# old:
+#means_all = {
+#    "ch": [239.75428353, 161.63261293, 18.46756344, 443.44779286, 18.46756344],
+#    "pr": [26.3338422, 42.2833745, 13.3134649, 9.57299184, 13.3134649],
+#    "li": [7.99171082, 7.63325168, 2.00604756, 0.60788009, 2.00604756],
+#}
+
+# todo: update standard deviation values:
 std_devs_all = {
     "ch": [25.35351729, 14.15546532, 3.10502837, 18.33059836, 7.76257093],
     "pr": [1.48845018, 2.38995494, 0.75250809, 0.54108783, 1.88127022],
@@ -78,7 +97,6 @@ for idx, (means, std_devs, ax) in enumerate(
             alpha=0.4,
         )
 
-
 # fig.suptitle("Normalverteilung")
 
 for ax, nutrient_name in zip(axes, means_all.keys()):
@@ -94,7 +112,7 @@ fig.tight_layout()
 fig.savefig(
     fname=str(
         Path(
-            "/home/julius/Masterarbeit/ad_meal_prep_control/results",
+            "../../results",
             "plots",
             f"xi_pdfs.png",
         )
