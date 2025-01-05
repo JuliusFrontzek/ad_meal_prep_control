@@ -145,8 +145,16 @@ writetable(bk_numbers_tab,'../../data/data_out/v2023/used_bk_numbers.xlsx');
 writetable(nominal_values_tab,'../../data/data_out/v2023/nominal_values.xlsx');
 writetable(inlet_concentrations_tab,'../../data/data_out/v2023/inlet_concentrations.xlsx');
 
-fileName = '../../data/data_out/v2023/macro_nutrients_concentrations.mat'; 
-save(fileName, 'S_macroNutrients_tables')
+% save macronutrient concentrations as excel with different tabs: 
+fileName = '../../data/data_out/v2023/macro_nutrients_concentrations.xlsx';
+for k = 1:nSubstrates
+    % get current table: 
+    substrate = agriculturalSubstrates{k}; 
+    curr_macro_nutrients_tab = S_macroNutrients_tables.(substrate);  
+
+    % save table as new tab:
+    writetable(curr_macro_nutrients_tab,fileName, 'Sheet',substrate); 
+end
 
 %% compute descriptive statistics of all substrates 
 % (# samples, min, max, mean, median, q25, q75)
