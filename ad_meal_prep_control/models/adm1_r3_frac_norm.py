@@ -380,7 +380,9 @@ def adm1_r3_frac_norm(
     )
 
     # overall inhibition factor
-    IacNorm = inhibitions[0] * inhibitions[1] * inhibitions[2]
+    IacNorm = model.set_expression(
+        "IacNorm", inhibitions[0] * inhibitions[1] * inhibitions[2]
+    )
 
     # Set measurement equations as expressions
     y_norm = []
