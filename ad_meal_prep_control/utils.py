@@ -456,7 +456,7 @@ class ScenarioFactory:
 
     _default_dict = {
         "t_step": 0.5 / 24,
-        "n_days_steady_state": 30,
+        "n_days_steady_state": 500,
         "n_days_mpc": 30,
         "sub_names": [
             "CORN_SILAGE",
