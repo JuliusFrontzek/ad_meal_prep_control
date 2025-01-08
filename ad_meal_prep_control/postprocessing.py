@@ -183,7 +183,7 @@ class PostProcessing:
                                 ax.indicate_inset_zoom(
                                     inset_ax,
                                     edgecolor="black",
-                                    linewidth=2.0,
+                                    linewidth=1.0,
                                 )
 
                         x_num = int(plot_var_name.split("_")[-1])
@@ -221,7 +221,7 @@ class PostProcessing:
                                 ax.indicate_inset_zoom(
                                     inset_ax,
                                     edgecolor="black",
-                                    linewidth=2.0,
+                                    linewidth=1.0,
                                 )
 
                     elif plot_var_name[0] == "u":
@@ -276,7 +276,7 @@ class PostProcessing:
 
                             if input_inset_axis is not None:
                                 ax.indicate_inset_zoom(
-                                    axins_input_feed, edgecolor="black", linewidth=2.0
+                                    axins_input_feed, edgecolor="black", linewidth=1.0
                                 )
 
                         # Add constraints to plot
@@ -335,7 +335,7 @@ class PostProcessing:
                                 ax.indicate_inset_zoom(
                                     inset_ax,
                                     edgecolor="black",
-                                    linewidth=2.0,
+                                    linewidth=1.0,
                                 )
 
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":
@@ -363,7 +363,7 @@ class PostProcessing:
                                     )
 
                                     ax.indicate_inset_zoom(
-                                        inset_ax, edgecolor="black", linewidth=2.0
+                                        inset_ax, edgecolor="black", linewidth=1.0
                                     )
 
                         else:
@@ -388,7 +388,7 @@ class PostProcessing:
                                     ax.indicate_inset_zoom(
                                         inset_ax,
                                         edgecolor="black",
-                                        linewidth=2.0,
+                                        linewidth=1.0,
                                     )
 
                 if constraints is not None:
@@ -418,7 +418,7 @@ class PostProcessing:
                                     )
 
                                     ax.indicate_inset_zoom(
-                                        inset_ax, edgecolor="black", linewidth=2.0
+                                        inset_ax, edgecolor="black", linewidth=1.0
                                     )
 
             for ax in axes_stacked:

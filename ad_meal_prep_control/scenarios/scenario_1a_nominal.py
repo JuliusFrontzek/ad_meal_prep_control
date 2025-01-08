@@ -15,7 +15,7 @@ mterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_set
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 n_days_mpc = 30
-setpoints = np.array([450.0, 650.0, 550.0, 450.0])
+setpoints = np.array([350.0, 550.0, 450.0, 350.0])
 
 ch4_set_point_function = SetpointFunction(
     setpoints=setpoints,
@@ -39,7 +39,7 @@ controller_params = ControllerParams(
 
 
 kwargs = {
-    "name": "Scenario_1a_quadratic_feedback_mismatch_5std_3tsap",
+    "name": "Scenario_1a_quadratic_nominal_feedback_mismatch_5std_3tsap",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "n_days_mpc": n_days_mpc,
