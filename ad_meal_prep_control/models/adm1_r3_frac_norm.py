@@ -361,10 +361,12 @@ def adm1_r3_frac_norm(
     # Inhibition functions
     inhibitions = []
 
+    # N-lim inhibition:
     inhibitions.append(
         model.set_expression("inhibition_1", x_norm[3] / (x_norm[3] + c[7] / Tx[3]))
     )
 
+    # pH inhibition:
     inhibitions.append(
         model.set_expression(
             "inhibition_2",
@@ -372,6 +374,7 @@ def adm1_r3_frac_norm(
         )
     )
 
+    # NH3 inhibition:
     inhibitions.append(
         model.set_expression(
             "inhibition_3",
