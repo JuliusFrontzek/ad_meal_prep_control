@@ -241,3 +241,7 @@ xlabel('\xi_{li} [g/L]'); % Label for the x-axis
 ylabel('Substrate');
 yticks(1:4); 
 yticklabels({'maize','grass','sugar beet','manure'}); % Custom y-tick labels
+sgtitle('Distribution of computed macronutrient inlet concentrations')
+% save: 
+pdf_path_name = '../../results/plots/boxplots_influent_macronutrients.pdf'; 
+exportgraphics(gcf,pdf_path_name, 'ContentType','vector');
