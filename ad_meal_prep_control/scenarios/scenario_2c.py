@@ -12,7 +12,8 @@ import random
 
 np.random.seed(seed=42)
 
-lterm = "(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.43)**2 + 50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.43)**4)"
+lterm = ("(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.65)**2 + "
+         "50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.65)**4)")
 
 mterm = "model.tvp['dummy_tvp']"
 
@@ -23,7 +24,7 @@ n_days_mpc = 30
 controller_params = ControllerParams(
     mpc_n_horizon=40,
     mpc_n_robust=1,
-    num_std_devs=2.0,
+    num_std_devs=2,
     cost_func=cost_func,
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
@@ -47,7 +48,7 @@ for i in range(mpc_t_steps):
 
 
 kwargs = {
-    "name": "Scenario_2c_dynamic_test",
+    "name": "Scenario_2c_dynamic",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "P_el_chp": 50.0,
@@ -66,6 +67,7 @@ kwargs = {
         max_feeding_error=0.05,
     ),
     "n_days_mpc": n_days_mpc,
+    "num_std_devs_sim": 2,
 }
 
 scenario = ScenarioFactory().create_scenario(
