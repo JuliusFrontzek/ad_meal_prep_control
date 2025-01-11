@@ -38,7 +38,7 @@ def controller_plotting_1a (scenario_names=None):
             remove_duplicate_labels(fig, 3)
             remove_duplicate_labels(fig, 1, legend_location='center right')
             fig.axes[0].legend(loc="lower right")
-            plt.savefig(f'../scenarios/results/plots/Plant Output {scenario}.png')
+            plt.savefig(f'../scenarios/results/plots/{scenario}.png')
 
         if metadata['feedback']:
             predicted_data = np.genfromtxt(f'../scenarios/results/Predicted Data {scenario}.csv', delimiter=' ')

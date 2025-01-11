@@ -108,4 +108,4 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         show_plot=show_plot,
         height_ratios=[2, 2, 1, 1],
     )
-    controller_plotting_1a()
+controller_plotting_1a()

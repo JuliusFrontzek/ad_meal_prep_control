@@ -24,7 +24,7 @@ n_days_mpc = 30
 controller_params = ControllerParams(
     mpc_n_horizon=40,
     mpc_n_robust=1,
-    num_std_devs=2,
+    num_std_devs=1,
     cost_func=cost_func,
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
@@ -62,12 +62,12 @@ kwargs = {
     "disturbances": Disturbances(
         state_jumps={18: state_jumps_ch4, 19: state_jumps_co2},
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 10.0, 0.01)],
+            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 10.0, 0.007)],
         },
         max_feeding_error=0.05,
     ),
     "n_days_mpc": n_days_mpc,
-    "num_std_devs_sim": 2,
+    "num_std_devs_sim": 1,
 }
 
 scenario = ScenarioFactory().create_scenario(
