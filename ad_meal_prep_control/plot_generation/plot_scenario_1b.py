@@ -4,6 +4,7 @@ from ad_meal_prep_control.postprocessing import (
     PostProcessing,
 )
 import sys
+from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1b import controller_plotting_1b
 
 scenario_names = [
     "Scenario_1b_quadratic_nominal_feedback_mismatch_5std_3tsap",
@@ -104,9 +105,9 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         show_plot=show_plot,
         height_ratios=[2, 1, 2, 1, 1],
         input_inset_axis={
-            "days": (12, 18),
-            "ylimit": (-1.0, 5.0),
-            "inset_axis_specs": (0.4, 0.4, 0.4, 0.3),
+            "days": (0, 10),
+            "ylimit": (-1.0, 30.0),
+            "inset_axis_specs": (0.4, 0.4, 0.27, 0.3),
         },
         other_inset_axes=[
             {
@@ -117,3 +118,4 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             },
         ],
     )
+controller_plotting_1b()
