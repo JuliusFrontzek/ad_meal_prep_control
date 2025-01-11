@@ -8,7 +8,7 @@ from ad_meal_prep_control import params_R3
 import sys
 
 post_processing = PostProcessing(
-    result_directory="/home/julius/Projects/ad_meal_prep_control/results",
+    result_directory="../scenarios/results",
     scenario_name="Scenario_2c_dynamic",
 )
 
@@ -41,14 +41,14 @@ post_processing.plot(
                     mpl_properties=MPLProperties(
                         color="green", linewidth=1.5, linestyle="-"
                     ),
-                    label=r"$V_{CH_4,tank}$",
+                    label=r"$V_{CH_4,tank, plant}$",
                     scaling=100.0,
                 ),
                 "x_20": PlotVarProperty(
                     mpl_properties=MPLProperties(
                         color="black", linewidth=1.5, linestyle="-"
                     ),
-                    label=r"$V_{CO_2,tank}$",
+                    label=r"$V_{CO_2,tank, plant}$",
                     scaling=100.0,
                 ),
             },
@@ -61,7 +61,8 @@ post_processing.plot(
                         color=post_processing.MEASUREMENT_COLOR,
                         linewidth=1.5,
                         linestyle="-",
-                    )
+                    ),
+                    label=r"$\dot V_{g, tank, plant}$",
                 )
             },
         ),
@@ -74,7 +75,7 @@ post_processing.plot(
                         linewidth=1.5,
                         linestyle="-",
                     ),
-                    label=r"$\dot V_{CH_4,AD}$",
+                    label=r"$\dot V_{CH_4,AD, plant}$",
                 ),
                 "y_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -82,7 +83,7 @@ post_processing.plot(
                         linewidth=1.5,
                         linestyle="-",
                     ),
-                    label=r"$\dot V_{g, AD}$",
+                    label=r"$\dot V_{g, AD, plant}$",
                 ),
             },
         ),
@@ -91,8 +92,31 @@ post_processing.plot(
             {
                 "y_4": PlotVarProperty(
                     mpl_properties=MPLProperties(linewidth=1.5, linestyle="-"),
-                    label="",
+                    label="$pH_{plant}$",
                 )
+            },
+        ),
+        (
+            r"$Inhibition$" + "\n" + r"$[-]$",
+            {
+                "inhibition_1": PlotVarProperty(
+                    mpl_properties=MPLProperties(
+                        color="blue", linewidth=1, linestyle="-"
+                    ),
+                    label=r"$Inhibition_1$",
+                ),
+                "inhibition_2": PlotVarProperty(
+                    mpl_properties=MPLProperties(
+                        color="green", linewidth=1, linestyle="-"
+                    ),
+                    label=r"$Inhibition_2$",
+                ),
+                "inhibition_3": PlotVarProperty(
+                    mpl_properties=MPLProperties(
+                        color="red", linewidth=1, linestyle="-"
+                    ),
+                    label=r"$Inhibition_3$",
+                ),
             },
         ),
     ],
@@ -106,5 +130,5 @@ post_processing.plot(
     ],
     dpi=dpi,
     show_plot=show_plot,
-    height_ratios=[2, 1, 2, 2, 2, 1],
+    height_ratios=[2, 1, 2, 2, 2, 1, 1],
 )

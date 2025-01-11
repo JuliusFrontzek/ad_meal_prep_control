@@ -126,21 +126,21 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         other_inset_axes=[
             {
                 "plot_idx": 1,
-                "days": (17, 17.5),
-                "ylimit": (15, 35),
-                "inset_axis_specs": (0.2, 0.4, 0.25, 0.25)
+                "days": (3, 5),
+                "ylimit": (10, 50),
+                "inset_axis_specs": (0.4, 0.4, 0.25, 0.25)
             },
             {
                 "plot_idx": 2,
-                "days": (17.15, 17.45),
-                "ylimit": (180, 250),
-                "inset_axis_specs": (0.2, 0.4, 0.25, 0.25)
+                "days": (3, 5),
+                "ylimit": (150, 300),
+                "inset_axis_specs": (0.4, 0.4, 0.25, 0.25)
             },
             {
                 "plot_idx": 3,
-                "days": (21.5, 22.5),
-                "ylimit": (300, 400),
-                "inset_axis_specs": (0.2, 0.4, 0.25, 0.25)
+                "days": (3, 5),
+                "ylimit": (100, 700),
+                "inset_axis_specs": (0.4, 0.4, 0.25, 0.25)
             },
             # {
             #    "plot_idx": 3,
