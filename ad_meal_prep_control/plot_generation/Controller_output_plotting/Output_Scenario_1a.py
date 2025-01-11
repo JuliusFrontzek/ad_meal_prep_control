@@ -38,7 +38,7 @@ def controller_plotting_1a (scenario_names=None):
             remove_duplicate_labels(fig, 3)
             remove_duplicate_labels(fig, 1, legend_location='center right')
             fig.axes[0].legend(loc="lower right")
-            plt.savefig(f'../scenarios/results/plots/{scenario}.png')
+            plt.savefig(f'../scenarios/results/plots/{scenario}_substrate_costs.png')
 
         if metadata['feedback']:
             predicted_data = np.genfromtxt(f'../scenarios/results/Predicted Data {scenario}.csv', delimiter=' ')
@@ -69,8 +69,8 @@ def controller_plotting_1a (scenario_names=None):
                                  linestyle='dotted', label=r"$\dot V_{CH_4, controller}$")
 
             remove_duplicate_labels(fig, 0)
-            remove_duplicate_labels(fig, 2)
-            remove_duplicate_labels(fig, 3)
+            remove_duplicate_labels(fig, 2, legend_location='center right')
+            remove_duplicate_labels(fig, 3, legend_location='center right')
             '''
                     axins_1 = fig.axes[1].inset_axes([0.4, 0.435, 0.25, 0.25],
                         xlim=(5, 10), ylim=(500, 900))
@@ -89,5 +89,5 @@ def controller_plotting_1a (scenario_names=None):
             #axins_1.grid(True, linestyle='dashed')
             fig.axes[0].legend(loc='lower right')
             remove_duplicate_labels(fig, 1, legend_location='center right')
-            plt.savefig(f'../scenarios/results/plots/{scenario}.png')
+            plt.savefig(f'../scenarios/results/plots/{scenario}_substrate_costs.png')
     return

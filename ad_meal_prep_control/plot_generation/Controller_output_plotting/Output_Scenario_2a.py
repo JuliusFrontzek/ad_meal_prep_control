@@ -134,5 +134,5 @@ def controller_plotting_2a (scenario_names=None):
             axins_2.grid(True, linestyle='dashed')
             axins_3.grid(True, linestyle='dashed')
 
-        plt.savefig(f'../scenarios/results/plots/{scenario}.png')
+        plt.savefig(f'../scenarios/results/plots/{scenario}_substrate_costs.png')
     return
