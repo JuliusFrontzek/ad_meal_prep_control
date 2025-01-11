@@ -3,8 +3,7 @@ from do_mpc.data import save_results, load_results
 import do_mpc
 import matplotlib.pyplot as plt
 import pickle as pkl
-from ad_meal_prep_control.utils import remove_duplicate_labels
-
+from ad_meal_prep_control.utils import remove_duplicate_labels, nRMSE
 def controller_plotting_1a (scenario_names=None):
 
     if scenario_names is None:
@@ -32,6 +31,10 @@ def controller_plotting_1a (scenario_names=None):
                              linestyle = 'dotted', label=r"$\dot V_{g, controller}$")
             fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 2], 'rebeccapurple',
                              linestyle = 'dotted', label=r"$\dot V_{CH_4, controller}$")
+
+            print(f'{scenario}_NRMSE_pH = ', nRMSE(x_est =mpc['mpc']['_aux', 'y_4'], x_true =plant_output[:, [1]]))
+            print(f'{scenario}_NRMSE_gas = ', nRMSE(x_est =mpc['mpc']['_aux', 'y_1'], x_true =plant_output[:, [0]]))
+            print(f'{scenario}_NRMSE_ch4 = ', nRMSE(x_est =mpc['mpc']['_aux', 'v_ch4_dot_tank_in'], x_true =plant_output[:, [2]]))
 
             remove_duplicate_labels(fig, 0)
             remove_duplicate_labels(fig, 2, legend_location='center right')
