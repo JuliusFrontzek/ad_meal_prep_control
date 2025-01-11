@@ -34,7 +34,7 @@ def controller_plotting_1a (scenario_names=None):
                              linestyle = 'dotted', label=r"$\dot V_{CH_4, controller}$")
 
             remove_duplicate_labels(fig, 0)
-            remove_duplicate_labels(fig, 2)
+            remove_duplicate_labels(fig, 2, legend_location='center right')
             remove_duplicate_labels(fig, 3)
             remove_duplicate_labels(fig, 1, legend_location='center right')
             fig.axes[0].legend(loc="lower right")
