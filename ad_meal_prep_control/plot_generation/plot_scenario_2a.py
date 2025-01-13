@@ -6,6 +6,7 @@ from ad_meal_prep_control.postprocessing import (
 )
 from ad_meal_prep_control import params_R3
 import sys
+from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_2a import controller_plotting_2a
 
 scenario_names = ["Scenario_2a_dynamic_nominal_feedback_mismatch_3std_8tsap",
                   'Scenario_2a_dynamic_nominal_ideal_feedback_8tsap',
@@ -15,7 +16,7 @@ plot_save_names = scenario_names
 
 for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     post_processing = PostProcessing(
-        result_directory="./results",
+        result_directory="../scenarios/results",
         scenario_name=plot_save_name,
     )
 
@@ -24,7 +25,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         show_plot = int(sys.argv[2])
     except IndexError:
         dpi = 600
-        show_plot = True
+        show_plot = False
 
     post_processing.plot(
         [
@@ -90,6 +91,29 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                     )
                 },
             ),
+            (
+                r"$Inhibition$" + "\n" + r"$[-]$",
+                {
+                    "inhibition_1": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="blue", linewidth=1, linestyle="-"
+                        ),
+                        label=r"$Inhibition_1$",
+                    ),
+                    "inhibition_2": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="green", linewidth=1, linestyle="-"
+                        ),
+                        label=r"$Inhibition_2$",
+                    ),
+                    "inhibition_3": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="red", linewidth=1, linestyle="-"
+                        ),
+                        label=r"$Inhibition_3$",
+                    ),
+                },
+            ),
         ],
         plot_save_name=plot_save_name,
         constraints=[
@@ -102,21 +126,21 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         other_inset_axes=[
             {
                 "plot_idx": 1,
-                "days": (17, 17.5),
-                "ylimit": (15, 35),
-                "inset_axis_specs": (0.2, 0.4, 0.25, 0.25)
+                "days": (3, 5),
+                "ylimit": (10, 50),
+                "inset_axis_specs": (0.4, 0.4, 0.25, 0.25)
             },
             {
                 "plot_idx": 2,
-                "days": (17.15, 17.45),
-                "ylimit": (180, 250),
-                "inset_axis_specs": (0.2, 0.4, 0.25, 0.25)
+                "days": (3, 5),
+                "ylimit": (150, 300),
+                "inset_axis_specs": (0.4, 0.4, 0.25, 0.25)
             },
             {
                 "plot_idx": 3,
-                "days": (21.5, 22.5),
-                "ylimit": (300, 400),
-                "inset_axis_specs": (0.2, 0.4, 0.25, 0.25)
+                "days": (3, 5),
+                "ylimit": (100, 700),
+                "inset_axis_specs": (0.4, 0.4, 0.25, 0.25)
             },
             # {
             #    "plot_idx": 3,
@@ -127,5 +151,6 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         ],
         dpi=dpi,
         show_plot=show_plot,
-        height_ratios=[2, 2, 2, 2, 1],
+        height_ratios=[2, 2, 2, 2, 1, 1],
     )
+controller_plotting_2a()

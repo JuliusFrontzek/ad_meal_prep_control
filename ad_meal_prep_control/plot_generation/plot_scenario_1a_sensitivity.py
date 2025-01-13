@@ -6,15 +6,12 @@ from ad_meal_prep_control.postprocessing import (
 import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1a import controller_plotting_1a
 
-
-scenario_names = ["Scenario_1a_quadratic_nominal_feedback_mismatch_5std_3tsap",
-                 'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap',
-                 'Scenario_1a_quadratic_robust_feedback_mismatch_5std_3tsap'
-                  ]
-plot_save_names = ["Scenario_1a_quadratic_nominal_feedback_mismatch_5std_3tsap_substrate_costs",
-                   'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap_substrate_costs',
-                   'Scenario_1a_quadratic_robust_feedback_mismatch_5std_3tsap_substrate_costs'
-                   ]
+scenario_names = ["Scenario_1a_quadratic_no_feedback_mismatch_1std_ch",
+                  'Scenario_1a_quadratic_no_feedback_mismatch_1std_pr',
+                  'Scenario_1a_quadratic_no_feedback_mismatch_1std_li']
+plot_save_names = ["Scenario_1a_quadratic_no_feedback_mismatch_1std_ch_substrate_costs",
+                   'Scenario_1a_quadratic_no_feedback_mismatch_1std_pr_substrate_costs',
+                  'Scenario_1a_quadratic_no_feedback_mismatch_1std_li_substrate_costs']
 
 try:
     dpi = int(sys.argv[1])
@@ -108,4 +105,4 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         show_plot=show_plot,
         height_ratios=[2, 2, 1, 1],
     )
-controller_plotting_1a()
+controller_plotting_1a('Sensitivity')

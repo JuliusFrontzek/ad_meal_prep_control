@@ -9,8 +9,8 @@ from ad_meal_prep_control.utils import (
 from ad_meal_prep_control.params_R3 import P_el_chp
 import numpy as np
 
-lterm = ("(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.45)**2 +"
-         "+ 50*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.45)**4)"
+lterm = ("(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.65)**2 +"
+         "+ 50*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.65)**4)"
          )
 
 mterm = "model.tvp['dummy_tvp']"
@@ -23,11 +23,11 @@ n_days_mpc = 30
 controller_params = ControllerParams(
     mpc_n_horizon=40,
     mpc_n_robust=0,
-    num_std_devs=3,
+    num_std_devs=0,
     cost_func=cost_func,
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
-    nl_cons=[NlConstraint(expression='6.5-model.aux["y_4"]', ub=0, soft_constraint=True, penalty_term_cons=10e-1)]
+    #nl_cons=[NlConstraint(expression='6.5-model.aux["y_4"]', ub=0, soft_constraint=True, penalty_term_cons=10e-1)]
     )
 
 kwargs = {
@@ -43,7 +43,7 @@ kwargs = {
     ],
     "t_step": 0.5 / 24.0,
     "n_days_mpc": n_days_mpc,
-    "num_std_devs_sim": 3,
+    "num_std_devs_sim": 0,
     "feedback": True,
     "mismatch": False,
     "t_stp_ahead_pred": 8

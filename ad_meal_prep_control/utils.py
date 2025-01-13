@@ -456,7 +456,7 @@ class ScenarioFactory:
 
     _default_dict = {
         "t_step": 0.5 / 24,
-        "n_days_steady_state": 30,
+        "n_days_steady_state": 500,
         "n_days_mpc": 30,
         "sub_names": [
             "CORN_SILAGE",
@@ -529,3 +529,12 @@ def remove_duplicate_labels(fig, axis_index, legend_location='best', bbox_to_anc
     # Set the legend with only the unique labels and specified location and bbox_to_anchor
     fig.axes[axis_index].legend(unique_labels.values(), unique_labels.keys(),
                                 loc=legend_location, bbox_to_anchor=bbox_to_anchor)
+
+def nRMSE(x_est, x_true):
+    N = x_est.shape[0]
+    assert N == x_true.shape[0], 'Shapes need to be the same'
+    x_diff = x_est-x_true
+    nRMSE = np.sqrt(1/N*np.sum(x_diff.transpose()*x_diff))/np.mean(x_true)
+    return nRMSE
+
+
