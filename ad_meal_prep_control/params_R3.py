@@ -49,5 +49,5 @@ p_gas_storage = p0 * 1.001  # slightly larger than atmospheric pressure [bar]
 p_norm = p0  # [bar]
 T_norm = 273.15  # [K]
 T_gas_storage = 323.15  # [K]
-P_el_chp = 75.0  # kW
+P_el_chp = 50.0  # kW
 V_GAS_STORAGE_MAX = 320  # P_el_chp * 4.3  # m^3
