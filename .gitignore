@@ -13,7 +13,6 @@ __pycache__
 *.so
 *.pkl
 *.csv
-*.txt
 
 # Specific files
 launch.json
