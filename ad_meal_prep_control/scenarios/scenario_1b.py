@@ -46,9 +46,9 @@ kwargs = {
     "disturbances": Disturbances(
         dictated_feeding={
             "CATTLE_MANURE_VERY_UNCERTAIN": [
-                (5.0, 10.0, 0.005),
-                (13.0, 17.0, 0.01),
-                (22.0, 26.0, 0.008),
+                (5.0, 10.0, 0.01),
+                (13.0, 17.0, 0.02),
+                (22.0, 26.0, 0.016),
             ],
         },
         max_feeding_error=0.05,

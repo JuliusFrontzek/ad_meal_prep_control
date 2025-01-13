@@ -41,7 +41,7 @@ def controller_plotting_1a (scenario_names=None):
             remove_duplicate_labels(fig, 3)
             remove_duplicate_labels(fig, 1, legend_location='center right')
             fig.axes[0].legend(loc="lower right")
-            plt.savefig(f'../scenarios/results/plots/{scenario}_substrate_costs.png')
+            plt.savefig(f'../scenarios/results/plots/Sensitivity/{scenario}_substrate_costs.png')
 
         if metadata['feedback']:
             predicted_data = np.genfromtxt(f'../scenarios/results/Predicted Data {scenario}.csv', delimiter=' ')
@@ -92,5 +92,5 @@ def controller_plotting_1a (scenario_names=None):
             #axins_1.grid(True, linestyle='dashed')
             fig.axes[0].legend(loc='lower right')
             remove_duplicate_labels(fig, 1, legend_location='center right')
-            plt.savefig(f'../scenarios/results/plots/{scenario}_substrate_costs.png')
+            plt.savefig(f'../scenarios/results/plots/Scenario 1/{scenario}_substrate_costs.png')
     return

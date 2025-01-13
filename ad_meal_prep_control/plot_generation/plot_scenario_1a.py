@@ -37,13 +37,13 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 {
                     "v_ch4_dot_tank_in_setpoint": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="orange", linewidth=1, linestyle="-."
+                            color="silver", linewidth=1, linestyle="--"
                         ),
                         label=r"Reference" "\n" "($\dot V_{CH_4}$)",
                     ),
                     "v_ch4_dot_tank_in": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color=post_processing.MEASUREMENT_COLOR,
+                            color='black',
                             linewidth=1,
                             linestyle="-",
                         ),
@@ -61,7 +61,9 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 r"$pH$" + "\n" + r"$[-]$",
                 {
                     "y_4": PlotVarProperty(
-                        mpl_properties=MPLProperties(linewidth=1, linestyle="-"),
+                        mpl_properties=MPLProperties(linewidth=1,
+                                                     linestyle="-",
+                                                     color="black"),
                         label="$pH_{plant}$",
                     )
                 },

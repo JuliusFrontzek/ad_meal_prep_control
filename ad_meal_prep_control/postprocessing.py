@@ -284,8 +284,9 @@ class PostProcessing:
                             self._scenario_meta_data["u_max"]["solid"],
                             xmin=0,
                             xmax=self._scenario_meta_data["n_days_mpc"],
-                            color="red",
-                            linestyle="--",
+                            color="gray",
+                            linestyle="-.",
+                            linewidth= 1.5
                             # label=r"$u_{max}$",
                         )
 
@@ -293,8 +294,9 @@ class PostProcessing:
                             self._scenario_meta_data["u_max"]["liquid"],
                             xmin=0,
                             xmax=self._scenario_meta_data["n_days_mpc"],
-                            color="red",
-                            linestyle="--",
+                            color="silver",
+                            linestyle="-.",
+                            linewidth = 1.5
                             # label=r"$u_{max}$",
                         )
 

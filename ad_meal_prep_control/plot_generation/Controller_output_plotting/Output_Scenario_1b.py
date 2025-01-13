@@ -84,5 +84,5 @@ def controller_plotting_1b (scenario_names=None):
             '''
             #axins_1.grid(True, linestyle='dashed')
             remove_duplicate_labels(fig, 2, legend_location='center right')
-            plt.savefig(f'../scenarios/results/plots/{scenario}.png')
+            plt.savefig(f'../scenarios/results/plots/Scenario 1/{scenario}.png')
     return
