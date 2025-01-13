@@ -415,6 +415,7 @@ def adm1_r3_frac_norm(
     )
     y_norm.append(model.set_expression("y_8_norm", Tx[0] / Ty[7] * x_norm[0]))
 
+    # absolute model outputs:
     y = []
     for i in range(8):
         y.append(model.set_expression(f"y_{i+1}", Ty[i] * y_norm[i]))
