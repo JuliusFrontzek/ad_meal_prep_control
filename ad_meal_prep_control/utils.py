@@ -534,7 +534,7 @@ def nRMSE(x_est, x_true):
     N = x_est.shape[0]
     assert N == x_true.shape[0], 'Shapes need to be the same'
     x_diff = x_est-x_true
-    nRMSE = np.sqrt(1/N*np.sum(x_diff.transpose()*x_diff))/np.mean(x_true)
+    nRMSE = np.sqrt(1/N*np.sum(x_diff*x_diff))/np.mean(x_true)
     return nRMSE
 
 
