@@ -439,7 +439,7 @@ class ScenarioFactory:
         ]
     )
 
-    _u_max_default = {"solid": 5.0, "liquid": 150.0}
+    _u_max_default = {"solid": 80.0, "liquid": 450.0}
 
     _Ty_default = np.array(
         [

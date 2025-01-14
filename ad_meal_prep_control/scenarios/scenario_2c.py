@@ -12,8 +12,9 @@ import random
 
 np.random.seed(seed=42)
 
-lterm = ("(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.65)**2 + "
-         "50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.65)**4)")
+lterm = ("(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.4)**2 + "
+         "+ 50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.4)**4)"
+         )
 
 mterm = "model.tvp['dummy_tvp']"
 
@@ -62,11 +63,11 @@ kwargs = {
     "disturbances": Disturbances(
         state_jumps={18: state_jumps_ch4, 19: state_jumps_co2},
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 7.0, 0.003),
-                                             (8.0, 11.0, 0.005),
-                                             (15.0, 19.0, 0.007)],
+            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 7.0, 0.0065),
+                                             (9.0, 12.0, 0.0086),
+                                             (15.0, 19.0, 0.0129)],
         },
-        max_feeding_error=0.05,
+        #max_feeding_error=0.05,
     ),
     "n_days_mpc": n_days_mpc,
     "num_std_devs_sim": 1,

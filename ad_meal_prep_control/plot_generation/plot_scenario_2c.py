@@ -22,7 +22,7 @@ except IndexError:
 post_processing.plot(
     [
         (
-            r"$\dot d_{feed}$" + "\n" + r"$[m^3/d]$",
+            r"$d_{feed}$" + "\n" + r"$[m^3/d]$",
             {
                 "dictated_sub_feed_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -88,7 +88,7 @@ post_processing.plot(
             },
         ),
         (
-            r"$pH$" + "\n" + r"$[1]$",
+            r"$pH$" + "\n" + r"$[-]$",
             {
                 "y_4": PlotVarProperty(
                     mpl_properties=MPLProperties(linewidth=1.5, linestyle="-"),
