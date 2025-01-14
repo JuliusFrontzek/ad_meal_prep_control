@@ -143,7 +143,7 @@ inlet_concentrations_tab = array2table(xInAgrSubstrates, 'VariableNames', agricu
 % save
 writetable(bk_numbers_tab,'../../data/data_out/v2023/used_bk_numbers.xlsx');
 writetable(nominal_values_tab,'../../data/data_out/v2023/nominal_values.xlsx');
-writetable(inlet_concentrations_tab,'../../data/data_out/v2023/inlet_concentrations.xlsx');
+writetable(inlet_concentrations_tab,'../../data/data_out/v2023/nominal_inlet_concentrations.xlsx');
 
 % save macronutrient concentrations as excel with different tabs: 
 fileName = '../../data/data_out/v2023/macro_nutrients_concentrations.xlsx';
