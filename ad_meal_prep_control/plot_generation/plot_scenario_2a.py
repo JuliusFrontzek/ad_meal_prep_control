@@ -83,7 +83,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 },
             ),
             (
-                r"$pH$" + "\n" + r"$[1]$",
+                r"$pH$" + "\n" + r"$[-]$",
                 {
                     "y_4": PlotVarProperty(
                         mpl_properties=MPLProperties(linewidth=1, linestyle="-"),

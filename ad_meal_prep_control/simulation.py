@@ -550,7 +550,7 @@ class Simulation:
             u_norm_steady_state = np.array(
                 [
                     [
-                        2.0 / _tu / len(self._subs_controlled)
+                        1.0 / _tu / len(self._subs_controlled)
                         if sub.state == "solid"
                         else 3.0 / _tu / len(self._subs_controlled)
                         for _tu, sub in zip(self.Tu, self._subs_controlled)
