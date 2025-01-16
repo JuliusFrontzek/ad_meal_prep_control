@@ -38,7 +38,7 @@ class Constraint:
 class PostProcessing:
     result_directory: str
     scenario_name: str
-    _default_mpl_properties = MPLProperties(color=None, linewidth=1.0, linestyle="-")
+    _default_mpl_properties = MPLProperties(color=None, linewidth=0.8, linestyle="-")
     _default_plot_var_properties = PlotVarProperty(
         mpl_properties=_default_mpl_properties
     )
@@ -46,11 +46,11 @@ class PostProcessing:
     _cmap = plt.colormaps.get_cmap("viridis")
 
     _SUBSTRATE_COLORS = {
-        "CORN_SILAGE": "yellow",
-        "GRASS_SILAGE": "green",
-        "CATTLE_MANURE": "brown",
-        "SUGAR_BEET_SILAGE": "orange",
-        "SUGAR_BEET_SILAGE_VERY_UNCERTAIN": "orange",
+        "CORN_SILAGE": "orange",
+        "GRASS_SILAGE": "limegreen",
+        "CATTLE_MANURE": "sienna",
+        "SUGAR_BEET_SILAGE": "deeppink",
+        "SUGAR_BEET_SILAGE_VERY_UNCERTAIN": "saddlebrown",
     }
 
     def __post_init__(self):
@@ -92,7 +92,7 @@ class PostProcessing:
     ):
         if plot_inputs:
             subplot_labels_and_vars.insert(
-                0, (r"$u_{feed,silage}$" + "\n" + r"$[m^3/d]$", {f"u_norm": None})
+                0, (r"$\dot V_{feed,silage}$" + "\n" + r"$[m^3/d]$", {f"u_norm": None})
             )
 
         if height_ratios is None:
@@ -114,7 +114,7 @@ class PostProcessing:
                 axins_input_feed = axes[0].inset_axes(
                     input_inset_axis["inset_axis_specs"],
                     xlim=(x1, x2),
-                    ylim=(y1, y2),
+                    #ylim=(y1, y2),
                     # xticklabels=[],
                     # yticklabels=[],
                 )
@@ -132,7 +132,7 @@ class PostProcessing:
                     _inset_ax = axes[inset_ax["plot_idx"]].inset_axes(
                         inset_ax["inset_axis_specs"],
                         xlim=(x1, x2),
-                        ylim=(y1, y2),
+                        #ylim=(y1, y2),
                         # xticklabels=[],
                         # yticklabels=[],
                     )
@@ -230,6 +230,7 @@ class PostProcessing:
                             for sub_name in self._scenario_meta_data["sub_names"]
                         ]
 
+
                         for i in range(self._num_u):
                             plt_kwargs["color"] = colors[i]
 
@@ -285,8 +286,8 @@ class PostProcessing:
                             xmin=0,
                             xmax=self._scenario_meta_data["n_days_mpc"],
                             color="gray",
-                            linestyle="-.",
-                            linewidth= 1.5
+                            linestyle="dashdot",
+                            linewidth= 1
                             # label=r"$u_{max}$",
                         )
 
@@ -295,17 +296,25 @@ class PostProcessing:
                             xmin=0,
                             xmax=self._scenario_meta_data["n_days_mpc"],
                             color="silver",
-                            linestyle="-.",
-                            linewidth = 1.5
+                            linestyle="dashdot",
+                            linewidth = 1
                             # label=r"$u_{max}$",
                         )
 
-                        ax.set_ylim(
-                            0.0, self._scenario_meta_data["u_max"]["solid"] * 1.1
-                        )
-                        ax_inputs_liquid.set_ylim(
-                            0.0, self._scenario_meta_data["u_max"]["liquid"] * 1.1
-                        )
+                        if 'Scenario_1b' in plot_save_name:
+                            ax.set_ylim(
+                                0.0, self._scenario_meta_data["u_max"]["solid"] * 0.05
+                            )
+                            ax_inputs_liquid.set_ylim(
+                                0.0, self._scenario_meta_data["u_max"]["liquid"] * 0.02
+                            )
+                        elif 'Scenario_1a' in plot_save_name:
+                            ax.set_ylim(
+                                0.0, self._scenario_meta_data["u_max"]["solid"] * 1
+                            )
+                            ax_inputs_liquid.set_ylim(
+                                0.0, self._scenario_meta_data["u_max"]["liquid"] * 0.5
+                            )
 
                     elif plot_var_name.startswith("dictated_sub_feed"):
                         feed_num = int(plot_var_name.split("_")[-1])
@@ -446,7 +455,7 @@ class PostProcessing:
             if plot_inputs:
                 # ax_inputs_liquid.yaxis.set_label_coords(0.1, 0)
                 ax_inputs_liquid.set_ylabel(
-                    r"$u_{feed,manure}$" + "\n" + r"$[m^3/d]$",
+                    r"$\dot V_{feed,manure}$" + "\n" + r"$[m^3/d]$",
                     rotation=0,
                     labelpad=30.0,
                 )

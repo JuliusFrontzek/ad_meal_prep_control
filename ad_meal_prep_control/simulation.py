@@ -575,7 +575,7 @@ class Simulation:
         vg_model = self._mpc.data.prediction(('_aux', 'y_1'))[0][0]
         ph_model = self._mpc.data.prediction(('_aux', 'y_4'))[0][0]
 
-        if '2' in self.scenario.name:
+        if 'Scenario_2' in self.scenario.name:
             vg_ch4_tank_model = self._mpc.data.prediction(('_x', 'x_19'))[0][0]
             vg_co2_tank_model = self._mpc.data.prediction(('_x', 'x_20'))[0][0]
             vg_tank_model = self._mpc.data.prediction(('_aux', 'v_gas_storage'))[0][0]
@@ -644,7 +644,7 @@ class Simulation:
                     ph_model = np.column_stack((ph_model, self._mpc.data.prediction(
                         ('_aux', 'y_4'))[0][self.scenario.t_stp_ahead_pred]))
 
-                    if '2' in self.scenario.name:
+                    if 'Scenario_2' in self.scenario.name:
                         # Prediction of MPC using model
                         vg_ch4_tank_model = np.column_stack((vg_ch4_tank_model, self._mpc.data.prediction(
                             ('_x', 'x_19'))[0][self.scenario.t_stp_ahead_pred]))
@@ -758,10 +758,10 @@ class Simulation:
 
             if self.scenario.feedback:
                 #save predicted data
-                if '1' in self.scenario.name:
+                if 'Scenario_1' in self.scenario.name:
                     predicted_data = np.concatenate((vg_model, ph_model, vg_ch4_model), axis=0)
                     np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
-                if '2' in self.scenario.name:
+                if 'Scenario_2' in self.scenario.name:
                     predicted_data = np.concatenate((vg_ch4_tank_model, vg_co2_tank_model, vg_tank_model,
                                                    vg_ch4_model, vg_model, ph_model), axis=0)
                     np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
@@ -771,17 +771,17 @@ class Simulation:
                 vg_model = self._simulator_plant.data['_aux', 'y_1']
                 ph_model = self._simulator_plant.data['_aux', 'y_4']
 
-                if '2' in self.scenario.name:
+                if 'Scenario_2' in self.scenario.name:
                     vg_ch4_tank_model = self._simulator_plant.data['_x', 'x_19']
                     vg_co2_tank_model = self._simulator_plant.data['_x', 'x_20']
                     vg_tank_model = self._simulator_plant.data['_aux', 'v_gas_storage']
 
                 #Save plant output
-                if '1' in self.scenario.name:
+                if 'Scenario_1' in self.scenario.name:
                     plant_output = np.concatenate((vg_model, ph_model, vg_ch4_model), axis=1)
                     np.savetxt(f'./results/Plant Output {self.scenario.name}.csv', plant_output)
 
-                if '2' in self.scenario.name:
+                if 'Scenario_2' in self.scenario.name:
                     plant_output = np.concatenate((vg_ch4_tank_model, vg_co2_tank_model, vg_tank_model,
                                                    vg_ch4_model, vg_model, ph_model), axis=1)
 
