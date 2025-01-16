@@ -31,7 +31,7 @@ rterm = " + ".join(rterms)
 controller_params = ControllerParams(
     mpc_n_horizon=15,
     mpc_n_robust=0,
-    num_std_devs=5.0,
+    num_std_devs=2.0,
     cost_func=cost_func,
     substrate_cost_formulation="quadratic",
     ch4_set_point_function=ch4_set_point_function,
@@ -40,7 +40,7 @@ controller_params = ControllerParams(
 
 
 kwargs = {
-    "name": "Scenario_1b_quadratic_nominal_feedback_mismatch_5std_3tsap",
+    "name": "Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "disturbances": Disturbances(
@@ -54,7 +54,7 @@ kwargs = {
         max_feeding_error=0.05,
     ),
     "n_days_mpc": n_days_mpc,
-    "num_std_devs_sim": 5.0,
+    "num_std_devs_sim": 2.0,
     "feedback": True,
     "mismatch": True,
     "t_stp_ahead_pred": 3
