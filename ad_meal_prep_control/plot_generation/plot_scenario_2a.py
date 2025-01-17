@@ -30,25 +30,25 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     if not 'nominal_feedback' in scenario_name:
         post_processing.plot(
             [
-                (
-                    "Gas storage  \nlevel" + r" $[\%]$",
-                    {
-                        "x_19": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="black", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$V_{CH_4,tank, plant}$",
-                            scaling=100.0,
-                        ),
-                        "x_20": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="blue", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$V_{CO_2,tank, plant}$",
-                            scaling=100.0,
-                        ),
-                    },
-                ),
+                #(
+                #    "Gas storage  \nlevel" + r" $[\%]$",
+                #    {
+                #        "x_19": PlotVarProperty(
+                #            mpl_properties=MPLProperties(
+                #                color="black", linewidth=1, linestyle="-"
+                #            ),
+                #            label=r"$V_{CH_4,tank, plant}$",
+                #            scaling=100.0,
+                #        ),
+                #        "x_20": PlotVarProperty(
+                #            mpl_properties=MPLProperties(
+                #                color="blue", linewidth=1, linestyle="-"
+                #            ),
+                #            label=r"$V_{CO_2,tank, plant}$",
+                #            scaling=100.0,
+                #        ),
+                #    },
+                #),
                 (
                     r"$V_{g, tank}$" + "\n" + r"$[m^3]$",
                     {
@@ -119,38 +119,38 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ],
             plot_save_name=plot_save_name,
             constraints=[
+                #Constraint(value=0.0, ax_idx=1),
                 Constraint(value=0.0, ax_idx=1),
-                Constraint(value=0.0, ax_idx=2),
-                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
-                Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-                Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
+                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=1),
+                Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
+                Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
             ],
             dpi=dpi,
             show_plot=show_plot,
-            height_ratios=[2, 2, 2, 2, 1, 1],
+            height_ratios=[2, 2, 2, 1, 1],
         )
     else:
         post_processing.plot(
             [
-                (
-                    "Gas storage  \nlevel" + r" $[\%]$",
-                    {
-                        "x_19": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="black", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$V_{CH_4,tank, plant}$",
-                            scaling=100.0,
-                        ),
-                        "x_20": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="blue", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$V_{CO_2,tank, plant}$",
-                            scaling=100.0,
-                        ),
-                    },
-                ),
+                #(
+                #    "Gas storage  \nlevel" + r" $[\%]$",
+                #    {
+                #        "x_19": PlotVarProperty(
+                #            mpl_properties=MPLProperties(
+                #                color="black", linewidth=1, linestyle="-"
+                #            ),
+                #            label=r"$V_{CH_4,tank, plant}$",
+                #            scaling=100.0,
+                #        ),
+                #        "x_20": PlotVarProperty(
+                #            mpl_properties=MPLProperties(
+                #                color="blue", linewidth=1, linestyle="-"
+                #            ),
+                #            label=r"$V_{CO_2,tank, plant}$",
+                #            scaling=100.0,
+                #        ),
+                #    },
+                #),
                 (
                     r"$V_{g, tank}$" + "\n" + r"$[m^3]$",
                     {
@@ -221,11 +221,11 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ],
             plot_save_name=plot_save_name,
             constraints=[
+                #Constraint(value=0.0, ax_idx=1),
                 Constraint(value=0.0, ax_idx=1),
-                Constraint(value=0.0, ax_idx=2),
-                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
-                Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-                Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
+                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=1),
+                Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
+                Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
             ],
             other_inset_axes=[
                 {
@@ -255,6 +255,6 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ],
             dpi=dpi,
             show_plot=show_plot,
-            height_ratios=[2, 2, 2, 2, 1, 1],
+            height_ratios=[2, 2, 2, 1, 1],
         )
 controller_plotting_2a()
