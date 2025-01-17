@@ -2,6 +2,7 @@ from ad_meal_prep_control.postprocessing import (
     PlotVarProperty,
     MPLProperties,
     PostProcessing,
+    Constraint
 )
 import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1b import controller_plotting_1b
@@ -100,6 +101,11 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ),
         ],
         plot_save_name=plot_save_name,
+        constraints=[
+            # adapt ylim of plots by adding invisible horizontal lines:
+            Constraint(value=0, ax_idx=2, color="white"),  # gas production lower bound
+            Constraint(value=0, ax_idx=4, color="white"),  # inhibtion lower bound
+        ],
         time_range=(0.0, 30.0),
         dpi=dpi,
         show_plot=show_plot,

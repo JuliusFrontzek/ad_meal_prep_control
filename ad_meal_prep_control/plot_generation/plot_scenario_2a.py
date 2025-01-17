@@ -124,7 +124,10 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=1),
                 Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
                 Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
-                Constraint(value=0, ax_idx=4, color="white"),  # add invisible line as workaround for ylim
+                # adapt ylim of plots by adding invisible horizontal lines:
+                Constraint(value=0, ax_idx=2, color="white"),  # gas production lower bound
+                Constraint(value=7.6, ax_idx=3, color="white"),  # pH upper bound
+                Constraint(value=0, ax_idx=4, color="white"),  # inhibtion lower bound
             ],
             dpi=dpi,
             show_plot=show_plot,
