@@ -305,30 +305,63 @@ class Simulation:
             self._xi_pr_sim = np.array([xi_pr_nom])
             self._xi_li_sim = np.array([xi_li_nom])
         else:
-            self._xi_ch_sim = np.array(
-                [
-                    xi_ch_nom
-                    #+ np.random.choice([-1, 1], size=xi_ch_nom.size)
-                    + self.scenario.num_std_devs_sim
-                    * xi_ch_std_dev
-                ]
-            )
-            self._xi_pr_sim = np.array(
-                [
-                    xi_pr_nom
-                    #+ np.random.choice([-1, 1], size=xi_pr_nom.size)
-                    #+ self.scenario.num_std_devs_sim
-                    #* xi_pr_std_dev
-                ]
-            )
-            self._xi_li_sim = np.array(
-                [
-                    xi_li_nom
-                    #+ np.random.choice([-1, 1], size=xi_li_nom.size)
-                    #+ self.scenario.num_std_devs_sim
-                    #* xi_li_std_dev
-                ]
-            )
+            if '_ch' and 'no_feedback' in self.scenario.name:
+                self._xi_ch_sim = np.array(
+                    [
+                        xi_ch_nom
+                        #+ np.random.choice([-1, 1], size=xi_ch_nom.size)
+                        + self.scenario.num_std_devs_sim
+                        * xi_ch_std_dev
+                    ]
+                )
+                self._xi_pr_sim = np.array(
+                    [
+                        xi_pr_nom
+                    ]
+                )
+                self._xi_li_sim = np.array(
+                    [
+                        xi_li_nom
+                    ]
+                )
+            if '_pr' and 'no_feedback' in self.scenario.name:
+                self._xi_ch_sim = np.array(
+                    [
+                        xi_ch_nom
+                    ]
+                )
+                self._xi_pr_sim = np.array(
+                    [
+                        xi_pr_nom
+                        #+ np.random.choice([-1, 1], size=xi_pr_nom.size)
+                        + self.scenario.num_std_devs_sim
+                        * xi_pr_std_dev
+                    ]
+                )
+                self._xi_li_sim = np.array(
+                    [
+                        xi_li_nom
+                    ]
+                )
+            if '_li' and 'no_feedback' in self.scenario.name:
+                self._xi_ch_sim = np.array(
+                    [
+                        xi_ch_nom
+                    ]
+                )
+                self._xi_pr_sim = np.array(
+                    [
+                        xi_pr_nom
+                    ]
+                )
+                self._xi_li_sim = np.array(
+                    [
+                        xi_li_nom
+                        #+ np.random.choice([-1, 1], size=xi_li_nom.size)
+                        + self.scenario.num_std_devs_sim
+                        * xi_li_std_dev
+                    ]
+                )
 
         # Normalize uncertain xi's
         self._xi_ch_mpc_mhe_norm = self._xi_ch_mpc_mhe / self.Tx[5]

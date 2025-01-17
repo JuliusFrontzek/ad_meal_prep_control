@@ -58,31 +58,31 @@ def controller_plotting_2a (scenario_names=None):
                 predicted_data[:, 0:metadata['t_stp_ahead_pred'] + 1] = np.NaN
 
                 if mpc['mpc'].meta_data['n_robust'] == 0:
-                    fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :]*100, 'black',
-                                     linestyle = 'dotted', label=r"$V_{CH_4,tank, controller}$", linewidth=1)
-                    fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :]*100, 'blue',
-                                     linestyle = 'dotted', label=r"$V_{CO_2,tank, controller}$", linewidth=1)
-                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'black',
+                    #fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :]*100, 'black',
+                    #                 linestyle = 'dotted', label=r"$V_{CH_4,tank, controller}$", linewidth=1)
+                    #fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :]*100, 'blue',
+                    #                 linestyle = 'dotted', label=r"$V_{CO_2,tank, controller}$", linewidth=1)
+                    fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'black',
                                      linestyle = 'dotted', label=r"$V_{g, tank, controller}$", linewidth=1)
-                    fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[3, :], 'blue',
+                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[3, :], 'blue',
                                      linestyle = 'dotted', label=r"$\dot V_{CH_4,AD, controller}$", linewidth=1)
-                    fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[4, :], 'black',
+                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[4, :], 'black',
                                      linestyle = 'dotted', label=r"$\dot V_{g, AD, controller}$", linewidth=1)
-                    fig.axes[4].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[5, :], 'black',
+                    fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[5, :], 'black',
                                      linestyle = 'dotted', label=r'$pH_{controller}$', linewidth=1)
 
                 if mpc['mpc'].meta_data['n_robust'] > 0:
-                    fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[0,1], :].transpose()*100, 'black',
-                                     linestyle = 'dotted', label=r"$V_{CH_4,tank, controller}$", linewidth=1)
-                    fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[2,3], :].transpose()*100, 'blue',
-                                     linestyle = 'dotted', label=r"$V_{CO_2,tank, controller}$", linewidth=1)
-                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[4,5], :].transpose(), 'black',
+                    #fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[0,1], :].transpose()*100, 'black',
+                    #                 linestyle = 'dotted', label=r"$V_{CH_4,tank, controller}$", linewidth=1)
+                    #fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[2,3], :].transpose()*100, 'blue',
+                    #                 linestyle = 'dotted', label=r"$V_{CO_2,tank, controller}$", linewidth=1)
+                    fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[4,5], :].transpose(), 'black',
                                      linestyle = 'dotted', label=r"$V_{g, tank, controller}$", linewidth=1)
-                    fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[6,7], :].transpose(), 'blue',
+                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[6,7], :].transpose(), 'blue',
                                      linestyle = 'dotted', label=r"$\dot V_{CH_4,AD, controller}$", linewidth=1)
-                    fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[8,9], :].transpose(), 'black',
+                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[8,9], :].transpose(), 'black',
                                      linestyle = 'dotted', label=r"$\dot V_{g, AD, controller}$", linewidth=1)
-                    fig.axes[4].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[10,11], :].transpose(), 'black',
+                    fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[10,11], :].transpose(), 'black',
                                      linestyle = 'dotted', label=r'$pH_{controller}$', linewidth=1)
 
                     #axins_1 = fig.axes[1].inset_axes([0.4, 0.15, 0.25, 0.25],
@@ -93,15 +93,15 @@ def controller_plotting_2a (scenario_names=None):
                     #                                 xlim=(3, 5), ylim=(100, 700))
 
                 if 'nominal_feedback' in scenario:
-                    axins_1 = fig.axes[1].inset_axes([0.4, 0.6, 0.35, 0.35],
-                                                     xlim=(18, 23), ylim=(-10, 120))
-                    axins_2 = fig.axes[2].inset_axes([0.4, 0.6, 0.35, 0.35],
+                    #axins_1 = fig.axes[1].inset_axes([0.4, 0.6, 0.35, 0.35],
+                    #                                 xlim=(18, 23), ylim=(-10, 120))
+                    axins_2 = fig.axes[1].inset_axes([0.4, 0.6, 0.35, 0.35],
                                                      xlim=(18, 23), ylim=(20, 300))
 
-                    axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :]*100, 'black',
-                                     linestyle = 'dotted', linewidth=1)
-                    axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :]*100, 'blue',
-                                     linestyle = 'dotted', linewidth=1)
+                    #axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :]*100, 'black',
+                    #                 linestyle = 'dotted', linewidth=1)
+                    #axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :]*100, 'blue',
+                    #                 linestyle = 'dotted', linewidth=1)
                     axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'black',
                                      linestyle = 'dotted', linewidth=1)
                     #axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[3, :], 'rebeccapurple',
@@ -121,19 +121,19 @@ def controller_plotting_2a (scenario_names=None):
                     #axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[8,9], :].transpose(), 'blue',
                     #                 linestyle = 'dotted', linewidth=1)
 
-                axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
-                             np.ones((predicted_data.shape[1],1))*0, 'black',
-                             linestyle='dashed')
+                #axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
+                #             np.ones((predicted_data.shape[1],1))*0, 'black',
+                #             linestyle='dashed')
                 axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
                              np.ones((predicted_data.shape[1],1))*V_GAS_STORAGE_MAX, 'black',
                              linestyle='dashed')
                 axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
                              np.ones((predicted_data.shape[1],1))*V_GAS_STORAGE_MAX*(1-metadata['controller_params']['gas_storage_bound_fraction']), 'grey',
                              linestyle='dashed')
-                axins_1.grid(True, linestyle='dashed')
+                #axins_1.grid(True, linestyle='dashed')
                 axins_2.grid(True, linestyle='dashed')
                 axins_2.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
-                axins_1.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+                #axins_1.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
                 #axins_3.grid(True, linestyle='dashed')
             except:
                 pass
@@ -141,6 +141,6 @@ def controller_plotting_2a (scenario_names=None):
         remove_duplicate_labels(fig, 2, legend_location='center left', bbox_to_anchor=(0, 0.6))
         remove_duplicate_labels(fig, 3, legend_location='center left', bbox_to_anchor=(0, 0.6))
         remove_duplicate_labels(fig, 4, legend_location='center left', bbox_to_anchor=(0, 0.6))
-        remove_duplicate_labels(fig, 5, legend_location='center left', bbox_to_anchor=(0, 0.6))
+        #remove_duplicate_labels(fig, 5, legend_location='center left', bbox_to_anchor=(0, 0.6))
         plt.savefig(f'../scenarios/results/plots/Scenario 2/{scenario}.png')
     return

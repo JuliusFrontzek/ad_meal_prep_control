@@ -128,6 +128,7 @@ post_processing.plot(
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
         Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
         Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
+        Constraint(value=0, ax_idx=5, color="white"),
     ],
     dpi=dpi,
     show_plot=show_plot,

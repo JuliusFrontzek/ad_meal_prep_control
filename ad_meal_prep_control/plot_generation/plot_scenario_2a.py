@@ -124,6 +124,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=1),
                 Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
                 Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
+                Constraint(value=0, ax_idx=4, color="white"),
             ],
             dpi=dpi,
             show_plot=show_plot,
@@ -228,14 +229,14 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"),
             ],
             other_inset_axes=[
+                #{
+                #    "plot_idx": 1,
+                #    "days": (18, 23),
+                #    "ylimit": (-10, 120),
+                #    "inset_axis_specs": (0.4, 0.2, 0.35, 0.35)
+                #},
                 {
                     "plot_idx": 1,
-                    "days": (18, 23),
-                    "ylimit": (-10, 120),
-                    "inset_axis_specs": (0.4, 0.2, 0.35, 0.35)
-                },
-                {
-                    "plot_idx": 2,
                     "days": (18, 23),
                     "ylimit": (20, 300),
                     "inset_axis_specs": (0.4, 0.2, 0.35, 0.35)
