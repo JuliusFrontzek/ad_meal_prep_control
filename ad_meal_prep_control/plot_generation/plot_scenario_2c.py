@@ -23,7 +23,7 @@ except IndexError:
 post_processing.plot(
     [
         (
-            '',#r"$d_{feed}$" + "\n" + r"$[m^3/d]$",
+            r"$d_{feed}$" + "\n" + r"$[m^3/d]$",
             {
                 "dictated_sub_feed_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -128,7 +128,7 @@ post_processing.plot(
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
         Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
         Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-        Constraint(value=0, ax_idx=5, color="white"),
+        Constraint(value=0, ax_idx=5, color="white"),  # add invisible line as workaround for ylim
     ],
     dpi=dpi,
     show_plot=show_plot,

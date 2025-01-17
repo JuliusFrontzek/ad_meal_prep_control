@@ -410,13 +410,24 @@ class PostProcessing:
                             color = constraint.color
 
                         if constraint.ax_idx == ax_idx:
-                            ax.hlines(
-                                constraint.value,
-                                0.0,
-                                self._scenario_meta_data["n_days_mpc"],
-                                color=color,
-                                linestyle="--",
-                            )
+                            # make white line practically invisible:
+                            if constraint.color == 'white':
+                                ax.hlines(
+                                    constraint.value,
+                                    0.0,
+                                    self._scenario_meta_data["n_days_mpc"],
+                                    color=color,
+                                    linestyle="-",
+                                    linewidth=0.1,
+                                )
+                            else:
+                                ax.hlines(
+                                    constraint.value,
+                                    0.0,
+                                    self._scenario_meta_data["n_days_mpc"],
+                                    color=color,
+                                    linestyle="--",
+                                )
 
                             if ax_idx in inset_axes:
                                 for inset_ax in inset_axes[ax_idx]:
