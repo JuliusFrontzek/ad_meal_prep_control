@@ -64,9 +64,9 @@ def controller_plotting_1b (scenario_names=None):
 
             remove_duplicate_labels(fig, 0, legend_location='center right', bbox_to_anchor=(1,1))
             remove_duplicate_labels(fig, 1, legend_location='center right', bbox_to_anchor=(1,1))
-            remove_duplicate_labels(fig, 3, legend_location='center right', bbox_to_anchor=(1,1))
-            remove_duplicate_labels(fig, 4, legend_location='center right', bbox_to_anchor=(1,1))
-            fig.axes[0].legend(loc ='lower right', bbox_to_anchor=(0.67,0.5))
+            remove_duplicate_labels(fig, 3, legend_location='center right', bbox_to_anchor=(1,0.7))
+            remove_duplicate_labels(fig, 4, legend_location='center right', bbox_to_anchor=(1,0.6))
+            fig.axes[0].legend(loc ='lower right', bbox_to_anchor=(0.67,0.45))
             '''
                     axins_1 = fig.axes[1].inset_axes([0.4, 0.435, 0.25, 0.25],
                         xlim=(5, 10), ylim=(500, 900))

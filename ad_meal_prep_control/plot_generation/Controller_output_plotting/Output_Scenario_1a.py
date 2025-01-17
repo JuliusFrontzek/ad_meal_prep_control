@@ -11,7 +11,7 @@ def controller_plotting_1a (scenario_names=None):
                   'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap',
                   'Scenario_1a_quadratic_robust_feedback_mismatch_5std_3tsap'
                   ]
-    elif scenario_names is 'Sensitivity':
+    elif scenario_names in 'Sensitivity':
         scenario_names = ["Scenario_1a_quadratic_no_feedback_mismatch_1std_ch",
                   'Scenario_1a_quadratic_no_feedback_mismatch_1std_pr',
                   'Scenario_1a_quadratic_no_feedback_mismatch_1std_li']
@@ -36,11 +36,11 @@ def controller_plotting_1a (scenario_names=None):
             print(f'{scenario}_NRMSE_gas = ', nRMSE(x_est =mpc['mpc']['_aux', 'y_1'], x_true =plant_output[:, [0]]))
             print(f'{scenario}_NRMSE_ch4 = ', nRMSE(x_est =mpc['mpc']['_aux', 'v_ch4_dot_tank_in'], x_true =plant_output[:, [2]]))
 
-            remove_duplicate_labels(fig, 0)
-            remove_duplicate_labels(fig, 2, legend_location='center right')
-            remove_duplicate_labels(fig, 3)
-            remove_duplicate_labels(fig, 1, legend_location='center right')
-            fig.axes[0].legend(loc="lower right")
+            remove_duplicate_labels(fig, 0, legend_location='center right', bbox_to_anchor=(1,1))
+            remove_duplicate_labels(fig, 2, legend_location='center right', bbox_to_anchor=(1,0.7))
+            remove_duplicate_labels(fig, 3, legend_location='center right', bbox_to_anchor=(1,0.55))
+            remove_duplicate_labels(fig, 1, legend_location='center right', bbox_to_anchor=(1,0.45))
+            fig.axes[0].legend(loc='lower right', bbox_to_anchor=(0.67,0.6))
             plt.savefig(f'../scenarios/results/plots/Sensitivity/{scenario}_substrate_costs.png')
 
         if metadata['feedback']:
@@ -53,27 +53,27 @@ def controller_plotting_1a (scenario_names=None):
             predicted_data[:, 0:metadata['t_stp_ahead_pred']+1] = np.NaN
 
             if mpc['mpc'].meta_data['n_robust'] == 0:
-                fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :], 'rebeccapurple',
+                fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :], 'black',
                              linestyle = 'dotted', label=r'$pH_{controller}$')
-                fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :], 'blue',
+                fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :], 'black',
                              linestyle = 'dotted', label=r"$\dot V_{g, controller}$")
-                fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'rebeccapurple',
+                fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'blue',
                              linestyle = 'dotted', label=r"$\dot V_{CH_4, controller}$")
 
             if mpc['mpc'].meta_data['n_robust'] > 0:
                 fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[2, 3], :].transpose(),
-                                 'rebeccapurple',
+                                 'black',
                                  linestyle='dotted', label=r'$pH_{controller}$')
                 fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[0, 1], :].transpose(),
-                                 'blue',
+                                 'black',
                                  linestyle='dotted', label=r"$\dot V_{g, controller}$")
                 fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[4, 5], :].transpose(),
-                                 'rebeccapurple',
+                                 'blue',
                                  linestyle='dotted', label=r"$\dot V_{CH_4, controller}$")
 
-            remove_duplicate_labels(fig, 0)
-            remove_duplicate_labels(fig, 2, legend_location='center right')
-            remove_duplicate_labels(fig, 3, legend_location='center right')
+            remove_duplicate_labels(fig, 0, legend_location='center right', bbox_to_anchor=(1,1))
+            remove_duplicate_labels(fig, 2, legend_location='center right', bbox_to_anchor=(1,0.7))
+            remove_duplicate_labels(fig, 3, legend_location='center right', bbox_to_anchor=(1,0.6))
             '''
                     axins_1 = fig.axes[1].inset_axes([0.4, 0.435, 0.25, 0.25],
                         xlim=(5, 10), ylim=(500, 900))
@@ -90,7 +90,7 @@ def controller_plotting_1a (scenario_names=None):
                                          linestyle='dotted', linewidth=1)
             '''
             #axins_1.grid(True, linestyle='dashed')
-            fig.axes[0].legend(loc='lower right')
+            fig.axes[0].legend(loc='lower right', bbox_to_anchor=(0.67,0.45))
             remove_duplicate_labels(fig, 1, legend_location='center right')
             plt.savefig(f'../scenarios/results/plots/Scenario 1/{scenario}_substrate_costs.png')
     return

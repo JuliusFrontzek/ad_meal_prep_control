@@ -34,13 +34,13 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 {
                     "v_ch4_dot_tank_in_setpoint": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="orange", linewidth=1, linestyle="-."
+                            color="grey", linewidth=1, linestyle="-."
                         ),
                         label=r"Reference" "\n" "($\dot V_{CH_4}$)",
                     ),
                     "v_ch4_dot_tank_in": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color=post_processing.MEASUREMENT_COLOR,
+                            color='blue',
                             linewidth=1,
                             linestyle="-",
                         ),
@@ -48,7 +48,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                     ),
                     "y_1": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="blue", linewidth=1, linestyle="-"
+                            color="black", linewidth=1, linestyle="-"
                         ),
                         label=r"$\dot V_{g, plant}$",
                     ),
@@ -58,7 +58,8 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 r"$pH$" + "\n" + r"$[-]$",
                 {
                     "y_4": PlotVarProperty(
-                        mpl_properties=MPLProperties(linewidth=1, linestyle="-"),
+                        mpl_properties=MPLProperties(linewidth=1, linestyle="-",
+                                                     color="black"),
                         label="$pH_{plant}$",
                     )
                 },
@@ -68,19 +69,19 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 {
                     "inhibition_1": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="blue", linewidth=1, linestyle="-"
+                            color="black", linewidth=1, linestyle="-"
                         ),
                         label=r"$Inhibition_1$",
                     ),
                     "inhibition_2": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="green", linewidth=1, linestyle="-"
+                            color="mediumblue", linewidth=1, linestyle="-"
                         ),
                         label=r"$Inhibition_2$",
                     ),
                     "inhibition_3": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="red", linewidth=1, linestyle="-"
+                            color="cornflowerblue", linewidth=1, linestyle="-"
                         ),
                         label=r"$Inhibition_3$",
                     ),
@@ -88,19 +89,19 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ),
         ],
         plot_save_name=plot_save_name,
-        input_inset_axis={
-            "days": (0, 10),
-            "ylimit": (-1.0, 30.0),
-            "inset_axis_specs": (0.4, 0.4, 0.27, 0.3),
-        },
-        other_inset_axes=[
-            {
-                "plot_idx": 1,
-                "days": (15, 25),
-                "ylimit": (340, 360),
-                "inset_axis_specs": (0.4, 0.7, 0.27, 0.2),
-            },
-        ],
+        #input_inset_axis={
+        #    "days": (0, 10),
+        #    "ylimit": (-1.0, 30.0),
+        #    "inset_axis_specs": (0.4, 0.4, 0.27, 0.3),
+        #},
+        #other_inset_axes=[
+        #    {
+        #        "plot_idx": 1,
+        #        "days": (15, 25),
+        #        "ylimit": (340, 360),
+        #        "inset_axis_specs": (0.4, 0.7, 0.27, 0.2),
+        #    },
+        #],
         dpi=dpi,
         show_plot=show_plot,
         height_ratios=[2, 2, 1, 1],
