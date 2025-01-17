@@ -301,19 +301,19 @@ class PostProcessing:
                             # label=r"$u_{max}$",
                         )
 
-                        if 'Scenario_1b' in plot_save_name:
+                        if 'Scenario_1' in plot_save_name:
                             ax.set_ylim(
-                                0.0, self._scenario_meta_data["u_max"]["solid"] * 0.05
+                                0.0, self._scenario_meta_data["u_max"]["solid"] * 0.1
                             )
                             ax_inputs_liquid.set_ylim(
-                                0.0, self._scenario_meta_data["u_max"]["liquid"] * 0.02
+                                0.0, self._scenario_meta_data["u_max"]["liquid"] * 0.05
                             )
-                        elif 'Scenario_1a' in plot_save_name:
+                        elif 'Scenario_2a' or 'Scenario_2c' in plot_save_name:
                             ax.set_ylim(
-                                0.0, self._scenario_meta_data["u_max"]["solid"] * 1
+                                0.0, self._scenario_meta_data["u_max"]["solid"] * 1.1
                             )
                             ax_inputs_liquid.set_ylim(
-                                0.0, self._scenario_meta_data["u_max"]["liquid"] * 0.5
+                                0.0, self._scenario_meta_data["u_max"]["liquid"] * 1.1
                             )
 
                     elif plot_var_name.startswith("dictated_sub_feed"):
