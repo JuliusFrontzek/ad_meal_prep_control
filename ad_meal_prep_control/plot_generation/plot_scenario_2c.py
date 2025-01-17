@@ -6,6 +6,7 @@ from ad_meal_prep_control.postprocessing import (
 )
 from ad_meal_prep_control import params_R3
 import sys
+from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_2c import controller_plotting_2c
 
 post_processing = PostProcessing(
     result_directory="../scenarios/results",
@@ -17,17 +18,17 @@ try:
     show_plot = int(sys.argv[2])
 except IndexError:
     dpi = 600
-    show_plot = True
+    show_plot = False
 
 post_processing.plot(
     [
         (
-            r"$d_{feed}$" + "\n" + r"$[m^3/d]$",
+            '',#r"$d_{feed}$" + "\n" + r"$[m^3/d]$",
             {
                 "dictated_sub_feed_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color=post_processing.MEASUREMENT_COLOR,
-                        linewidth=1.5,
+                        color='saddlebrown',
+                        linewidth=1,
                         linestyle="-",
                     ),
                     label="cattle manure\nwith large uncertainty",
@@ -39,14 +40,14 @@ post_processing.plot(
             {
                 "x_19": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color="green", linewidth=1.5, linestyle="-"
+                        color="black", linewidth=1, linestyle="-"
                     ),
                     label=r"$V_{CH_4,tank, plant}$",
                     scaling=100.0,
                 ),
                 "x_20": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color="black", linewidth=1.5, linestyle="-"
+                        color="blue", linewidth=1, linestyle="-"
                     ),
                     label=r"$V_{CO_2,tank, plant}$",
                     scaling=100.0,
@@ -58,8 +59,8 @@ post_processing.plot(
             {
                 "v_gas_storage": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color=post_processing.MEASUREMENT_COLOR,
-                        linewidth=1.5,
+                        color='black',
+                        linewidth=1,
                         linestyle="-",
                     ),
                     label=r"$\dot V_{g, tank, plant}$",
@@ -71,16 +72,16 @@ post_processing.plot(
             {
                 "v_ch4_dot_tank_in": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color=post_processing.MEASUREMENT_COLOR,
-                        linewidth=1.5,
+                        color='blue',
+                        linewidth=1,
                         linestyle="-",
                     ),
                     label=r"$\dot V_{CH_4,AD, plant}$",
                 ),
                 "y_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color="blue",
-                        linewidth=1.5,
+                        color="black",
+                        linewidth=1,
                         linestyle="-",
                     ),
                     label=r"$\dot V_{g, AD, plant}$",
@@ -91,7 +92,7 @@ post_processing.plot(
             r"$pH$" + "\n" + r"$[-]$",
             {
                 "y_4": PlotVarProperty(
-                    mpl_properties=MPLProperties(linewidth=1.5, linestyle="-"),
+                    mpl_properties=MPLProperties(linewidth=1, linestyle="-", color="black"),
                     label="$pH_{plant}$",
                 )
             },
@@ -101,34 +102,35 @@ post_processing.plot(
             {
                 "inhibition_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color="blue", linewidth=1, linestyle="-"
+                        color="black", linewidth=1, linestyle="-"
                     ),
                     label=r"$Inhibition_1$",
                 ),
                 "inhibition_2": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color="green", linewidth=1, linestyle="-"
+                        color="mediumblue", linewidth=1, linestyle="-"
                     ),
                     label=r"$Inhibition_2$",
                 ),
                 "inhibition_3": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color="red", linewidth=1, linestyle="-"
+                        color="cornflowerblue", linewidth=1, linestyle="-"
                     ),
                     label=r"$Inhibition_3$",
                 ),
             },
         ),
     ],
-    plot_save_name="scenario_2c",
+    plot_save_name="Scenario_2c_dynamic",
     constraints=[
         Constraint(value=0.0, ax_idx=2),
         Constraint(value=0.0, ax_idx=3),
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=3),
-        Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="blue"),
-        Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="blue"),
+        Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="grey"),
+        Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="grey"),
     ],
     dpi=dpi,
     show_plot=show_plot,
     height_ratios=[2, 1, 2, 2, 2, 1, 1],
 )
+controller_plotting_2c()

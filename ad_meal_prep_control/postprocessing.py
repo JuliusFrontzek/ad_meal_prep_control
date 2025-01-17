@@ -132,7 +132,7 @@ class PostProcessing:
                     _inset_ax = axes[inset_ax["plot_idx"]].inset_axes(
                         inset_ax["inset_axis_specs"],
                         xlim=(x1, x2),
-                        #ylim=(y1, y2),
+                        ylim=(y1, y2),
                         # xticklabels=[],
                         # yticklabels=[],
                     )
@@ -281,22 +281,22 @@ class PostProcessing:
                                 )
 
                         # Add constraints to plot
-                        ax.hlines(
-                            self._scenario_meta_data["u_max"]["solid"],
-                            xmin=0,
-                            xmax=self._scenario_meta_data["n_days_mpc"],
-                            color="gray",
-                            linestyle="dashdot",
-                            linewidth= 1
-                            # label=r"$u_{max}$",
-                        )
+                        #ax.hlines(
+                        #    self._scenario_meta_data["u_max"]["solid"],
+                        #    xmin=0,
+                        #    xmax=self._scenario_meta_data["n_days_mpc"],
+                        #    color="black",
+                        #    linestyle="--",
+                        #    linewidth= 1
+                        #    # label=r"$u_{max}$",
+                        #)
 
                         ax_inputs_liquid.hlines(
                             self._scenario_meta_data["u_max"]["liquid"],
                             xmin=0,
                             xmax=self._scenario_meta_data["n_days_mpc"],
-                            color="silver",
-                            linestyle="dashdot",
+                            color="black",
+                            linestyle=(0, (5, 5)),
                             linewidth = 1
                             # label=r"$u_{max}$",
                         )
@@ -405,7 +405,7 @@ class PostProcessing:
                 if constraints is not None:
                     for constraint in constraints:
                         if constraint.color is None:
-                            color = "red"
+                            color = "black"
                         else:
                             color = constraint.color
 
@@ -439,10 +439,11 @@ class PostProcessing:
                     loc = 0
                 labels = [line.get_label() for line in ax.get_lines()]
                 if not labels[0].startswith("_"):
-                    temp_legend = ax.legend(ncol=max(1, len(labels) // 3), loc=loc)
+                    temp_legend = ax.legend(ncol=max(1, len(labels) // 3), loc='lower left')
                     temp_legend.remove()
-                    ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3))
-                    #ax_inputs_liquid.add_artist(temp_legend)
+                    ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3), loc = 'upper left')
+                    if 'silage' in labels[0] and 'Scenario_2' in plot_save_name:
+                        ax_inputs_liquid.add_artist(temp_legend)
                 ax.grid(True, linestyle="--")
 
             # axis.yaxis.set_label_coords(-0.1, 0)
