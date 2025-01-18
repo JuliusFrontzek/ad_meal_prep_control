@@ -25,16 +25,28 @@ def controller_plotting_1a (scenario_names=None):
         if not metadata['feedback']:
             plant_output = np.genfromtxt(f'../scenarios/results/Plant Output {scenario}.csv', delimiter=' ')
 
-            fig.axes[2].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 1], 'rebeccapurple',
+            fig.axes[2].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 1], 'black',
                              linestyle = 'dotted', label=r'$pH_{controller}$')
-            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 0], 'blue',
+            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 0], 'black',
                              linestyle = 'dotted', label=r"$\dot V_{g, controller}$")
-            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 2], 'rebeccapurple',
+            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 2], 'blue',
                              linestyle = 'dotted', label=r"$\dot V_{CH_4, controller}$")
 
-            print(f'{scenario}_NRMSE_pH = ', nRMSE(x_est =mpc['mpc']['_aux', 'y_4'], x_true =plant_output[:, [1]]))
-            print(f'{scenario}_NRMSE_gas = ', nRMSE(x_est =mpc['mpc']['_aux', 'y_1'], x_true =plant_output[:, [0]]))
-            print(f'{scenario}_NRMSE_ch4 = ', nRMSE(x_est =mpc['mpc']['_aux', 'v_ch4_dot_tank_in'], x_true =plant_output[:, [2]]))
+            error_ph =(f'{scenario}_NRMSE_pH = ', nRMSE(x_est =mpc['mpc']['_aux', 'y_4'], x_true =plant_output[:, [1]]))
+            error_gas = (f'{scenario}_NRMSE_gas = ', nRMSE(x_est =mpc['mpc']['_aux', 'y_1'], x_true =plant_output[:, [0]]))
+            error_ch4 = (f'{scenario}_NRMSE_ch4 = ', nRMSE(x_est =mpc['mpc']['_aux', 'v_ch4_dot_tank_in'], x_true =plant_output[:, [2]]))
+
+            results = [
+                [f"{scenario}_NRMSE_pH", error_ph],
+                [f"{scenario}_NRMSE_gas", error_gas],
+                [f"{scenario}_NRMSE_ch4", error_ch4]
+            ]
+
+            output_file = f'../scenarios/results/plots/Sensitivity/{scenario}_NRMSE.txt'
+            with open(output_file, 'w') as f:
+                f.write("Metric, Value\n")  # Header for clarity
+                for metric, value in results:
+                    f.write(f"{metric}, {value}\n")
 
             remove_duplicate_labels(fig, 0, legend_location='center right', bbox_to_anchor=(1,1))
             remove_duplicate_labels(fig, 2, legend_location='center right', bbox_to_anchor=(1,0.7))
