@@ -305,30 +305,14 @@ class Simulation:
             self._xi_pr_sim = np.array([xi_pr_nom])
             self._xi_li_sim = np.array([xi_li_nom])
         else:
-            if self.scenario.feedback:
+            if (
+                self.scenario.feedback          # for regular simulations do-MPC paper
+                or '_ch' in self.scenario.name  # for sensitivity analysis
+            ):
                 self._xi_ch_sim = np.array(
                     [
                         xi_ch_nom
                         # + np.random.choice([-1, 1], size=xi_ch_nom.size)
-                        + self.scenario.num_std_devs_sim
-                        * xi_ch_std_dev
-                    ]
-                )
-                self._xi_pr_sim = np.array(
-                    [
-                        xi_pr_nom
-                    ]
-                )
-                self._xi_li_sim = np.array(
-                    [
-                        xi_li_nom
-                    ]
-                )
-            elif '_ch' in self.scenario.name:
-                self._xi_ch_sim = np.array(
-                    [
-                        xi_ch_nom
-                        #+ np.random.choice([-1, 1], size=xi_ch_nom.size)
                         + self.scenario.num_std_devs_sim
                         * xi_ch_std_dev
                     ]
