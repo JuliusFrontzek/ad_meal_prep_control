@@ -10,7 +10,7 @@ import matplotlib as mpl
 mpl.rcParams['figure.dpi'] = 1000
 
 
-def controller_plotting_2c (scenario_names=None):
+def controller_plotting_2c(scenario_names=None):
 
     if scenario_names is None:
         scenario_names = ["Scenario_2c_dynamic"]
@@ -40,12 +40,12 @@ def controller_plotting_2c (scenario_names=None):
             fig.axes[4].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 5], 'rebeccapurple',
                              linestyle = 'dotted', label=r'$pH_{model}$', linewidth=1)
             fig.axes[0].legend()
-            fig.axes[1].legend(bbox_to_anchor=(0.95, 1))
+            fig.axes[1].legend()
             fig.axes[2].legend()
-            fig.axes[3].legend(bbox_to_anchor=(0.95, 1))
+            fig.axes[3].legend()
             fig.axes[4].legend()
             plt.savefig(f'../scenarios/results/plots/Plant Output {scenario}.png')
-        if metadata['feedback']:
+        else:
             pass
         '''
             # We create a NaN array to shift our data
@@ -139,11 +139,13 @@ def controller_plotting_2c (scenario_names=None):
             except:
                 pass
         '''
-        remove_duplicate_labels(fig, 1, legend_location='center right', bbox_to_anchor=(1, 1))
-        remove_duplicate_labels(fig, 2, legend_location='center left', bbox_to_anchor=(0, 0.6))
-        remove_duplicate_labels(fig, 3, legend_location='center left', bbox_to_anchor=(0, 0.6))
-        remove_duplicate_labels(fig, 4, legend_location='center left', bbox_to_anchor=(0, 0.6))
-        remove_duplicate_labels(fig, 5, legend_location='center left', bbox_to_anchor=(0, 0.6))
-        remove_duplicate_labels(fig, 6, legend_location='center left', bbox_to_anchor=(0, 0.6))
+        #remove_duplicate_labels(fig, 0, legend_location='center', bbox_to_anchor=(0.5, 0.5))
+        remove_duplicate_labels(fig, 1, legend_location='center right')#, bbox_to_anchor=(1, 1))
+        remove_duplicate_labels(fig, 2, legend_location='center right')#, bbox_to_anchor=(0, 0.6))
+        remove_duplicate_labels(fig, 3, legend_location='center right')#, bbox_to_anchor=(0, 0.6))
+        remove_duplicate_labels(fig, 4, legend_location='center right')#, bbox_to_anchor=(0, 0.6))
+        remove_duplicate_labels(fig, 5, legend_location='center right', bbox_to_anchor=(1, 0.6))
+        #fig.axes[0].legend(loc='lower right', bbox_to_anchor=(0.62, 0.45))
+        #remove_duplicate_labels(fig, 6, legend_location='center left', bbox_to_anchor=(0, 0.6))
         plt.savefig(f'../scenarios/results/plots/Scenario 2/{scenario}.png')
     return

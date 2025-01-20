@@ -64,29 +64,29 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                     )
                 },
             ),
-            (
-                r"$Inhibition$" + "\n" + r"$[-]$",
-                {
-                    "inhibition_1": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="black", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$Inhibition_1$",
-                    ),
-                    "inhibition_2": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="mediumblue", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$Inhibition_2$",
-                    ),
-                    "inhibition_3": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="cornflowerblue", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$Inhibition_3$",
-                    ),
-                },
-            ),
+            #(
+            #    r"$Inhibition$" + "\n" + r"$[-]$",
+            #    {
+            #        "inhibition_1": PlotVarProperty(
+            #            mpl_properties=MPLProperties(
+            #                color="black", linewidth=1, linestyle="-"
+            #            ),
+            #            label=r"$Inhibition_1$",
+            #        ),
+            #        "inhibition_2": PlotVarProperty(
+            #            mpl_properties=MPLProperties(
+            #                color="mediumblue", linewidth=1, linestyle="-"
+            #            ),
+            #            label=r"$Inhibition_2$",
+            #        ),
+            #        "inhibition_3": PlotVarProperty(
+            #            mpl_properties=MPLProperties(
+            #                color="cornflowerblue", linewidth=1, linestyle="-"
+            #            ),
+            #            label=r"$Inhibition_3$",
+            #        ),
+            #    },
+            #),
         ],
         plot_save_name=plot_save_name,
         #input_inset_axis={
@@ -104,6 +104,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         #],
         dpi=dpi,
         show_plot=show_plot,
-        height_ratios=[2, 2, 1, 1],
+        #height_ratios=[2, 2, 1, 1],
+        height_ratios=[2, 2, 1],
     )
 controller_plotting_1a('Sensitivity')

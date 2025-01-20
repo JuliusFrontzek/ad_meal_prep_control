@@ -123,7 +123,6 @@ post_processing.plot(
     ],
     plot_save_name="Scenario_2c_dynamic",
     constraints=[
-        #Constraint(value=0.0, ax_idx=2),
         Constraint(value=0.0, ax_idx=2),
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
         Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
@@ -136,5 +135,13 @@ post_processing.plot(
     dpi=dpi,
     show_plot=show_plot,
     height_ratios=[2, 1, 2, 2, 1, 1],
+    other_inset_axes=[
+                {
+                    "plot_idx": 2,
+                    "days": (7.6, 9),
+                    "ylimit": (200, 225),
+                    "inset_axis_specs": (0.4, 0.2, 0.2, 0.2),
+                },
+            ],
 )
 controller_plotting_2c()

@@ -26,6 +26,7 @@ $ pip install -e .
 - Once completed, open the directory 'plot_generation', choose the scenario you want to plot
 - If you want to include the MPC predictions into the plot, open the directory 'Controller output plotting' and choose the scenario you want to plot
 - Run the script 
+- the resulting plots will be stored in ad_meal_prep_control/scenarios/results/plots/{Scenario 1;Scenario 2; Sensitivity}. Note that (incomplete) plots based only on the status of Julius' master's thesis are additionally saved in ad_meal_prep_control/scenarios/results/plots.  
 
 ## Additional information
 

@@ -107,6 +107,7 @@ class PostProcessing:
             ax_inputs_liquid = axes[0].twinx()
 
             if input_inset_axis is not None:
+                # unpack elements "days" and "ylimit" of input_inset_axis and save:
                 x1, x2, y1, y2 = (
                     *input_inset_axis["days"],
                     *input_inset_axis["ylimit"],
@@ -114,9 +115,9 @@ class PostProcessing:
                 axins_input_feed = axes[0].inset_axes(
                     input_inset_axis["inset_axis_specs"],
                     xlim=(x1, x2),
-                    #ylim=(y1, y2),
-                    # xticklabels=[],
-                    # yticklabels=[],
+                    ylim=(y1, y2),
+                    #xticklabels=[],
+                    #yticklabels=[],
                 )
                 axins_input_feed_liquid = axins_input_feed.twinx()
 
@@ -450,9 +451,9 @@ class PostProcessing:
                     loc = 0
                 labels = [line.get_label() for line in ax.get_lines()]
                 if not labels[0].startswith("_"):
-                    temp_legend = ax.legend(ncol=max(1, len(labels) // 3), loc='lower left')
+                    temp_legend = ax.legend(ncol=max(1, len(labels) // 3), loc='upper left')
                     temp_legend.remove()
-                    ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3), loc = 'upper left')
+                    ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3), loc='upper right')
                     if 'silage' in labels[0] and 'Scenario_2' in plot_save_name:
                         ax_inputs_liquid.add_artist(temp_legend)
                 ax.grid(True, linestyle="--")

@@ -62,11 +62,12 @@ def controller_plotting_1b (scenario_names=None):
                                  linestyle='dotted', label=r"$\dot V_{CH_4, controller}$")
 
 
-            remove_duplicate_labels(fig, 0, legend_location='center right', bbox_to_anchor=(1,1))
-            remove_duplicate_labels(fig, 1, legend_location='center right', bbox_to_anchor=(1,1))
-            remove_duplicate_labels(fig, 3, legend_location='center right', bbox_to_anchor=(1,0.7))
-            remove_duplicate_labels(fig, 4, legend_location='center right', bbox_to_anchor=(1,0.6))
-            fig.axes[0].legend(loc ='lower right', bbox_to_anchor=(0.67,0.45))
+            remove_duplicate_labels(fig, 0, legend_location='upper left', bbox_to_anchor=(0.1, 1))
+            remove_duplicate_labels(fig, 1, legend_location='center right')
+            remove_duplicate_labels(fig, 2, legend_location='upper right')
+            remove_duplicate_labels(fig, 3, legend_location='lower right')
+            remove_duplicate_labels(fig, 4, legend_location='center right', bbox_to_anchor=(1, 0.6))
+            #fig.axes[0].legend(loc='lower right', bbox_to_anchor=(0.62, 0.45))
             '''
                     axins_1 = fig.axes[1].inset_axes([0.4, 0.435, 0.25, 0.25],
                         xlim=(5, 10), ylim=(500, 900))
@@ -83,6 +84,5 @@ def controller_plotting_1b (scenario_names=None):
                                          linestyle='dotted', linewidth=1)
             '''
             #axins_1.grid(True, linestyle='dashed')
-            remove_duplicate_labels(fig, 2, legend_location='center right')
             plt.savefig(f'../scenarios/results/plots/Scenario 1/{scenario}.png')
     return

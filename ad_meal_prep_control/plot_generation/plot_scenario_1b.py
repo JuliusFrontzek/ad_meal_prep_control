@@ -7,12 +7,8 @@ from ad_meal_prep_control.postprocessing import (
 import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1b import controller_plotting_1b
 
-scenario_names = [
-    "Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap",
-]
-plot_save_names = [
-    "Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap",
-]
+scenario_name = ["Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap"]
+plot_save_name = scenario_name
 
 try:
     dpi = int(sys.argv[1])
@@ -21,7 +17,7 @@ except IndexError:
     dpi = 600
     show_plot = False
 
-for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
+for scenario_name, plot_save_name in zip(scenario_name, plot_save_name):
     post_processing = PostProcessing(
         result_directory="../scenarios/results",
         scenario_name=scenario_name,
@@ -30,7 +26,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     post_processing.plot(
         [
             (
-                " ",#r"$\dot d_{feed}$" + "\n" + r"$[m^3/d]$",
+                r"$\dot d_{feed}$" + "\n" + r"$[m^3/d]$",
                 {
                     "dictated_sub_feed_1": PlotVarProperty(
                         mpl_properties=MPLProperties(
@@ -110,18 +106,18 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         dpi=dpi,
         show_plot=show_plot,
         height_ratios=[1, 1, 2, 1, 1],
-        #input_inset_axis={
-        #    "days": (0, 10),
-        #    "ylimit": (-1.0, 30.0),
-        #    "inset_axis_specs": (0.4, 0.4, 0.27, 0.3),
-        #},
-        #other_inset_axes=[
-        #    {
-        #        "plot_idx": 2,
-        #        "days": (12, 18),
-        #        "ylimit": (345, 355),
-        #        "inset_axis_specs": (0.37, 0.7, 0.3, 0.2),
-        #    },
-        #],
+        input_inset_axis={
+            "days": (5, 6),
+            "ylimit": (0.7, 1.5),
+            "inset_axis_specs": (0.6, 0.45, 0.2, 0.2),
+        },
+        other_inset_axes=[
+            {
+                "plot_idx": 2,
+                "days": (12, 18),
+                "ylimit": (345, 355),
+                "inset_axis_specs": (0.37, 0.7, 0.3, 0.2),
+            },
+        ],
     )
 controller_plotting_1b()
