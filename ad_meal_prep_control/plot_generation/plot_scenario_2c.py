@@ -138,9 +138,9 @@ post_processing.plot(
     other_inset_axes=[
                 {
                     "plot_idx": 2,
-                    "days": (7.6, 9),
-                    "ylimit": (200, 225),
-                    "inset_axis_specs": (0.4, 0.2, 0.2, 0.2),
+                    "days": (6, 7.5),
+                    "ylimit": (210, 235),
+                    "inset_axis_specs": (0.21, 0.3, 0.1, 0.2),
                 },
             ],
 )
