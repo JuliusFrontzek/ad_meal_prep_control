@@ -97,8 +97,7 @@ class Simulation:
         else:
             self._ch4_outflow_rate = typical_ch4_vol_flow_rate(
                 max_power=self.scenario.P_el_chp,
-                n_steps=self._n_steps_mpc
-                + self.scenario.controller_params.mpc_n_horizon,
+                n_steps=self._n_steps_mpc + self.scenario.controller_params.mpc_n_horizon,
                 t_step=self.scenario.t_step,
             )
 

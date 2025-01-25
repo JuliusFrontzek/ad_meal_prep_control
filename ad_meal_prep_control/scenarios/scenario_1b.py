@@ -14,7 +14,10 @@ mterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_set
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
-n_days_mpc = 30
+# user input:
+n_days_mpc = 30         # prediction horizon
+n_std_dev = 2           # used for plant and controller
+t_stp_ahead_pred = 3    # for controller plotting
 setpoints = np.array([350.0, 550.0, 450.0, 350.0])
 
 ch4_set_point_function = SetpointFunction(
@@ -31,7 +34,7 @@ rterm = " + ".join(rterms)
 controller_params = ControllerParams(
     mpc_n_horizon=15,
     mpc_n_robust=0,
-    num_std_devs=2.0,
+    num_std_devs=n_std_dev,
     cost_func=cost_func,
     substrate_cost_formulation="quadratic",
     ch4_set_point_function=ch4_set_point_function,
@@ -40,7 +43,6 @@ controller_params = ControllerParams(
 
 
 kwargs = {
-    "name": "Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "disturbances": Disturbances(
@@ -54,10 +56,11 @@ kwargs = {
         max_feeding_error=0.05,
     ),
     "n_days_mpc": n_days_mpc,
-    "num_std_devs_sim": 2.0,
+    "num_std_devs_sim": n_std_dev,
     "feedback": True,
     "mismatch": True,
-    "t_stp_ahead_pred": 3
+    "t_stp_ahead_pred": t_stp_ahead_pred,
+    "name": f"Scenario_1b_quadratic_nominal_feedback_mismatch_{n_std_dev}std_{t_stp_ahead_pred}tsap",
 }
 
 scenario = ScenarioFactory().create_scenario(

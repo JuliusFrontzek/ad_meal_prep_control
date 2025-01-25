@@ -17,13 +17,15 @@ mterm = "model.tvp['dummy_tvp']"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
-n_days_mpc = 30
-
+# user input:
+n_days_mpc = 30         # prediction horizon
+n_std_dev = 0
+t_stp_ahead_pred = 8    # for controller plotting
 
 controller_params = ControllerParams(
     mpc_n_horizon=40,
     mpc_n_robust=0,
-    num_std_devs=0,
+    num_std_devs=n_std_dev,
     cost_func=cost_func,
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
@@ -31,7 +33,6 @@ controller_params = ControllerParams(
     )
 
 kwargs = {
-    "name": "Scenario_2a_dynamic_nominal_ideal_feedback_8tsap",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "P_el_chp": 50.0,
@@ -43,10 +44,11 @@ kwargs = {
     ],
     "t_step": 0.5 / 24.0,
     "n_days_mpc": n_days_mpc,
-    "num_std_devs_sim": 0,
+    "num_std_devs_sim": n_std_dev,
     "feedback": True,
     "mismatch": False,
-    "t_stp_ahead_pred": 8
+    "t_stp_ahead_pred": t_stp_ahead_pred,
+    "name": f"Scenario_2a_dynamic_nominal_ideal_feedback_{t_stp_ahead_pred}tsap",
 }
 
 scenario = ScenarioFactory().create_scenario(

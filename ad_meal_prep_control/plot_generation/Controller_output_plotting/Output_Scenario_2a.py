@@ -10,7 +10,7 @@ import matplotlib as mpl
 mpl.rcParams['figure.dpi'] = 1000
 
 
-def controller_plotting_2a (scenario_names=None):
+def controller_plotting_2a(scenario_names=None):
 
     if scenario_names is None:
         scenario_names = ["Scenario_2a_dynamic_nominal_feedback_mismatch_3std_8tsap",
