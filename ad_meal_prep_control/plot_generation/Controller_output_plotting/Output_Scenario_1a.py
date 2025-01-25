@@ -8,9 +8,9 @@ from ad_meal_prep_control.utils import remove_duplicate_labels, nRMSE
 
 def controller_plotting_1a(scenario_names=None):
     if scenario_names is None:
-        scenario_names = ['Scenario_1a_quadratic_nominal_feedback_mismatch_5std_3tsap',
+        scenario_names = ['Scenario_1a_quadratic_nominal_feedback_mismatch_3std_3tsap',
                           'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap',
-                          'Scenario_1a_quadratic_robust_feedback_mismatch_5std_3tsap'
+                          'Scenario_1a_quadratic_robust_feedback_mismatch_3std_3tsap'
                           ]
     elif scenario_names in 'Sensitivity':
         scenario_names = ['Scenario_1a_quadratic_no_feedback_mismatch_1std_ch',

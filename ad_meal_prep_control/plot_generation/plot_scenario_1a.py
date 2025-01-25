@@ -7,13 +7,13 @@ import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1a import controller_plotting_1a
 
 
-scenario_names = ["Scenario_1a_quadratic_nominal_feedback_mismatch_5std_3tsap",
-                 'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap',
-                 'Scenario_1a_quadratic_robust_feedback_mismatch_5std_3tsap'
+scenario_names = ["Scenario_1a_quadratic_nominal_feedback_mismatch_3std_3tsap",
+                  "Scenario_1a_quadratic_nominal_ideal_feedback_3tsap",
+                  "Scenario_1a_quadratic_robust_feedback_mismatch_3std_3tsap"
                   ]
-plot_save_names = ["Scenario_1a_quadratic_nominal_feedback_mismatch_5std_3tsap_substrate_costs",
-                   'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap_substrate_costs',
-                   'Scenario_1a_quadratic_robust_feedback_mismatch_5std_3tsap_substrate_costs'
+plot_save_names = ["Scenario_1a_quadratic_nominal_feedback_mismatch_3std_3tsap_substrate_costs",
+                   "Scenario_1a_quadratic_nominal_ideal_feedback_3tsap_substrate_costs",
+                   "Scenario_1a_quadratic_robust_feedback_mismatch_3std_3tsap_substrate_costs"
                    ]
 
 try:
