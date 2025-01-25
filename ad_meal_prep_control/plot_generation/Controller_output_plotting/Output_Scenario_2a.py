@@ -95,7 +95,7 @@ def controller_plotting_2a (scenario_names=None):
                 if 'nominal_feedback' in scenario:
                     #axins_1 = fig.axes[1].inset_axes([0.4, 0.6, 0.35, 0.35],
                     #                                 xlim=(18, 23), ylim=(-10, 120))
-                    axins_2 = fig.axes[1].inset_axes([0.4, 0.6, 0.35, 0.35],
+                    axins_2 = fig.axes[1].inset_axes([0.35, 0.25, 0.4, 0.4],
                                                      xlim=(18, 23), ylim=(20, 300))
 
                     #axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :]*100, 'black',
@@ -104,6 +104,8 @@ def controller_plotting_2a (scenario_names=None):
                     #                 linestyle = 'dotted', linewidth=1)
                     axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'black',
                                      linestyle = 'dotted', linewidth=1)
+                    axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), mpc['mpc']['_aux', "v_gas_storage"],
+                                    'black', linewidth=1)
                     #axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[3, :], 'rebeccapurple',
                     #                 linestyle = 'dotted', linewidth=1)
                     #axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[4, :], 'blue',

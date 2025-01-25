@@ -238,12 +238,12 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 #    "ylimit": (-10, 120),
                 #    "inset_axis_specs": (0.4, 0.2, 0.35, 0.35)
                 #},
-                {
-                    "plot_idx": 1,
-                    "days": (18, 23),
-                    "ylimit": (20, 300),
-                    "inset_axis_specs": (0.4, 0.2, 0.35, 0.35)
-                },
+                #{
+                #    "plot_idx": 1,
+                #    "days": (18, 23),
+                #    "ylimit": (20, 300),
+                #    "inset_axis_specs": (0.4, 0.2, 0.35, 0.35)
+                #},
                 #{
                 #    "plot_idx": 3,
                 #    "days": (3, 5),
