@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pickle as pkl
 from ad_meal_prep_control.utils import remove_duplicate_labels
 
-def controller_plotting_1b (scenario_names=None):
+def controller_plotting_1b(scenario_names=None):
     if scenario_names is None:
         scenario_names = ["Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap"]
 
