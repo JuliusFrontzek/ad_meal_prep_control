@@ -7,6 +7,7 @@ import numpy as np
 from pathlib import Path
 import math
 from ad_meal_prep_control import substrates
+from collections.abc import Iterable
 
 plt.rcParams["text.usetex"]
 
@@ -89,7 +90,7 @@ class PostProcessing:
         height_ratios: list[float] = None,
         input_inset_axis: dict[str, tuple] = None,
         other_inset_axes: list[dict[str, tuple]] = None,
-        color_background_idx: int = None,
+        color_background_indices: tuple[int] = None,
     ):
         if plot_inputs:
             subplot_labels_and_vars.insert(
@@ -478,7 +479,7 @@ class PostProcessing:
                 )
 
         # Gray coloring of plot background
-        if isinstance(color_background_idx, int):
+        if isinstance(color_background_indices, Iterable):
             x = self._data_simulator._time
             y = self._data_simulator["_tvp", "v_ch4_dot_tank_out"]
 
@@ -490,9 +491,9 @@ class PostProcessing:
                     start = x[i]
                 if not mask[i] and mask[i - 1]:  # End of a region
                     end = x[i]
-                    axes[color_background_idx].axvspan(
-                        start[0], end[0], color="gray", alpha=0.3
-                    )
+
+                    for ax_idx in color_background_indices:
+                        axes[ax_idx].axvspan(start[0], end[0], color="gray", alpha=0.3)
 
         if time_range is not None:
             plt.setp(axes, xlim=time_range)
