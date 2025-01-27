@@ -62,13 +62,13 @@ def controller_plotting_2a(scenario_names=None):
                     #                 linestyle = 'dotted', label=r"$V_{CH_4,tank, controller}$", linewidth=1)
                     #fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :]*100, 'blue',
                     #                 linestyle = 'dotted', label=r"$V_{CO_2,tank, controller}$", linewidth=1)
-                    fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'black',
-                                     linestyle = 'dotted', label=r"$V_{g, tank, controller}$", linewidth=1)
+                    fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :],
+                                     'black', linestyle = 'dotted', label=r"$V_{g, tank, controller}$", linewidth=1)  # controller predictions
                     #fig.axes[1].set_ylim(bottom=0, top=500)  # ylim of gas storage filling level
-                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[3, :], 'blue',
-                                     linestyle = 'dotted', label=r"$\dot V_{CH_4,AD, controller}$", linewidth=1)
-                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[4, :], 'black',
-                                     linestyle = 'dotted', label=r"$\dot V_{g, AD, controller}$", linewidth=1)
+                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[3, :],
+                                     'blue', linestyle = 'dotted', label=r"$\dot V_{CH_4,AD, controller}$", linewidth=1)
+                    fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[4, :],
+                                     'black', linestyle = 'dotted', label=r"$\dot V_{g, AD, controller}$", linewidth=1)
                     fig.axes[2].set_ylim(bottom=-50, top=1000)  # ylim of gas production
                     fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[5, :], 'black',
                                      linestyle = 'dotted', label=r'$pH_{controller}$', linewidth=1)
@@ -105,10 +105,15 @@ def controller_plotting_2a(scenario_names=None):
                     #axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :]*100, 'blue',
                     #                 linestyle = 'dotted', linewidth=1)
 
+                    # plot insets
                     axins_2 = fig.axes[1].inset_axes([0.55, 0.5, 0.24, 0.4], xlim=(21, 24), ylim=(50, 320))
                     axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :],
                                  'black', linestyle = 'dotted', linewidth=1)
-                    axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), mpc['mpc']['_aux', "v_gas_storage"],
+                    # SH: this is false, cause these are the mpc predictions (only without time step ahead predictions):
+                    #axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), mpc['mpc']['_aux', "v_gas_storage"],
+                    #             'black', linewidth=1)
+                    # SH: this is correct, cause this is the plant performance:
+                    axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), mpc['simulator']._aux[:, 25],
                                  'black', linewidth=1)
                     # hard and soft constraints:
                     axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]),

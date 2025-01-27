@@ -15,7 +15,7 @@ mterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_set
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 # user input:
-n_days_mpc = 30         # prediction horizon
+n_days_mpc = 30         # length of simulation [d]
 n_std_dev = 2           # used for plant and controller
 t_stp_ahead_pred = 3    # for controller plotting
 setpoints = np.array([350.0, 550.0, 450.0, 350.0])

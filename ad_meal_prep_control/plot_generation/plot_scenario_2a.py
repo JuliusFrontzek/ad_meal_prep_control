@@ -9,8 +9,8 @@ import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_2a import controller_plotting_2a
 
 scenario_names = ['Scenario_2a_dynamic_nominal_feedback_mismatch_3std_8tsap',
-                  #'Scenario_2a_dynamic_nominal_ideal_feedback_8tsap',
-                  #'Scenario_2a_dynamic_robust_feedback_mismatch_3std_8tsap',
+                  'Scenario_2a_dynamic_nominal_ideal_feedback_8tsap',
+                  'Scenario_2a_dynamic_robust_feedback_mismatch_3std_8tsap',
                  ]
 plot_save_names = scenario_names
 

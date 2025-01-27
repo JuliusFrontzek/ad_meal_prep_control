@@ -18,7 +18,7 @@ mterm = "model.tvp['dummy_tvp']"
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 # user input:
-n_days_mpc = 30         # prediction horizon
+n_days_mpc = 30         # length of simulation [d]
 n_std_dev = 0
 t_stp_ahead_pred = 8    # for controller plotting
 
