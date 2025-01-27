@@ -6,7 +6,6 @@ from ad_meal_prep_control.postprocessing import (
 )
 from ad_meal_prep_control import params_R3
 import sys
-from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_2c import controller_plotting_2c
 
 post_processing = PostProcessing(
     result_directory="../scenarios/results",
@@ -140,8 +139,7 @@ post_processing.plot(
                     "plot_idx": 2,
                     "days": (6, 7.5),
                     "ylimit": (210, 235),
-                    "inset_axis_specs": (0.21, 0.3, 0.1, 0.2),
+                    "inset_axis_specs": (0.12, 0.3, 0.1, 0.2),
                 },
             ],
 )
-controller_plotting_2c()

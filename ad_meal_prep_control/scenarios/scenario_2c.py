@@ -33,6 +33,7 @@ controller_params = ControllerParams(
 
 t_step = 0.5 / 24.0
 
+# add gas storage measurement noise ("state jumps"):
 rng = default_rng()
 mpc_t_steps = int(n_days_mpc / t_step)
 
