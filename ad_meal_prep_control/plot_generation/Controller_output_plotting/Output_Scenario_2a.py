@@ -64,12 +64,17 @@ def controller_plotting_2a(scenario_names=None):
                     #                 linestyle = 'dotted', label=r"$V_{CO_2,tank, controller}$", linewidth=1)
                     fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'black',
                                      linestyle = 'dotted', label=r"$V_{g, tank, controller}$", linewidth=1)
+                    #fig.axes[1].set_ylim(bottom=0, top=500)  # ylim of gas storage filling level
                     fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[3, :], 'blue',
                                      linestyle = 'dotted', label=r"$\dot V_{CH_4,AD, controller}$", linewidth=1)
                     fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[4, :], 'black',
                                      linestyle = 'dotted', label=r"$\dot V_{g, AD, controller}$", linewidth=1)
+                    fig.axes[2].set_ylim(bottom=-50, top=1000)  # ylim of gas production
                     fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[5, :], 'black',
                                      linestyle = 'dotted', label=r'$pH_{controller}$', linewidth=1)
+                    fig.axes[3].set_ylim(bottom=4, top=None)  # ylim of pH
+                    fig.axes[3].set_yticks(range(4, 15, 2))  # Set specific tick positions
+                    #fig.axes[3].set_yticklabels([19, 20, 21, 22, 23, 24])  # Set the labels for the ticks
 
                 if mpc['mpc'].meta_data['n_robust'] > 0:
                     #fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[0,1], :].transpose()*100, 'black',
@@ -95,17 +100,53 @@ def controller_plotting_2a(scenario_names=None):
                 if 'nominal_feedback' in scenario:
                     #axins_1 = fig.axes[1].inset_axes([0.4, 0.6, 0.35, 0.35],
                     #                                 xlim=(18, 23), ylim=(-10, 120))
-                    axins_2 = fig.axes[1].inset_axes([0.35, 0.25, 0.4, 0.4],
-                                                     xlim=(18, 23), ylim=(20, 300))
-
                     #axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :]*100, 'black',
                     #                 linestyle = 'dotted', linewidth=1)
                     #axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :]*100, 'blue',
                     #                 linestyle = 'dotted', linewidth=1)
-                    axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'black',
-                                     linestyle = 'dotted', linewidth=1)
+
+                    axins_2 = fig.axes[1].inset_axes([0.55, 0.5, 0.24, 0.4], xlim=(21, 24), ylim=(50, 320))
+                    axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :],
+                                 'black', linestyle = 'dotted', linewidth=1)
                     axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]), mpc['mpc']['_aux', "v_gas_storage"],
-                                    'black', linewidth=1)
+                                 'black', linewidth=1)
+                    # hard and soft constraints:
+                    axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
+                                 np.ones((predicted_data.shape[1], 1)) * V_GAS_STORAGE_MAX,
+                                 'black', linestyle='dashed')
+                    axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
+                                 np.ones((predicted_data.shape[1], 1)) * V_GAS_STORAGE_MAX * (
+                                             1 - metadata['controller_params']['gas_storage_bound_fraction']),
+                                 'grey', linestyle='dashed')
+                    axins_2.tick_params(axis='x', which='both', labelbottom=True)  # Ensure labels are shown
+                    axins_2.grid(True, linestyle='dashed')  # show grid
+                    fig.axes[1].indicate_inset_zoom(
+                        axins_2,
+                        edgecolor="black",
+                        linewidth=1.0,
+                    )
+
+                    axins_3 = fig.axes[1].inset_axes([0.1, 0.3, 0.3, 0.3], xlim=(0, 10), ylim=(0, 250))
+                    axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :],
+                                 'black', linestyle='dotted', linewidth=1)
+                    axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]), mpc['mpc']['_aux', "v_gas_storage"],
+                                 'black', linewidth=1)
+                    # hard and soft constraints:
+                    axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
+                                 np.ones((predicted_data.shape[1], 1)) * V_GAS_STORAGE_MAX,
+                                 'black', linestyle='dashed')
+                    axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
+                                 np.ones((predicted_data.shape[1], 1)) * V_GAS_STORAGE_MAX * (
+                                         1 - metadata['controller_params']['gas_storage_bound_fraction']),
+                                 'grey', linestyle='dashed')
+                    axins_3.tick_params(axis='x', which='both', labelbottom=True)  # Ensure labels are shown
+                    axins_3.grid(True, linestyle='dashed')  # show grid
+                    fig.axes[1].indicate_inset_zoom(
+                        axins_3,
+                        edgecolor="black",
+                        linewidth=1.0,
+                    )
+
                     #axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[3, :], 'rebeccapurple',
                     #                 linestyle = 'dotted', linewidth=1)
                     #axins_3.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[4, :], 'blue',
@@ -126,20 +167,12 @@ def controller_plotting_2a(scenario_names=None):
                 #axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
                 #             np.ones((predicted_data.shape[1],1))*0, 'black',
                 #             linestyle='dashed')
-                axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
-                             np.ones((predicted_data.shape[1],1))*V_GAS_STORAGE_MAX, 'black',
-                             linestyle='dashed')
-                axins_2.plot(np.linspace(0, 30, num=predicted_data.shape[1]),
-                             np.ones((predicted_data.shape[1],1))*V_GAS_STORAGE_MAX*(1-metadata['controller_params']['gas_storage_bound_fraction']), 'grey',
-                             linestyle='dashed')
-                #axins_1.grid(True, linestyle='dashed')
-                axins_2.grid(True, linestyle='dashed')
-                axins_2.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+                # axins_1.grid(True, linestyle='dashed')
                 #axins_1.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
                 #axins_3.grid(True, linestyle='dashed')
             except:
                 pass
-        remove_duplicate_labels(fig, 1, legend_location='center left', bbox_to_anchor=(0, 0.6))
+        remove_duplicate_labels(fig, 1, legend_location='upper left', bbox_to_anchor=(0, 1))
         remove_duplicate_labels(fig, 2, legend_location='center left', bbox_to_anchor=(0, 0.6))
         remove_duplicate_labels(fig, 3, legend_location='center left', bbox_to_anchor=(0, 0.6))
         remove_duplicate_labels(fig, 4, legend_location='center left', bbox_to_anchor=(0, 0.6))
