@@ -89,6 +89,7 @@ class PostProcessing:
         height_ratios: list[float] = None,
         input_inset_axis: dict[str, tuple] = None,
         other_inset_axes: list[dict[str, tuple]] = None,
+        color_background_idx: int = None,
     ):
         if plot_inputs:
             subplot_labels_and_vars.insert(
@@ -116,8 +117,8 @@ class PostProcessing:
                     input_inset_axis["inset_axis_specs"],
                     xlim=(x1, x2),
                     ylim=(y1, y2),
-                    #xticklabels=[],
-                    #yticklabels=[],
+                    # xticklabels=[],
+                    # yticklabels=[],
                 )
                 axins_input_feed_liquid = axins_input_feed.twinx()
 
@@ -231,7 +232,6 @@ class PostProcessing:
                             for sub_name in self._scenario_meta_data["sub_names"]
                         ]
 
-
                         for i in range(self._num_u):
                             plt_kwargs["color"] = colors[i]
 
@@ -282,7 +282,7 @@ class PostProcessing:
                                 )
 
                         # Add constraints to plot
-                        #ax.hlines(
+                        # ax.hlines(
                         #    self._scenario_meta_data["u_max"]["solid"],
                         #    xmin=0,
                         #    xmax=self._scenario_meta_data["n_days_mpc"],
@@ -290,7 +290,7 @@ class PostProcessing:
                         #    linestyle="--",
                         #    linewidth= 1
                         #    # label=r"$u_{max}$",
-                        #)
+                        # )
 
                         ax_inputs_liquid.hlines(
                             self._scenario_meta_data["u_max"]["liquid"],
@@ -298,18 +298,18 @@ class PostProcessing:
                             xmax=self._scenario_meta_data["n_days_mpc"],
                             color="black",
                             linestyle=(0, (5, 5)),
-                            linewidth = 1
+                            linewidth=1,
                             # label=r"$u_{max}$",
                         )
 
-                        if 'Scenario_1' in plot_save_name:
+                        if "Scenario_1" in plot_save_name:
                             ax.set_ylim(
                                 0.0, self._scenario_meta_data["u_max"]["solid"] * 0.1
                             )
                             ax_inputs_liquid.set_ylim(
                                 0.0, self._scenario_meta_data["u_max"]["liquid"] * 0.05
                             )
-                        elif 'Scenario_2a' or 'Scenario_2c' in plot_save_name:
+                        elif "Scenario_2a" or "Scenario_2c" in plot_save_name:
                             ax.set_ylim(
                                 0.0, self._scenario_meta_data["u_max"]["solid"] * 1.1
                             )
@@ -412,7 +412,7 @@ class PostProcessing:
 
                         if constraint.ax_idx == ax_idx:
                             # make white line practically invisible:
-                            if constraint.color == 'white':
+                            if constraint.color == "white":
                                 ax.hlines(
                                     constraint.value,
                                     0.0,
@@ -451,10 +451,14 @@ class PostProcessing:
                     loc = 0
                 labels = [line.get_label() for line in ax.get_lines()]
                 if not labels[0].startswith("_"):
-                    temp_legend = ax.legend(ncol=max(1, len(labels) // 3), loc='upper left')
+                    temp_legend = ax.legend(
+                        ncol=max(1, len(labels) // 3), loc="upper left"
+                    )
                     temp_legend.remove()
-                    ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3), loc='upper right')
-                    if 'silage' in labels[0] and 'Scenario_2' in plot_save_name:
+                    ax_inputs_liquid.legend(
+                        ncol=max(1, len(labels) // 3), loc="upper right"
+                    )
+                    if "silage" in labels[0] and "Scenario_2" in plot_save_name:
                         ax_inputs_liquid.add_artist(temp_legend)
                 ax.grid(True, linestyle="--")
 
@@ -473,6 +477,23 @@ class PostProcessing:
                     labelpad=30.0,
                 )
 
+        # Gray coloring of plot background
+        if isinstance(color_background_idx, int):
+            x = self._data_simulator._time
+            y = self._data_simulator["_tvp", "v_ch4_dot_tank_out"]
+
+            mask = y > 0
+            if mask[0]:
+                start = x[0]
+            for i in range(1, len(x)):
+                if mask[i] and not mask[i - 1]:  # Start of a region
+                    start = x[i]
+                if not mask[i] and mask[i - 1]:  # End of a region
+                    end = x[i]
+                    axes[color_background_idx].axvspan(
+                        start[0], end[0], color="gray", alpha=0.3
+                    )
+
         if time_range is not None:
             plt.setp(axes, xlim=time_range)
 
@@ -487,8 +508,10 @@ class PostProcessing:
                 dpi=dpi,
                 format="png",
             )
-            #Save plot to a pickle so we can add the plant output later
-            with open(Path(self.result_directory, "plots", f"{plot_save_name}.pkl"), 'wb') as file:
+            # Save plot to a pickle so we can add the plant output later
+            with open(
+                Path(self.result_directory, "plots", f"{plot_save_name}.pkl"), "wb"
+            ) as file:
                 pickle.dump(fig, file)
         if show_plot:
             plt.show()
