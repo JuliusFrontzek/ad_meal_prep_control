@@ -493,7 +493,7 @@ class PostProcessing:
                     end = x[i]
 
                     for ax_idx in color_background_indices:
-                        axes[ax_idx].axvspan(start[0], end[0], color="gray", alpha=0.3)
+                        axes[ax_idx].axvspan(start[0], end[0], color="gray", alpha=0.3, lw=0)
 
         if time_range is not None:
             plt.setp(axes, xlim=time_range)
