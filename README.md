@@ -17,7 +17,6 @@ $ pip install -e .
 ```
 
 ## Usage instructions
-
 - Open the directory 'ad_meal_prep_control'
 - Open the directory 'scenarios'
 - Choose the case scenario of your preference, in the directory 'No feedback' you will find the sensitivity analysis script. The other ones include feedback as the default option
@@ -37,6 +36,11 @@ $ pip install -e .
 - Executed using IPopt 3.14.16 with solver MA27 of the Harwell Subroutine Library 
 
 ## Troubleshooting
+### run code with HSL solvers
+- David specified the exact location of the HSL solver in mpc.py, see 'nlpsol_opts', and then path under 'ipopt.hsllib'
+- this might produce errors, then try leaving out the 'ipopt.hsllib' statement
+- the solver is then searched in the default directory.  
+
 ### Plotting
 If the Matplotlib based plot does not show up, try installing the GUI backend tk, e.g.
 ```

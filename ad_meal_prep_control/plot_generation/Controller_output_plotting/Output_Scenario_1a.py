@@ -35,7 +35,7 @@ def controller_plotting_1a(scenario_names=None):
 
             error_ph = (f'{scenario}_NRMSE_pH = ', nRMSE(x_est=mpc['mpc']['_aux', 'y_4'], x_true=plant_output[:, [1]]))
             error_gas = (
-            f'{scenario}_NRMSE_gas = ', nRMSE(x_est=mpc['mpc']['_aux', 'y_1'], x_true=plant_output[:, [0]]))
+                f'{scenario}_NRMSE_gas = ', nRMSE(x_est=mpc['mpc']['_aux', 'y_1'], x_true=plant_output[:, [0]]))
             error_ch4 = (f'{scenario}_NRMSE_ch4 = ',
                          nRMSE(x_est=mpc['mpc']['_aux', 'v_ch4_dot_tank_in'], x_true=plant_output[:, [2]]))
 
@@ -54,7 +54,7 @@ def controller_plotting_1a(scenario_names=None):
             remove_duplicate_labels(fig, 0, legend_location='center right', bbox_to_anchor=(1, 1))
             remove_duplicate_labels(fig, 1, legend_location='center right', bbox_to_anchor=(1, 0.45))
             remove_duplicate_labels(fig, 2, legend_location='center right', bbox_to_anchor=(1, 0.7))
-            #remove_duplicate_labels(fig, 3, legend_location='center right', bbox_to_anchor=(1,0.55))
+            # remove_duplicate_labels(fig, 3, legend_location='center right', bbox_to_anchor=(1,0.55))
             fig.axes[0].legend(loc='lower right', bbox_to_anchor=(0.67, 0.6))
             plt.savefig(f'../scenarios/results/plots/Sensitivity/{scenario}_substrate_costs.png')
 
@@ -104,7 +104,7 @@ def controller_plotting_1a(scenario_names=None):
                                          'blue',
                                          linestyle='dotted', linewidth=1)
             '''
-            #axins_1.grid(True, linestyle='dashed')
+            # axins_1.grid(True, linestyle='dashed')
             fig.axes[0].legend(loc='lower right', bbox_to_anchor=(0.67, 0.45))
             remove_duplicate_labels(fig, 1, legend_location='center right')
             plt.savefig(f'../scenarios/results/plots/Scenario 1/{scenario}_substrate_costs.png')

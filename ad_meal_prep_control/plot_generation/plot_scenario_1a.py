@@ -6,7 +6,6 @@ from ad_meal_prep_control.postprocessing import (
 import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1a import controller_plotting_1a
 
-
 scenario_names = ["Scenario_1a_quadratic_nominal_feedback_mismatch_3std_3tsap",
                   "Scenario_1a_quadratic_nominal_ideal_feedback_3tsap",
                   "Scenario_1a_quadratic_robust_feedback_mismatch_3std_3tsap"
@@ -22,7 +21,6 @@ try:
 except IndexError:
     dpi = 600
     show_plot = False
-
 
 for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     post_processing = PostProcessing(
@@ -93,19 +91,19 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ),
         ],
         plot_save_name=plot_save_name,
-        #input_inset_axis={
+        # input_inset_axis={
         #    "days": (0, 10),
         #    "ylimit": (-1.0, 30.0),
         #    "inset_axis_specs": (0.4, 0.4, 0.27, 0.3),
-        #},
-        #other_inset_axes=[
+        # },
+        # other_inset_axes=[
         #    {
         #        "plot_idx": 1,
         #        "days": (15, 25),
         #        "ylimit": (340, 360),
         #        "inset_axis_specs": (0.4, 0.7, 0.27, 0.2),
         #    },
-        #],
+        # ],
         dpi=dpi,
         show_plot=show_plot,
         height_ratios=[1, 2, 1, 1],

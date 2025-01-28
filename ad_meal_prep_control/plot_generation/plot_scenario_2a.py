@@ -28,7 +28,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         show_plot = int(sys.argv[2])
     except IndexError:
         dpi = 100
-        show_plot = True
+        show_plot = False
 
     if not "nominal_feedback" in scenario_name:
         post_processing.plot(
@@ -137,7 +137,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                     value=0, ax_idx=2, color="white"
                 ),  # gas production lower bound
                 Constraint(value=7.6, ax_idx=3, color="white"),  # pH upper bound
-                Constraint(value=0, ax_idx=4, color="white"),  # inhibtion lower bound
+                Constraint(value=0, ax_idx=4, color="white"),  # inhibition lower bound
             ],
             dpi=dpi,
             show_plot=show_plot,

@@ -7,11 +7,11 @@ from ad_meal_prep_control.params_R3 import *
 from ad_meal_prep_control.utils import remove_duplicate_labels
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import matplotlib as mpl
+
 mpl.rcParams['figure.dpi'] = 1000
 
 
 def controller_plotting_2c(scenario_names=None):
-
     if scenario_names is None:
         scenario_names = ["Scenario_2c_dynamic"]
     for scenario in scenario_names:
@@ -24,21 +24,21 @@ def controller_plotting_2c(scenario_names=None):
 
         if not metadata['feedback']:
             plant_output = np.genfromtxt(f'../scenarios/results/Plant Output {scenario}.csv', delimiter=' ')
-            plant_output = plant_output[:-1,:]
+            plant_output = plant_output[:-1, :]
             plant_output[0, :] = np.NaN
 
-            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 0]*100, 'limegreen',
-                             linestyle = 'dotted', label=r"$V_{CH_4,tank, controller}$", linewidth=1)
-            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 1]*100, 'darkgreen',
-                             linestyle = 'dotted', label=r"$V_{CO_2,tank, controller}$", linewidth=1)
+            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 0] * 100, 'limegreen',
+                             linestyle='dotted', label=r"$V_{CH_4,tank, controller}$", linewidth=1)
+            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 1] * 100, 'darkgreen',
+                             linestyle='dotted', label=r"$V_{CO_2,tank, controller}$", linewidth=1)
             fig.axes[2].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 2], 'rebeccapurple',
-                             linestyle = 'dotted', label=r"$V_{g, tank, controller}$", linewidth=1)
+                             linestyle='dotted', label=r"$V_{g, tank, controller}$", linewidth=1)
             fig.axes[3].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 3], 'rebeccapurple',
-                             linestyle = 'dotted', label=r"$\dot V_{CH_4,AD, controller}$", linewidth=1)
+                             linestyle='dotted', label=r"$\dot V_{CH_4,AD, controller}$", linewidth=1)
             fig.axes[3].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 4], 'blue',
-                             linestyle = 'dotted', label=r"$\dot V_{g, AD, controller}$", linewidth=1)
+                             linestyle='dotted', label=r"$\dot V_{g, AD, controller}$", linewidth=1)
             fig.axes[4].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 5], 'rebeccapurple',
-                             linestyle = 'dotted', label=r'$pH_{model}$', linewidth=1)
+                             linestyle='dotted', label=r'$pH_{model}$', linewidth=1)
             fig.axes[0].legend()
             fig.axes[1].legend()
             fig.axes[2].legend()
@@ -139,13 +139,13 @@ def controller_plotting_2c(scenario_names=None):
             except:
                 pass
         '''
-        #remove_duplicate_labels(fig, 0, legend_location='center', bbox_to_anchor=(0.5, 0.5))
-        remove_duplicate_labels(fig, 1, legend_location='center right')#, bbox_to_anchor=(1, 1))
-        remove_duplicate_labels(fig, 2, legend_location='center right')#, bbox_to_anchor=(0, 0.6))
-        remove_duplicate_labels(fig, 3, legend_location='center right')#, bbox_to_anchor=(0, 0.6))
-        remove_duplicate_labels(fig, 4, legend_location='center right')#, bbox_to_anchor=(0, 0.6))
+        # remove_duplicate_labels(fig, 0, legend_location='center', bbox_to_anchor=(0.5, 0.5))
+        remove_duplicate_labels(fig, 1, legend_location='center right')  # , bbox_to_anchor=(1, 1))
+        remove_duplicate_labels(fig, 2, legend_location='center right')  # , bbox_to_anchor=(0, 0.6))
+        remove_duplicate_labels(fig, 3, legend_location='center right')  # , bbox_to_anchor=(0, 0.6))
+        remove_duplicate_labels(fig, 4, legend_location='center right')  # , bbox_to_anchor=(0, 0.6))
         remove_duplicate_labels(fig, 5, legend_location='center right', bbox_to_anchor=(1, 0.6))
-        #fig.axes[0].legend(loc='lower right', bbox_to_anchor=(0.62, 0.45))
-        #remove_duplicate_labels(fig, 6, legend_location='center left', bbox_to_anchor=(0, 0.6))
+        # fig.axes[0].legend(loc='lower right', bbox_to_anchor=(0.62, 0.45))
+        # remove_duplicate_labels(fig, 6, legend_location='center left', bbox_to_anchor=(0, 0.6))
         plt.savefig(f'../scenarios/results/plots/Scenario 2/{scenario}.png')
     return

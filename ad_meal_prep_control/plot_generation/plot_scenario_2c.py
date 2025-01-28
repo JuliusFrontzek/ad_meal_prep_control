@@ -6,6 +6,7 @@ from ad_meal_prep_control.postprocessing import (
 )
 from ad_meal_prep_control import params_R3
 import sys
+from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_2c import controller_plotting_2c
 
 post_processing = PostProcessing(
     result_directory="../scenarios/results",
@@ -34,7 +35,7 @@ post_processing.plot(
                 ),
             },
         ),
-        #(
+        # (
         #    "Gas storage  \nlevel" + r" $[\%]$",
         #    {
         #        "x_19": PlotVarProperty(
@@ -52,7 +53,7 @@ post_processing.plot(
         #            scaling=100.0,
         #        ),
         #    },
-        #),
+        # ),
         (
             r"$V_{g, tank}$" + "\n" + r"$[m^3]$",
             {
@@ -135,11 +136,13 @@ post_processing.plot(
     show_plot=show_plot,
     height_ratios=[2, 1, 2, 2, 1, 1],
     other_inset_axes=[
-                {
-                    "plot_idx": 2,
-                    "days": (6, 7.5),
-                    "ylimit": (210, 235),
-                    "inset_axis_specs": (0.12, 0.3, 0.1, 0.2),
-                },
-            ],
+        {
+            "plot_idx": 2,
+            "days": (6, 7.5),
+            "ylimit": (210, 235),
+            "inset_axis_specs": (0.12, 0.3, 0.1, 0.2),
+        },
+    ],
+    #color_background_indices=(2,),
 )
+controller_plotting_2c()
