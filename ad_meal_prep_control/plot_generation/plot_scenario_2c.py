@@ -143,6 +143,6 @@ post_processing.plot(
             "inset_axis_specs": (0.12, 0.3, 0.1, 0.2),
         },
     ],
-    #color_background_indices=(2,),
+    color_background_indices=(2,),
 )
 controller_plotting_2c()

@@ -61,8 +61,8 @@ class PostProcessing:
         self._data_simulator = self._data_simulation["simulator"]
         self._data_mpc = self._data_simulation["mpc"]
         with open(
-            Path(self.result_directory, f"{self.scenario_name}_scenario_meta_data.pkl"),
-            "rb",
+                Path(self.result_directory, f"{self.scenario_name}_scenario_meta_data.pkl"),
+                "rb",
         ) as fp:
             self._scenario_meta_data = pickle.load(fp)
 
@@ -79,18 +79,18 @@ class PostProcessing:
         self.MEASUREMENT_COLOR = self._cmap.resampled(1).colors[0]
 
     def plot(
-        self,
-        subplot_labels_and_vars: list[tuple[str, dict[str, PlotVarProperty]]],
-        plot_inputs: bool = True,
-        time_range: tuple[float] = None,
-        plot_save_name: str = None,
-        constraints: list[Constraint] = None,
-        dpi: int = 600,
-        show_plot: bool = True,
-        height_ratios: list[float] = None,
-        input_inset_axis: dict[str, tuple] = None,
-        other_inset_axes: list[dict[str, tuple]] = None,
-        color_background_indices: tuple[int] = None,
+            self,
+            subplot_labels_and_vars: list[tuple[str, dict[str, PlotVarProperty]]],
+            plot_inputs: bool = True,
+            time_range: tuple[float] = None,
+            plot_save_name: str = None,
+            constraints: list[Constraint] = None,
+            dpi: int = 600,
+            show_plot: bool = True,
+            height_ratios: list[float] = None,
+            input_inset_axis: dict[str, tuple] = None,
+            other_inset_axes: list[dict[str, tuple]] = None,
+            color_background_indices: tuple[int] = None,
     ):
         if plot_inputs:
             subplot_labels_and_vars.insert(
@@ -149,7 +149,7 @@ class PostProcessing:
         axes[-1].set_xlabel("Time [d]")
 
         for ax_idx, (axis, subplot_label_and_vars) in enumerate(
-            zip(axes, subplot_labels_and_vars)
+                zip(axes, subplot_labels_and_vars)
         ):
             axes_stacked = [axis]
 
@@ -200,7 +200,7 @@ class PostProcessing:
                         ax.plot(
                             self._data_simulator._time,
                             self._data_simulator._y[
-                                :, self._num_u + y_num + self._num_dictated_subs - 1
+                            :, self._num_u + y_num + self._num_dictated_subs - 1
                             ],
                             label=plot_var_property.label,
                             **plt_kwargs,
@@ -211,11 +211,11 @@ class PostProcessing:
                                 inset_ax.plot(
                                     self._data_simulator._time,
                                     self._data_simulator._y[
-                                        :,
-                                        self._num_u
-                                        + y_num
-                                        + self._num_dictated_subs
-                                        - 1,
+                                    :,
+                                    self._num_u
+                                    + y_num
+                                    + self._num_dictated_subs
+                                    - 1,
                                     ],
                                     label=plot_var_property.label,
                                     **plt_kwargs,
@@ -328,7 +328,7 @@ class PostProcessing:
                             self._data_simulator._tvp[:, feed_num - 1]
                             * self._scenario_meta_data["Tu"][
                                 self._num_u + feed_num - 1
-                            ],
+                                ],
                             label=plot_var_property.label,
                             **plt_kwargs,
                         )
@@ -340,7 +340,7 @@ class PostProcessing:
                                     self._data_simulator._tvp[:, feed_num - 1]
                                     * self._scenario_meta_data["Tu"][
                                         self._num_u + feed_num - 1
-                                    ],
+                                        ],
                                     label=plot_var_property.label,
                                     **plt_kwargs,
                                 )
@@ -369,7 +369,7 @@ class PostProcessing:
                                     inset_ax.plot(
                                         self._data_simulator._time,
                                         self._data_simulator._aux[
-                                            :, aux_expression_idx
+                                        :, aux_expression_idx
                                         ],
                                         label=plot_var_property.label,
                                         **plt_kwargs,
@@ -511,7 +511,7 @@ class PostProcessing:
             )
             # Save plot to a pickle so we can add the plant output later
             with open(
-                Path(self.result_directory, "plots", f"{plot_save_name}.pkl"), "wb"
+                    Path(self.result_directory, "plots", f"{plot_save_name}.pkl"), "wb"
             ) as file:
                 pickle.dump(fig, file)
         if show_plot:
