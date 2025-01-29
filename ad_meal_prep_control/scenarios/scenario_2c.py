@@ -21,11 +21,12 @@ mterm = "model.tvp['dummy_tvp']"
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 n_days_mpc = 30
+n_std_dev = 1  # number std deviations
 
 controller_params = ControllerParams(
     mpc_n_horizon=40,
     mpc_n_robust=1,
-    num_std_devs=1,
+    num_std_devs=n_std_dev,
     cost_func=cost_func,
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
@@ -71,7 +72,7 @@ kwargs = {
         #max_feeding_error=0.05,
     ),
     "n_days_mpc": n_days_mpc,
-    "num_std_devs_sim": 1,
+    "num_std_devs_sim": n_std_dev,
 }
 
 scenario = ScenarioFactory().create_scenario(

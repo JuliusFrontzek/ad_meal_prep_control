@@ -73,9 +73,9 @@ def controller_plotting_2a(scenario_names=None):
                     fig.axes[2].set_ylim(bottom=-50, top=1000)  # ylim of gas production
                     fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[5, :], 'black',
                                      linestyle='dotted', label=r'$pH_{controller}$', linewidth=1)
-                    fig.axes[3].set_ylim(bottom=4, top=None)  # ylim of pH
-                    fig.axes[3].set_yticks(range(4, 15, 2))  # Set specific tick positions
-                    # fig.axes[3].set_yticklabels([19, 20, 21, 22, 23, 24])  # Set the labels for the ticks
+                    if 'nominal_feedback' in scenario_names:
+                        fig.axes[3].set_ylim(bottom=4, top=None)  # ylim of pH
+                        fig.axes[3].set_yticks(range(4, 15, 2))  # Set specific tick positions for pH
 
                 if mpc['mpc'].meta_data['n_robust'] > 0:
                     # fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[0,1], :].transpose()*100, 'black',

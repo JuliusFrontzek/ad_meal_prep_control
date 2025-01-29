@@ -18,9 +18,9 @@ mterm = "model.tvp['dummy_tvp']"
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 # user input:
-n_days_mpc = 30         # length of simulation [d]
-n_std_dev = 0
-t_stp_ahead_pred = 8    # for controller plotting
+n_days_mpc = 30  # length of simulation [d]
+n_std_dev = 0  # number std deviations
+t_stp_ahead_pred = 8  # for controller plotting
 
 controller_params = ControllerParams(
     mpc_n_horizon=40,
@@ -29,8 +29,8 @@ controller_params = ControllerParams(
     cost_func=cost_func,
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
-    #nl_cons=[NlConstraint(expression='6.5-model.aux["y_4"]', ub=0, soft_constraint=True, penalty_term_cons=10e-1)]
-    )
+    # nl_cons=[NlConstraint(expression='6.5-model.aux["y_4"]', ub=0, soft_constraint=True, penalty_term_cons=10e-1)]
+)
 
 kwargs = {
     "pygame_vis": False,
