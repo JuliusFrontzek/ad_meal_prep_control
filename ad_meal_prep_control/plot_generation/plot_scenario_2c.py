@@ -139,7 +139,7 @@ post_processing.plot(
         {
             "plot_idx": 2,
             "days": (6, 7.5),
-            "ylimit": (210, 235),
+            "ylimit": (200, 225),
             "inset_axis_specs": (0.12, 0.3, 0.1, 0.2),
         },
     ],
