@@ -15,6 +15,7 @@ mterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_set
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 n_days_mpc = 30
+n_std_dev = 5           # used for plant and controller
 setpoints = np.array([350.0, 550.0, 450.0, 350.0])
 
 ch4_set_point_function = SetpointFunction(
@@ -31,7 +32,7 @@ rterm = " + ".join(rterms)
 controller_params = ControllerParams(
     mpc_n_horizon=15,
     mpc_n_robust=0,
-    num_std_devs=1,
+    num_std_devs=n_std_dev,
     cost_func=cost_func,
     substrate_cost_formulation="quadratic",
     ch4_set_point_function=ch4_set_point_function,
@@ -39,11 +40,11 @@ controller_params = ControllerParams(
 )
 
 kwargs = {
-    "name": "Scenario_1a_quadratic_no_feedback_mismatch_1std_li",
+    "name": f"Scenario_1a_quadratic_no_feedback_mismatch_{n_std_dev}std_li",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "n_days_mpc": n_days_mpc,
-    "num_std_devs_sim": 1,
+    "num_std_devs_sim": n_std_dev,
     "feedback": False,
     "mismatch": True,
     "t_stp_ahead_pred": 3

@@ -157,14 +157,14 @@ for k = 1:nSubstrates
 end
 
 %% compute descriptive statistics of all substrates 
-% (# samples, min, max, mean, median, q25, q75)
+% (# samples, min, max, mean, median, q25, q75, IQR)
 % create a struct that has a field for each substrate; each field contains
 % a table with the statistical values (columns) for ch/pr/li (rows); then
 % saved as excel file with different tabs
 macroNutrients_descr_stats = struct(); % allocate memory
 
 for kk = 1:nSubstrates
-    macros_descr_stats_kk = nan(7,3); % allocate memory (7 measures, 3 macro nutrients)
+    macros_descr_stats_kk = nan(8,3); % allocate memory (8 measures, 3 macro nutrients)
     
     % get data: 
     substrateNumber = kk;    % 1...7 for respective substrate
@@ -179,14 +179,15 @@ for kk = 1:nSubstrates
     medianVals = median(macroNutrientsValues); 
     q25 = quantile(macroNutrientsValues,0.25); % 25 percent quantile
     q75 = quantile(macroNutrientsValues,0.75); % 75 percent quantile
+    iqr = q75 - q25; % inter quartile range
 
     % put statistical measures into array: 
     macros_descr_stats_kk(1,:) = repmat(nSamples,[1,3]); 
-    macros_descr_stats_kk(2:end,:) = [minVals;maxVals;meanVals;medianVals;q25;q75];  
+    macros_descr_stats_kk(2:end,:) = [minVals;maxVals;meanVals;medianVals;q25;q75;iqr];  
 
     % turn into table and save in struct: 
     macro_col_names = {'X_ch','X_pr','X_li'}; 
-    macro_row_names = {'n_samples','min','max','mean','median','q25','q75'}; 
+    macro_row_names = {'n_samples','min','max','mean','median','q25','q75','iqr'}; 
     macros_descr_stats_tab_kk = array2table(macros_descr_stats_kk, ...
         'VariableNames',macro_col_names, 'RowNames',macro_row_names);
     macroNutrients_descr_stats.(substrate) = macros_descr_stats_tab_kk; 
