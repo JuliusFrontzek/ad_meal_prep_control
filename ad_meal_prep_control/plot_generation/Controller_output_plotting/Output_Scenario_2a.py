@@ -73,7 +73,7 @@ def controller_plotting_2a(scenario_names=None):
                     fig.axes[2].set_ylim(bottom=-50, top=1000)  # ylim of gas production
                     fig.axes[3].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[5, :], 'black',
                                      linestyle='dotted', label=r'$pH_{controller}$', linewidth=1)
-                    if 'nominal_feedback' in scenario_names:
+                    if 'nominal_feedback' in scenario:
                         fig.axes[3].set_ylim(bottom=4, top=None)  # ylim of pH
                         fig.axes[3].set_yticks(range(4, 15, 2))  # Set specific tick positions for pH
 
