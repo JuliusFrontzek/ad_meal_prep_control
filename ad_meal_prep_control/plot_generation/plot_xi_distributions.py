@@ -24,8 +24,6 @@ means_all = {
     "li": np.append(lipids, lipids[2]),
 }
 
-# todo: update standard deviation values:
-
 std_devs_all = {
     "ch": [40.085336, 36.613181, 5.378375, 49.423171],
     "pr": [1.540789, 2.473993, 0.778969, 0.560114],

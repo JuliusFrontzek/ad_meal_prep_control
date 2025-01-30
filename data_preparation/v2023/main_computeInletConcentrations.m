@@ -199,7 +199,7 @@ end
 
 %% draw boxplots of macro nutrients
 close all
-dompc_substrates = agriculturalSubstrates([1,2,4,5]); 
+do_mpc_substrates = agriculturalSubstrates([1,2,4,5]); 
 
 figure
 tiledlayout(3,1)
@@ -208,7 +208,7 @@ tiledlayout(3,1)
 nexttile
 hold on
 for k = 1:4
-    macro_table = S_macroNutrients_tables.(dompc_substrates{k}); 
+    macro_table = S_macroNutrients_tables.(do_mpc_substrates{k}); 
     carbs = table2array(macro_table(:,1)); 
     boxplot(carbs, 'orientation','horizontal','Positions',k)
 end
@@ -221,7 +221,7 @@ yticklabels({'maize','grass','sugar beet','manure'}); % Custom y-tick labels
 nexttile
 hold on
 for k = 1:4
-    macro_table = S_macroNutrients_tables.(dompc_substrates{k}); 
+    macro_table = S_macroNutrients_tables.(do_mpc_substrates{k}); 
     proteins = table2array(macro_table(:,2)); 
     boxplot(proteins, 'orientation','horizontal','Positions',k)
 end
@@ -234,7 +234,7 @@ yticklabels({'maize','grass','sugar beet','manure'}); % Custom y-tick labels
 nexttile
 hold on
 for k = 1:4
-    macro_table = S_macroNutrients_tables.(dompc_substrates{k}); 
+    macro_table = S_macroNutrients_tables.(do_mpc_substrates{k}); 
     lipids = table2array(macro_table(:,3)); 
     boxplot(lipids, 'orientation','horizontal','Positions',k)
 end
