@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 from webencodings import labels
 
-##### get the fuckin data from excel, motherfucker!
+##### get the fuckin data from excel:
 # draw a single boxplot only for carbs of corn silage
 # Read all sheets into a dictionary of DataFrames
 excel_file = '../../data/data_out/v2023/macro_nutrients_concentrations.xlsx'
