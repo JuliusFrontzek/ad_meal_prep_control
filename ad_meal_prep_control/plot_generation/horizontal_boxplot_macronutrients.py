@@ -39,16 +39,17 @@ right_axes = []  # Store the right y-axes for later iteration
 for k, ax in enumerate(axes):
     axR = ax.twinx()  # instantiate a second Axes that shares the same x-axis
     # iterate over substrates:
-    for subk in range(len(dfs_substrates)):
-        axR.boxplot(dfs_substrates[subk].iloc[:, k],
+    for sub_k in range(len(dfs_substrates)):
+        axR.boxplot(dfs_substrates[sub_k].iloc[:, k],
                     vert=False,  # horizontal boxplots
                     patch_artist=True,
-                    boxprops=dict(facecolor=sub_colors[subk], color=sub_colors_dark[subk], alpha=0.4),
-                    # Box fill color with transparency
-                    whiskerprops=dict(color=sub_colors_dark[subk]),  # Whisker color
-                    capprops=dict(color=sub_colors[subk]),  # Cap color
-                    medianprops=dict(color=sub_colors_dark[subk]),  # Median line color
-                    positions=[subk],
+                    # Box fill color with transparency:
+                    boxprops=dict(facecolor=sub_colors[sub_k], color=sub_colors_dark[sub_k], alpha=0.4),
+                    widths=0.7,
+                    whiskerprops=dict(color=sub_colors_dark[sub_k]),  # Whisker color
+                    capprops=dict(color=sub_colors[sub_k]),  # Cap color
+                    medianprops=dict(color=sub_colors_dark[sub_k]),  # Median line color
+                    positions=[sub_k],
                     showfliers=False,  # ignore outliers
                     # flierprops=dict(marker='o', color='pink', alpha=0.5)  # outlier color
                     )
