@@ -262,6 +262,7 @@ class Simulation:
         xi_pr_std_dev = np.array([un_xi[1].std_dev for un_xi in uncertain_xis])
         xi_li_std_dev = np.array([un_xi[2].std_dev for un_xi in uncertain_xis])
 
+        # set controller values (for scenario tree):
         if (
                 self.scenario.controller_params.num_std_devs == 0.0
                 or self.scenario.controller_params.mpc_n_robust == 0
@@ -279,6 +280,7 @@ class Simulation:
                     + self.scenario.controller_params.num_std_devs * xi_ch_std_dev,
                 ]
             )
+            # ignore uncertainties in proteins and lipids (acc. to sensitivity analysis):
             self._xi_pr_mpc_mhe = np.array(
                 [
                     xi_pr_nom
@@ -296,6 +298,7 @@ class Simulation:
                 ]
             )
 
+        # set plant values:
         if (
                 self.scenario.num_std_devs_sim == 0.0
                 or not self.scenario.mismatch

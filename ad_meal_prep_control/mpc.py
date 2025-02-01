@@ -59,7 +59,7 @@ def mpc_setup(
         "collocation_ni": 1,
         "store_full_solution": store_full_solution,
         # "nl_cons_check_colloc_points": True,
-        'nlpsol_opts': {"ipopt.linear_solver": "ma27", "ipopt.hsllib": "/usr/local/lib/libcoinhsl.so.2.2.5"}
+        'nlpsol_opts': {"ipopt.linear_solver": "ma27"},# "ipopt.hsllib": "/usr/local/lib/libcoinhsl.so.2.2.5"}
     }
 
     # setup_mpc["nlpsol_opts"] = {
@@ -100,7 +100,7 @@ def mpc_setup(
             model.x["x_19"] + model.x["x_20"] + model.aux["V_H2O"] / V_GAS_STORAGE_MAX,
             ub=1.0 - gas_storage_bound_fraction,
             soft_constraint=True,
-            penalty_term_cons=1e1,
+            penalty_term_cons=1e3,  # c_3
             maximum_violation=gas_storage_bound_fraction,
         )
 
@@ -181,7 +181,7 @@ def mpc_setup(
 
     if substrate_cost_formulation in ["linear", "quadratic"]:
         substrate_costs = np.array(substrate_costs)
-        substrate_costs /= np.max(substrate_costs[substrate_costs > 0])
+        substrate_costs /= np.max(substrate_costs[substrate_costs > 0])  # normalize to most expensive substrate cost
 
         sub_cost_rterms = []
 
@@ -195,9 +195,9 @@ def mpc_setup(
         sub_cost_rterm = " + ".join(sub_cost_rterms)
 
         if rterm is None:
-            rterm = sub_cost_rterm
+            rterm = sub_cost_rterm  # only consider substrate costs in rterm
         else:
-            rterm += f" + {sub_cost_rterm}"
+            rterm += f" + {sub_cost_rterm}"  # consider substrate cost additionally in rterm
 
     if rterm is not None:
         mpc.set_rterm(rterm=eval(rterm))
