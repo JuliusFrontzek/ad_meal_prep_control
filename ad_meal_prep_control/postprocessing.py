@@ -159,7 +159,7 @@ class PostProcessing:
 
         axes[-1].set_xlabel("Time [d]")
 
-        # draw the actual plot:
+        # draw the actual plots:
         for ax_idx, (axis, subplot_label_and_vars) in enumerate(
                 zip(axes, subplot_labels_and_vars)
         ):
@@ -174,6 +174,7 @@ class PostProcessing:
                         if isinstance(plot_var_property, PlotVarProperty)
                         else self._default_mpl_properties.to_dict()
                     )
+                    # plot states:
                     if plot_var_name[0] == "x":
                         x_num = int(plot_var_name.split("_")[-1])
 
@@ -301,9 +302,7 @@ class PostProcessing:
 
                             if input_inset_axes is not None:
                                 for inset_ax_u in inset_axes_u:
-                                    ax.indicate_inset_zoom(
-                                        inset_ax_u, edgecolor="black", linewidth=1.0
-                                    )
+                                    ax.indicate_inset_zoom(inset_ax_u, edgecolor="black", linewidth=1.0)
 
                         # Add constraints to plot
                         # ax.hlines(
@@ -400,7 +399,9 @@ class PostProcessing:
                                     )
 
                                     ax.indicate_inset_zoom(
-                                        inset_ax, edgecolor="black", linewidth=1.0
+                                        inset_ax,
+                                        edgecolor="black",
+                                        linewidth=1.0
                                     )
 
                         else:
@@ -466,7 +467,9 @@ class PostProcessing:
                                     )
 
                                     ax.indicate_inset_zoom(
-                                        inset_ax, edgecolor="black", linewidth=1.0
+                                        inset_ax,
+                                        edgecolor="black",
+                                        linewidth=1.0
                                     )
 
             for ax in axes_stacked:
