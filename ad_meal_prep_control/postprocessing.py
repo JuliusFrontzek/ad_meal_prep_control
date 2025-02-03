@@ -55,13 +55,6 @@ class PostProcessing:
     }
 
     # substrates' linewidth specs:
-    _SUBSTRATE_LINEWIDTHS = {
-        "CORN_SILAGE": 0.8,
-        "GRASS_SILAGE": 1.2,
-        "CATTLE_MANURE": 0.5,
-        "SUGAR_BEET_SILAGE": 1.5,
-        "SUGAR_BEET_SILAGE_VERY_UNCERTAIN": 1,
-    }
     _LINEWIDTH_sub_min = 0.5
     _LINEWIDTH_sub_max = 2.5
 
@@ -99,7 +92,7 @@ class PostProcessing:
             dpi: int = 600,
             show_plot: bool = True,
             height_ratios: list[float] = None,
-            input_inset_axis: dict[str, tuple] = None,
+            input_inset_axes: list[dict[str, tuple]] = None,
             other_inset_axes: list[dict[str, tuple]] = None,
             color_background_indices: tuple[int] = None,
     ):
@@ -119,25 +112,30 @@ class PostProcessing:
         if plot_inputs:
             ax_inputs_liquid = axes[0].twinx()
 
-            # inset axes for substrates:
-            if input_inset_axis is not None:
-                # unpack elements "days" and "ylimit" of input_inset_axis and save:
-                x1, x2, y1, y2 = (
-                    *input_inset_axis["days"],
-                    *input_inset_axis["ylimit"],
-                )
-                axins_input_feed = axes[0].inset_axes(
-                    input_inset_axis["inset_axis_specs"],
-                    xlim=(x1, x2),
-                    ylim=(y1, y2),
-                    # xticklabels=[],
-                    # yticklabels=[],
-                )
-                axins_input_feed_liquid = axins_input_feed.twinx()
+            # create inset axes for substrates:
+            inset_axes_u = []
+            inset_axes_u_liq = []
+            if input_inset_axes is not None:
+                for input_inset_ax in input_inset_axes:
+                    # unpack elements "days" and "ylimit" of input_inset_ax and save:
+                    x1, x2, y1, y2 = (
+                        *input_inset_ax["days"],
+                        *input_inset_ax["ylimit"],
+                    )
 
-                axins_input_feed.grid(True, linestyle="--")
+                    _inset_ax_input = axes[0].inset_axes(
+                        input_inset_ax["inset_axis_specs"],
+                        xlim=(x1, x2),
+                        ylim=(y1, y2),
+                        # xticklabels=[],
+                        # yticklabels=[],
+                    )
+                    _inset_ax_input.grid(True, linestyle="--")
+                    _inset_ax_input_liq = _inset_ax_input.twinx()
+                    inset_axes_u.append(_inset_ax_input)
+                    inset_axes_u_liq.append(_inset_ax_input_liq)
 
-            # other inset axes:
+            # create other inset axes:
             inset_axes = {}
             if other_inset_axes is not None:
                 for inset_ax in other_inset_axes:
@@ -161,6 +159,7 @@ class PostProcessing:
 
         axes[-1].set_xlabel("Time [d]")
 
+        # draw the actual plot:
         for ax_idx, (axis, subplot_label_and_vars) in enumerate(
                 zip(axes, subplot_labels_and_vars)
         ):
@@ -247,14 +246,9 @@ class PostProcessing:
                             self._SUBSTRATE_COLORS[sub_name]
                             for sub_name in self._scenario_meta_data["sub_names"]
                         ]
-                        # # modify linewidths:
-                        # linewidths = [
-                        #     self._SUBSTRATE_LINEWIDTHS[sub_name]
-                        #     for sub_name in self._scenario_meta_data["sub_names"]
-                        # ]
-                        # linearly interpolate linewidths (first thick, then thin):
+                        # linearly interpolate linewidths of substrates (first thick, then thin):
                         linewidths = [(self._LINEWIDTH_sub_min - self._LINEWIDTH_sub_max) / (self._num_u - 1) * sub_k +
-                                       self._LINEWIDTH_sub_max for sub_k in range(self._num_u)]
+                                      self._LINEWIDTH_sub_max for sub_k in range(self._num_u)]
 
                         # iterate over all substrates:
                         for i in range(self._num_u):
@@ -265,15 +259,16 @@ class PostProcessing:
                             sub = getattr(substrates, sub_name)
 
                             if sub.state == "solid":
-                                if input_inset_axis is not None:
-                                    axins_input_feed.plot(
-                                        self._data_simulator._time,
-                                        self._data_simulator._u[:, i]
-                                        * self._scenario_meta_data["Tu"][i],
-                                        # * self._scenario_meta_data["u_max"]["solid"]
-                                        # / self._scenario_meta_data["u_max"][sub.state],
-                                        **plt_kwargs,
-                                    )
+                                if input_inset_axes is not None:
+                                    for inset_ax_u in inset_axes_u:
+                                        inset_ax_u.plot(
+                                            self._data_simulator._time,
+                                            self._data_simulator._u[:, i]
+                                            * self._scenario_meta_data["Tu"][i],
+                                            # * self._scenario_meta_data["u_max"]["solid"]
+                                            # / self._scenario_meta_data["u_max"][sub.state],
+                                            **plt_kwargs,
+                                        )
                                 ax.plot(
                                     self._data_simulator._time,
                                     self._data_simulator._u[:, i]
@@ -290,22 +285,25 @@ class PostProcessing:
                                     label=sub_name.lower().replace("_", " "),
                                     **plt_kwargs,
                                 )
-                                if input_inset_axis is not None:
-                                    axins_input_feed_liquid.plot(
-                                        self._data_simulator._time,
-                                        self._data_simulator._u[:, i]
-                                        * self._scenario_meta_data["Tu"][i],
-                                        **plt_kwargs,
-                                    )
+                                if input_inset_axes is not None:
+                                    for inset_ax_u_liq in inset_axes_u_liq:
+                                        inset_ax_u_liq.plot(
+                                            self._data_simulator._time,
+                                            self._data_simulator._u[:, i]
+                                            * self._scenario_meta_data["Tu"][i],
+                                            **plt_kwargs,
+                                        )
+                                        # for input insets, use same ylims for left and right y-axes:
+                                        inset_ax_u_liq.set_ylim(
+                                            inset_axes_u[0].get_ylim()
+                                        )
+                                        inset_ax_u_liq.set_axis_off()  # mute right ylabels
 
-                                    axins_input_feed_liquid.set_ylim(
-                                        axins_input_feed.get_ylim()
+                            if input_inset_axes is not None:
+                                for inset_ax_u in inset_axes_u:
+                                    ax.indicate_inset_zoom(
+                                        inset_ax_u, edgecolor="black", linewidth=1.0
                                     )
-
-                            if input_inset_axis is not None:
-                                ax.indicate_inset_zoom(
-                                    axins_input_feed, edgecolor="black", linewidth=1.0
-                                )
 
                         # Add constraints to plot
                         # ax.hlines(

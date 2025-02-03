@@ -109,16 +109,17 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
         dpi=dpi,
         show_plot=show_plot,
         height_ratios=[1, 1, 2, 1, 1],
-        input_inset_axis={
-            "days": (4.7, 6),
-            "ylimit": (0.6, 1.5),
-            "inset_axis_specs": (0.55, 0.45, 0.15, 0.2),
-        },
-        # {
-        #     "days": (26, 28),
-        #     "ylimit": (0.5, 1.2),
-        #     "inset_axis_specs": (0.7, 0.45, 0.1, 0.2),
-        # }
+        input_inset_axes=[
+            {
+                "days": (4.7, 6),
+                "ylimit": (0.6, 1.5),
+                "inset_axis_specs": (0.6, 0.45, 0.15, 0.2),
+            },
+            {
+                "days": (26, 27),
+                "ylimit": (0.55, 0.7),
+                "inset_axis_specs": (0.85, 0.45, 0.1, 0.2),
+            }],
         other_inset_axes=[
             {
                 "plot_idx": 2,
