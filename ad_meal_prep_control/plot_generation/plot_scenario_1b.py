@@ -68,7 +68,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                 r"$pH$" + "\n" + r"$[-]$",
                 {
                     "y_4": PlotVarProperty(
-                        mpl_properties=MPLProperties(linewidth=1, linestyle="-", color = 'black'),
+                        mpl_properties=MPLProperties(linewidth=1, linestyle="-", color='black'),
                         label='$pH_{plant}$',
                     )
                 },
@@ -112,8 +112,13 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
         input_inset_axis={
             "days": (4.7, 6),
             "ylimit": (0.6, 1.5),
-            "inset_axis_specs": (0.6, 0.45, 0.2, 0.2),
+            "inset_axis_specs": (0.55, 0.45, 0.15, 0.2),
         },
+        # {
+        #     "days": (26, 28),
+        #     "ylimit": (0.5, 1.2),
+        #     "inset_axis_specs": (0.7, 0.45, 0.1, 0.2),
+        # }
         other_inset_axes=[
             {
                 "plot_idx": 2,

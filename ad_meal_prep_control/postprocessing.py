@@ -54,6 +54,17 @@ class PostProcessing:
         "SUGAR_BEET_SILAGE_VERY_UNCERTAIN": "saddlebrown",
     }
 
+    # substrates' linewidth specs:
+    _SUBSTRATE_LINEWIDTHS = {
+        "CORN_SILAGE": 0.8,
+        "GRASS_SILAGE": 1.2,
+        "CATTLE_MANURE": 0.5,
+        "SUGAR_BEET_SILAGE": 1.5,
+        "SUGAR_BEET_SILAGE_VERY_UNCERTAIN": 1,
+    }
+    _LINEWIDTH_sub_min = 0.5
+    _LINEWIDTH_sub_max = 2.5
+
     def __post_init__(self):
         self._data_simulation = do_mpc.data.load_results(
             str(Path(self.result_directory, f"{self.scenario_name}_mpc_results.pkl"))
@@ -108,6 +119,7 @@ class PostProcessing:
         if plot_inputs:
             ax_inputs_liquid = axes[0].twinx()
 
+            # inset axes for substrates:
             if input_inset_axis is not None:
                 # unpack elements "days" and "ylimit" of input_inset_axis and save:
                 x1, x2, y1, y2 = (
@@ -125,6 +137,7 @@ class PostProcessing:
 
                 axins_input_feed.grid(True, linestyle="--")
 
+            # other inset axes:
             inset_axes = {}
             if other_inset_axes is not None:
                 for inset_ax in other_inset_axes:
@@ -191,6 +204,7 @@ class PostProcessing:
 
                         x_num = int(plot_var_name.split("_")[-1])
 
+                    # plot outputs:
                     elif plot_var_name[0] == "y":
                         y_num = int(plot_var_name.split("_")[-1])
 
@@ -227,14 +241,25 @@ class PostProcessing:
                                     linewidth=1.0,
                                 )
 
+                    # plot inputs (controlled substrates):
                     elif plot_var_name[0] == "u":
                         colors = [
                             self._SUBSTRATE_COLORS[sub_name]
                             for sub_name in self._scenario_meta_data["sub_names"]
                         ]
+                        # # modify linewidths:
+                        # linewidths = [
+                        #     self._SUBSTRATE_LINEWIDTHS[sub_name]
+                        #     for sub_name in self._scenario_meta_data["sub_names"]
+                        # ]
+                        # linearly interpolate linewidths (first thick, then thin):
+                        linewidths = [(self._LINEWIDTH_sub_min - self._LINEWIDTH_sub_max) / (self._num_u - 1) * sub_k +
+                                       self._LINEWIDTH_sub_max for sub_k in range(self._num_u)]
 
+                        # iterate over all substrates:
                         for i in range(self._num_u):
                             plt_kwargs["color"] = colors[i]
+                            plt_kwargs["linewidth"] = linewidths[i]
 
                             sub_name = self._scenario_meta_data["sub_names"][i]
                             sub = getattr(substrates, sub_name)
@@ -257,7 +282,7 @@ class PostProcessing:
                                     **plt_kwargs,
                                 )
 
-                            else:
+                            else:  # liquid substrates
                                 ax_inputs_liquid.plot(
                                     self._data_simulator._time,
                                     self._data_simulator._u[:, i]
@@ -318,6 +343,7 @@ class PostProcessing:
                                 0.0, self._scenario_meta_data["u_max"]["liquid"] * 1.1
                             )
 
+                    # plot disturbance feeding:
                     elif plot_var_name.startswith("dictated_sub_feed"):
                         feed_num = int(plot_var_name.split("_")[-1])
 

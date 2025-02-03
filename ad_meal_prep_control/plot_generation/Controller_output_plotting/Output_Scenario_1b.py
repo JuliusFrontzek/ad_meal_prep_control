@@ -13,6 +13,7 @@ def controller_plotting_1b(scenario_names=None):
     for scenario in scenario_names:
         with open(f'../scenarios/results/plots/{scenario}.pkl', 'rb') as file:
             fig = pkl.load(file)
+            fig.set_dpi(1000)
         mpc = load_results(f'../scenarios/results/{scenario}_mpc_results.pkl')
         metadata = load_results(f'../scenarios/results/{scenario}_scenario_meta_data.pkl')
         # Graph
