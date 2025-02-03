@@ -22,16 +22,17 @@ def controller_plotting_1a(scenario_names=None):
             fig = pkl.load(file)
         mpc = load_results(f'../scenarios/results/{scenario}_mpc_results.pkl')
         metadata = load_results(f'../scenarios/results/{scenario}_scenario_meta_data.pkl')
-        # Graph
+
+        # Sensitivity analysis:
         if not metadata['feedback']:
             plant_output = np.genfromtxt(f'../scenarios/results/Plant Output {scenario}.csv', delimiter=' ')
 
             fig.axes[2].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 1], 'black',
-                             linestyle='dotted', label=r'$pH_{controller}$')
+                             linestyle='dotted', label=r'$pH_{sim 2}$')
             fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 0], 'black',
-                             linestyle='dotted', label=r"$\dot V_{g, controller}$")
+                             linestyle='dotted', label=r"$\dot V_{g, sim 2}$")
             fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 2], 'blue',
-                             linestyle='dotted', label=r"$\dot V_{CH_4, controller}$")
+                             linestyle='dotted', label=r"$\dot V_{CH_4, sim 2}$")
 
             error_ph = (f'{scenario}_NRMSE_pH = ', nRMSE(x_est=mpc['mpc']['_aux', 'y_4'], x_true=plant_output[:, [1]]))
             error_gas = (
