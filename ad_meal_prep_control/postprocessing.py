@@ -247,9 +247,12 @@ class PostProcessing:
                             self._SUBSTRATE_COLORS[sub_name]
                             for sub_name in self._scenario_meta_data["sub_names"]
                         ]
-                        # linearly interpolate linewidths of substrates (first thick, then thin):
-                        linewidths = [(self._LINEWIDTH_sub_min - self._LINEWIDTH_sub_max) / (self._num_u - 1) * sub_k +
-                                      self._LINEWIDTH_sub_max for sub_k in range(self._num_u)]
+                        if "Scenario_1" in self.scenario_name:
+                            # linearly interpolate linewidths of substrates (first thick, then thin):
+                            linewidths = [(self._LINEWIDTH_sub_min - self._LINEWIDTH_sub_max) / (self._num_u - 1) * sub_k +
+                                          self._LINEWIDTH_sub_max for sub_k in range(self._num_u)]
+                        else:  # same std. linewidth for all substrates
+                            linewidths = [1 for _ in range(self._num_u)]
 
                         # iterate over all substrates:
                         for i in range(self._num_u):
