@@ -70,7 +70,7 @@ class TimeSlot:
     end_time: Time
 
 
-def typical_ch4_vol_flow_rate(max_power: float, n_steps: int, t_step: float):
+def typical_ch4_vol_flow_rate(max_power: float, n_steps: int, t_step: float, return_schedule: bool = False):
     schedule = {
         0: (TimeSlot(Time(7), Time(15)), TimeSlot(Time(16), Time(22))),
         1: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
@@ -111,10 +111,14 @@ def typical_ch4_vol_flow_rate(max_power: float, n_steps: int, t_step: float):
             ):
                 chp_load[i] = 1.0
                 break
-
-    return chp.ch4_vol_flow_rate(
+    ch4_flow_rate = chp.ch4_vol_flow_rate(
         load=chp_load, press=params_R3.p_gas_storage, temp=params_R3.T_gas_storage
     )
+
+    if return_schedule:
+        return schedule
+    else:
+        return ch4_flow_rate
 
 
 @dataclass_json

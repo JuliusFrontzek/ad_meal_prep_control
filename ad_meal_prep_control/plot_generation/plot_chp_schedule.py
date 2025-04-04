@@ -1,9 +1,10 @@
 from matplotlib import colors
 import pandas as pd
 from pathlib import Path
-from ad_meal_prep_control.utils import CHP
-#from ad_meal_prep_control.utils import Time
-#from ad_meal_prep_control.utils import TimeSlot
+import ad_meal_prep_control.utils as utils
+from ad_meal_prep_control.utils import Time
+from ad_meal_prep_control.utils import TimeSlot
+from ad_meal_prep_control.params_R3 import P_el_chp
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,30 +20,13 @@ plt.rcParams.update({
     'ytick.labelsize': my_fs,     # Y-axis tick label font size
 })
 
-@dataclass(order=True)
-class Time:
-    hour: int
-    minute: int = 0
-
-@dataclass
-class TimeSlot:
-    start_time: Time
-    end_time: Time
-
-# Schedule data
-schedule = {
-    0: (TimeSlot(Time(7), Time(15)), TimeSlot(Time(16), Time(22))),
-    1: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
-    2: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(22))),
-    3: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(15), Time(22))),
-    4: (TimeSlot(Time(7), Time(14)), TimeSlot(Time(16), Time(23))),
-    5: (TimeSlot(Time(9), Time(12)), TimeSlot(Time(17), Time(23))),
-    6: (
-        TimeSlot(Time(0), Time(1)),
-        TimeSlot(Time(11), Time(12)),
-        TimeSlot(Time(17), Time(23, 59)),
-    ),
-}
+# get the fuckin Schedule data:
+n_days = 30
+t_step = 0.5 / 24.0
+n_steps = round(n_days / t_step)
+max_power = P_el_chp
+return_schedule = True
+schedule = utils.typical_ch4_vol_flow_rate(max_power, n_steps, t_step, return_schedule)
 
 # Function to convert Time objects to hours in fraction
 def time_to_hours(t):
