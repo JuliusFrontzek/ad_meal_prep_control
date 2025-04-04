@@ -459,7 +459,7 @@ class ScenarioFactory:
         "n_days_steady_state": 500,
         "n_days_mpc": 30,
         "sub_names": [
-            "CORN_SILAGE",
+            "MAIZE_SILAGE",
             "GRASS_SILAGE",
             "CATTLE_MANURE",
             "SUGAR_BEET_SILAGE",

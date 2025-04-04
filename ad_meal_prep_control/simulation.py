@@ -693,7 +693,7 @@ class Simulation:
 
                 if not self.scenario.feedback:
                     # Plant results
-                    # y_next order: 4 substrates (CORN_SILAGE, GRASS_SILAGE, CATTLE_MANURE,
+                    # y_next order: 4 substrates (MAIZE_SILAGE, GRASS_SILAGE, CATTLE_MANURE,
                     # SUGAR_BEET_SILAGE) + 6 measurements
                     y_next_plant = self._simulator_plant.make_step(u_norm_actual)  # Plant output
 

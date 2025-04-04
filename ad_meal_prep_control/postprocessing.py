@@ -47,7 +47,7 @@ class PostProcessing:
     _cmap = plt.colormaps.get_cmap("viridis")
 
     _SUBSTRATE_COLORS = {
-        "CORN_SILAGE": "orange",
+        "MAIZE_SILAGE": "orange",
         "GRASS_SILAGE": "limegreen",
         "CATTLE_MANURE": "sienna",
         "SUGAR_BEET_SILAGE": "deeppink",

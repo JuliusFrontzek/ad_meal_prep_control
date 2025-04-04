@@ -241,8 +241,8 @@ STANDARD_SUBSTRATE = Substrate(
     cost=10.0,
 )
 
-CORN_SILAGE = Substrate(
-    name="CORN_SILAGE",
+MAIZE_SILAGE = Substrate(
+    name="MAIZE_SILAGE",
     nominal_values=np.array(
         [
             357.0,
@@ -488,7 +488,7 @@ def multiple_substrates_to_latex(subs: list[Substrate]):
 if __name__ == "__main__":
     multiple_substrates_to_latex(
         [
-            CORN_SILAGE,
+            MAIZE_SILAGE,
             GRASS_SILAGE,
             SUGAR_BEET_SILAGE,
             CATTLE_MANURE,
@@ -496,7 +496,7 @@ if __name__ == "__main__":
         ]
     )
     # CATTLE_MANURE.to_latex()
-    # CORN_SILAGE.to_latex()
+    # MAIZE_SILAGE.to_latex()
     # GRASS_SILAGE.to_latex()
     # SUGAR_BEET_SILAGE.to_latex()
     # CATTLE_MANURE_VERY_UNCERTAIN.to_latex()

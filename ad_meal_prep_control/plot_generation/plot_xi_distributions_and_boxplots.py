@@ -10,7 +10,7 @@ from ad_meal_prep_control import substrates
 
 ### preliminaries:
 substrate_names = [
-    "CORN_SILAGE",
+    "MAIZE_SILAGE",
     "GRASS_SILAGE",
     "SUGAR_BEET_SILAGE",
     "CATTLE_MANURE",
@@ -18,13 +18,13 @@ substrate_names = [
 n_substrates = len(substrate_names)
 
 substrate_colors = {
-    "CORN_SILAGE": "orange",
+    "MAIZE_SILAGE": "orange",
     "GRASS_SILAGE": "limegreen",
     "SUGAR_BEET_SILAGE": "deeppink",
     "CATTLE_MANURE": "saddlebrown",
 }
 substrate_colors_dark = {
-    "CORN_SILAGE": "darkorange",
+    "MAIZE_SILAGE": "darkorange",
     "GRASS_SILAGE": "green",
     "SUGAR_BEET_SILAGE": "mediumvioletred",
     "CATTLE_MANURE": "maroon",
