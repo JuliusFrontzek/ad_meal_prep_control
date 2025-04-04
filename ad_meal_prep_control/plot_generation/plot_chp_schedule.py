@@ -10,7 +10,7 @@ import numpy as np
 from dataclasses import dataclass
 
 # adjust default font sizes:
-my_fs = 20
+my_fs = 23
 plt.rcParams.update({
     'font.size': 10,           # Default font size
     'axes.labelsize': my_fs,      # Axis label font size
@@ -72,7 +72,7 @@ for day in days:
         states.append(0)  # Off state
 
 # Create the figure with specified size (width, height)
-plt.figure(figsize=(10, 4))
+plt.figure(figsize=(10, 3))
 
 # Create a stair graph showing ON and OFF states
 plt.step(timeline, states, where='post', label='State', color='black')
