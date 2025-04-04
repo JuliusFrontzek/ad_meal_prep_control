@@ -1,14 +1,8 @@
-from matplotlib import colors
-import pandas as pd
-from pathlib import Path
-import ad_meal_prep_control.utils as utils
-from ad_meal_prep_control.utils import Time
-from ad_meal_prep_control.utils import TimeSlot
-from ad_meal_prep_control.params_R3 import P_el_chp
-
 import matplotlib.pyplot as plt
 import numpy as np
-from dataclasses import dataclass
+from pathlib import Path
+import ad_meal_prep_control.utils as utils
+from ad_meal_prep_control.params_R3 import P_el_chp
 
 # adjust default font sizes:
 my_fs = 23
@@ -63,16 +57,13 @@ plt.step(timeline, states, where='post', label='State', color='black')
 
 plt.xlabel('Time [d]')
 plt.ylabel('CHP status')
+plt.xlim(0, 24 * 7)  # Limit x-axis to one week (0 to 168 hours)
+plt.ylim(-0.05, 1.05)  # Adjust y-axis limits for clarity
 
 # Adjust x-axis to show days
 hour_ticks = np.arange(0, 24 * 7 + 1, 24)
 plt.xticks(hour_ticks, labels=[day_k for day_k in range(len(hour_ticks))])
-
 plt.yticks([0, 1], ['Off', 'On'])
-#plt.grid()
-
-plt.xlim(0, 24 * 7)  # Limit x-axis to one week (0 to 168 hours)
-plt.ylim(-0.05, 1.05)  # Adjust y-axis limits for clarity
 
 # Save the plot as a high-resolution PNG file
 plt.savefig(fname=str(
