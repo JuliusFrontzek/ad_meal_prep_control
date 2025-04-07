@@ -67,7 +67,8 @@ class Simulation:
         self.x0_norm_estimated = np.copy(self.x0_norm_true) * (
                 1.0 + 0.1 * np.random.randn(self.x0_norm_true.shape[0])
         )
-
+        
+        # save init conditions of GS to overwrite after steady-state transition:
         if self.scenario.external_gas_storage_model:
             self._v_ch4_norm_true_0 = self.x0_norm_true[18]
             self._v_co2_norm_true_0 = self.x0_norm_true[19]
@@ -171,6 +172,7 @@ class Simulation:
             self._substrate_setup()
             self._model_setup()
 
+            # GS is super full in SS since no CHP outflow considered. Hence use pre-saved values:
             if self.scenario.external_gas_storage_model:
                 self.x0_norm_true[18] = self._v_ch4_norm_true_0
                 self.x0_norm_true[19] = self._v_co2_norm_true_0
@@ -588,9 +590,9 @@ class Simulation:
             u_norm_steady_state = np.array(
                 [
                     [
-                        1.0 / _tu / len(self._subs_controlled)
+                        1.0 / len(self._subs_controlled) / _tu
                         if sub.state == "solid"
-                        else 3.0 / _tu / len(self._subs_controlled)
+                        else 3.0 / len(self._subs_controlled) / _tu
                         for _tu, sub in zip(self.Tu, self._subs_controlled)
                     ]
                 ]
