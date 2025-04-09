@@ -703,6 +703,7 @@ class Simulation:
                 self.x0_norm_true = np.array(self._simulator.x0.master)
                 self.x0_norm_estimated = self._estimator.make_step(y_next)
 
+                # add state jumps to gas storage states:
                 if not self.scenario.disturbances.state_jumps is None:
                     for (
                             x_idx,

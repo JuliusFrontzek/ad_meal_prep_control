@@ -44,10 +44,10 @@ state_jumps_co2 = []
 
 for i in range(mpc_t_steps):
     if i % int(5 / t_step / 24) == 0:
-        state_jumps_ch4.append((i, random.random() * 0.06 - 0.03))
+        state_jumps_ch4.append((i, random.random() * 0.06 - 0.03))  # +/- 3%
         state_jumps_co2.append((i, random.random() * 0.06 - 0.03))
     else:
-        state_jumps_ch4.append((i, random.random() * 0.02 - 0.01))
+        state_jumps_ch4.append((i, random.random() * 0.02 - 0.01))  # +/- 1%
         state_jumps_co2.append((i, random.random() * 0.02 - 0.01))
 
 
