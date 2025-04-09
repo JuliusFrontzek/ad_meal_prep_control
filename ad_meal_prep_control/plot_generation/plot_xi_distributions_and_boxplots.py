@@ -140,7 +140,7 @@ for idx_k, (means, std_devs, ax) in enumerate(zip(means_all.values(), std_devs_a
 subtitles = ['carbohydrates', 'proteins', 'lipids']
 for k, ax, axR, nutrient_name in zip(range(len(axes)), axes, right_axes, means_all.keys()):
     ax.set_xlabel(
-        r"$\xi" + "_" + "{" + f"{nutrient_name}" + "}$ $[\mathrm{g} \mathrm{L}^{-1}]$"
+        r"$\xi" + "_" + "\mathrm{" + f"{nutrient_name}" + "}$ $[\mathrm{g} \mathrm{L}^{-1}]$"
     )
     ax.set_ylabel("density")
     ax.set_title(subtitles[k])
