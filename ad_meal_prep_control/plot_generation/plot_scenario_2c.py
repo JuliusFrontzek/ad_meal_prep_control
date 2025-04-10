@@ -135,12 +135,12 @@ post_processing.plot(
     dpi=dpi,
     show_plot=show_plot,
     height_ratios=[2, 1, 2, 2, 1, 1],
-    input_inset_axes=[
-        {
-            "days": (12, 13),
-            "ylimit": (0, 1),
-            "inset_axis_specs": (0.4, 0.7, 0.05, 0.15),
-        }],
+    # input_inset_axes=[
+    #     {
+    #         "days": (12, 13),
+    #         "ylimit": (0, 1),
+    #         "inset_axis_specs": (0.4, 0.7, 0.05, 0.15),
+    #     }],
     other_inset_axes=[
         {
             "plot_idx": 2,
