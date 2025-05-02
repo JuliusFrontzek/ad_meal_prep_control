@@ -8,25 +8,29 @@ from ad_meal_prep_control.utils import (
 from ad_meal_prep_control.params_R3 import P_el_chp
 import numpy as np
 
-lterm = ("(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.4)**2 + "
-         "+ 50.*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - 0.4)**4)"
+fill_level_setpoint = 0.4
+lterm = (f"(5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2 +"
+         f"+ 5e-1 *(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**4)"
          )
+
 mterm = "model.tvp['dummy_tvp']"
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
-n_days_mpc = 30
+# user input:
+n_days_mpc = 2.5  # length of simulation [d]
+n_std_dev = 0  # number std deviations
 
 controller_params = ControllerParams(
-    mpc_n_horizon=40,
-    mpc_n_robust=1,
-    num_std_devs=1,
+    mpc_n_horizon=48,
+    mpc_n_robust=0,
+    num_std_devs=n_std_dev,
     cost_func=cost_func,
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
 )
 
 kwargs = {
-    "name": "Scenario_2b_dynamic",
+    "name": "Scenario_2b_nominal_ideal",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "P_el_chp": 50.0,
@@ -39,14 +43,13 @@ kwargs = {
     ],
     "disturbances": Disturbances(
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 7.0, 0.0065),
-                                             (9.0, 12.0, 0.0086),
-                                             (15.0, 19.0, 0.0129)],
+            "MAIZE_SILAGE": [
+                            (1.0, 2.0, 0.02),
+                            ],
         },
-        #max_feeding_error=0.05,
     ),
     "n_days_mpc": n_days_mpc,
-    "num_std_devs_sim": 1,
+    "num_std_devs_sim": 0,
 }
 
 scenario = ScenarioFactory().create_scenario(

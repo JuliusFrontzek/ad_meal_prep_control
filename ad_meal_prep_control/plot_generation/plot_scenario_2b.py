@@ -10,7 +10,7 @@ import sys
 
 post_processing = PostProcessing(
     result_directory="../scenarios/results",
-    scenario_name="Scenario_2b_dynamic",
+    scenario_name="Scenario_2b_nominal_ideal",
 )
 
 try:
@@ -18,7 +18,7 @@ try:
     show_plot = int(sys.argv[2])
 except IndexError:
     dpi = 600
-    show_plot = True
+    show_plot = False
 
 post_processing.plot(
     [
@@ -27,11 +27,11 @@ post_processing.plot(
             {
                 "dictated_sub_feed_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
-                        color='saddlebrown',
+                        color='orange',
                         linewidth=1,
-                        linestyle="-",
+                        linestyle="--",
                     ),
-                    label="cattle manure\nwith large uncertainty",
+                    label="dictated maize silage",
                 ),
             },
         ),
@@ -121,7 +121,7 @@ post_processing.plot(
             },
         ),
     ],
-    plot_save_name="Scenario_2b_dynamic",
+    plot_save_name="Scenario_2b_nominal_ideal",
     constraints=[
         Constraint(value=0.0, ax_idx=2),
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
@@ -135,5 +135,6 @@ post_processing.plot(
     dpi=dpi,
     show_plot=show_plot,
     height_ratios=[2, 1, 2, 2, 1, 1],
+    color_background_indices=(0,1),
 )
 #controller_plotting_2b()

@@ -15,7 +15,6 @@ lterm = (f"(5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STOR
          )
 
 mterm = "model.tvp['dummy_tvp']"
-
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 # user input:
