@@ -172,7 +172,7 @@ class Simulation:
             self._substrate_setup()
             self._model_setup()
 
-            # GS is super full in SS since no CHP outflow considered. Hence use pre-saved values:
+            # __SH: GS is super full in SS since no CHP outflow considered -> use pre-saved values for norm. GS states:
             if self.scenario.external_gas_storage_model:
                 self.x0_norm_true[18] = self._v_ch4_norm_true_0
                 self.x0_norm_true[19] = self._v_co2_norm_true_0

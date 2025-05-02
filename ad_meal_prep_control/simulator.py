@@ -42,7 +42,7 @@ def simulator_setup(
                 for dictated_sub in dictated_sub_properties:
                     start_time = dictated_sub[0]
                     end_time = dictated_sub[1]
-                    feed_amount = dictated_sub[2]
+                    feed_amount = dictated_sub[2]  # __SH: normalized
                     if t_now >= start_time and t_now < end_time:
                         tvp_template["dictated_sub_feed", feed_idx] = feed_amount
                         break

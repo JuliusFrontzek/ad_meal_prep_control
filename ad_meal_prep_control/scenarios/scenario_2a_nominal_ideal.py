@@ -10,8 +10,8 @@ from ad_meal_prep_control.params_R3 import P_el_chp
 import numpy as np
 
 fill_level_setpoint = 0.4
-lterm = (f"(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2 +"
-         f"+ 50*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**4)"
+lterm = (f"(5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2 +"
+         f"+ 5e-1 *(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**4)"
          )
 
 mterm = "model.tvp['dummy_tvp']"
@@ -19,12 +19,12 @@ mterm = "model.tvp['dummy_tvp']"
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 # user input:
-n_days_mpc = 30  # length of simulation [d]
+n_days_mpc = 14  # length of simulation [d]
 n_std_dev = 0  # number std deviations
 t_stp_ahead_pred = 8  # for controller plotting
 
 controller_params = ControllerParams(
-    mpc_n_horizon=40,
+    mpc_n_horizon=48,
     mpc_n_robust=0,
     num_std_devs=n_std_dev,
     cost_func=cost_func,

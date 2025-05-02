@@ -83,7 +83,7 @@ def mpc_setup(
                     for dictated_sub in dictated_sub_properties:
                         start_time = dictated_sub[0]
                         end_time = dictated_sub[1]
-                        feed_amount = dictated_sub[2]
+                        feed_amount = dictated_sub[2]  # __SH: normalized
 
                         time_k = t_now + t_step * k
                         if time_k >= start_time and time_k < end_time:
@@ -197,7 +197,7 @@ def mpc_setup(
         if rterm is None:
             rterm = sub_cost_rterm  # only consider substrate costs in rterm
         else:
-            rterm += f" + {sub_cost_rterm}"  # consider substrate cost additionally in rterm
+            rterm += f" + {sub_cost_rterm}"  # add substrate cost to existing rterm
 
     if rterm is not None:
         mpc.set_rterm(rterm=eval(rterm))
