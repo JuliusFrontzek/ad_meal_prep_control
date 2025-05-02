@@ -5,7 +5,7 @@ kpr = 0.2
 kli = 0.1
 kdec = 0.02
 fracChFast = (
-    0.4  # fraction of fast cabohydrates Rindergülle (rel. hoher Faseranteil am Eingang)
+    0.4  # fraction of fast cabohydrates (rel. hoher Faseranteil am Eingang)
 )
 mu_m_ac = 0.4  # 1/d
 K_S_ac = 0.14  # kg/m^3

@@ -18,7 +18,7 @@ cost_func = CostFunction(lterm=lterm, mterm=mterm)
 n_days_mpc = 30         # length of simulation [d]
 n_std_dev = 2           # used for plant and controller
 t_stp_ahead_pred = 3    # for controller plotting
-setpoints = np.array([350.0, 550.0, 450.0, 350.0])
+setpoints = np.array([400.0, 450.0, 500.0, 400.0])
 
 ch4_set_point_function = SetpointFunction(
     setpoints=setpoints,

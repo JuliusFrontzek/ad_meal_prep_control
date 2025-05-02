@@ -7,8 +7,8 @@ from ad_meal_prep_control.postprocessing import (
 import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1b import controller_plotting_1b
 
-# scenario_names = ["Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap"]
-scenario_names = ["Scenario_1b_quadratic_robust_feedback_mismatch_1.5std_3tsap"]
+scenario_names = ["Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap"]
+# scenario_names = ["Scenario_1b_quadratic_robust_feedback_mismatch_1.5std_3tsap"]
 plot_save_name = scenario_names
 
 try:
@@ -112,26 +112,26 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
         input_inset_axes=[
             {
                 "days": (4.7, 6),
-                "ylimit": (0.6, 1.5),
+                "ylimit": (0.4, 1.2),
                 "inset_axis_specs": (0.6, 0.45, 0.15, 0.2),
             },
             {
                 "days": (26, 27),
-                "ylimit": (0.55, 0.7),
+                "ylimit": (0.55, 0.8),
                 "inset_axis_specs": (0.85, 0.45, 0.1, 0.2),
             }],
         other_inset_axes=[
             {
                 "plot_idx": 2,
-                "days": (12, 18),
-                "ylimit": (345, 355),
-                "inset_axis_specs": (0.37, 0.7, 0.3, 0.2),
-            },
-            {
-                "plot_idx": 2,
                 "days": (2.6, 3.6),
                 "ylimit": (320, 580),
                 "inset_axis_specs": (0.15, 0.1, 0.1, 0.2),
+            },
+            {
+                "plot_idx": 2,
+                "days": (12, 18),
+                "ylimit": (390, 410),
+                "inset_axis_specs": (0.37, 0.15, 0.3, 0.2),
             },
         ],
     )

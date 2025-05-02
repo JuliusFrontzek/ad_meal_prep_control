@@ -590,9 +590,9 @@ class Simulation:
             u_norm_steady_state = np.array(
                 [
                     [
-                        1.0 / len(self._subs_controlled) / _tu
-                        if sub.state == "solid"
-                        else 3.0 / len(self._subs_controlled) / _tu
+                        5e-4 / len(self._subs_controlled) * _tu
+                        if sub.state == "solid"                      # for silages
+                        else 1e-5 / len(self._subs_controlled) * _tu  # for manure
                         for _tu, sub in zip(self.Tu, self._subs_controlled)
                     ]
                 ]
