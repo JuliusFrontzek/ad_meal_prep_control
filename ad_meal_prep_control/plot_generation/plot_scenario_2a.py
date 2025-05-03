@@ -11,9 +11,9 @@ from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scen
 )
 
 scenario_names = [
-    "Scenario_2a_dynamic_nominal_feedback_mismatch_2std_8tsap",
+    #"Scenario_2a_dynamic_nominal_feedback_mismatch_2std_8tsap",
     "Scenario_2a_dynamic_nominal_ideal_feedback_8tsap",
-    "Scenario_2a_dynamic_robust_feedback_mismatch_2std_8tsap",
+    #"Scenario_2a_dynamic_robust_feedback_mismatch_2std_8tsap",
 ]
 plot_save_names = scenario_names
 
@@ -124,25 +124,26 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             plot_save_name=plot_save_name,
             constraints=[
                 # Constraint(value=0.0, ax_idx=1),
-                Constraint(value=0.0, ax_idx=1),
-                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=1),
+                Constraint(value=0.0, ax_idx=2),
+                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
                 Constraint(
-                    value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"
+                    value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"
                 ),
                 Constraint(
-                    value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"
+                    value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"
                 ),
                 # adapt ylim of plots by adding invisible horizontal lines:
                 Constraint(
-                    value=0, ax_idx=2, color="white"
+                    value=0, ax_idx=3, color="white"
                 ),  # gas production lower bound
-                Constraint(value=7.6, ax_idx=3, color="white"),  # pH upper bound
-                Constraint(value=0, ax_idx=4, color="white"),  # inhibition lower bound
+                Constraint(value=7.6, ax_idx=4, color="white"),  # pH upper bound
+                Constraint(value=0, ax_idx=5, color="white"),  # inhibition lower bound
             ],
             dpi=dpi,
             show_plot=show_plot,
-            height_ratios=[2, 2, 2, 1, 1],
+            height_ratios=[2, 1, 2, 2, 1, 1],
             color_background_indices=(1,),
+            plot_olr=True,
         )
     else:
         post_processing.plot(
@@ -238,13 +239,13 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             plot_save_name=plot_save_name,
             constraints=[
                 # Constraint(value=0.0, ax_idx=1),
-                Constraint(value=0.0, ax_idx=1),
-                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=1),
+                Constraint(value=0.0, ax_idx=2),
+                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
                 Constraint(
-                    value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"
+                    value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"
                 ),
                 Constraint(
-                    value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=1, color="grey"
+                    value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"
                 ),
             ],
             other_inset_axes=[
@@ -275,7 +276,8 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ],
             dpi=dpi,
             show_plot=show_plot,
-            height_ratios=[2, 2, 2, 1, 1],
+            height_ratios=[2, 1, 2, 2, 1, 1],
             color_background_indices=(1,),
+            plot_olr=True,
         )
 controller_plotting_2a(scenario_names)

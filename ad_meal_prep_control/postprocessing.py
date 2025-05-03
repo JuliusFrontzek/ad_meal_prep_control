@@ -6,7 +6,9 @@ import pickle
 import numpy as np
 from pathlib import Path
 import math
-from ad_meal_prep_control import substrates
+from ad_meal_prep_control import (
+    substrates,
+    params_R3)
 from collections.abc import Iterable
 
 plt.rcParams["text.usetex"]
@@ -82,6 +84,45 @@ class PostProcessing:
 
         self.MEASUREMENT_COLOR = self._cmap.resampled(1).colors[0]
 
+        # compute organic loading rate (OLR):
+        # __SH: carefully think which variables really need to be defined as an attribute of PostProcessing
+        # __SH: compute OLR only from controlled substrates for now
+        # get absolute volume flows
+        # u_controlled = []
+        # for k in range(self._num_u):
+        #     u_controlled.append(self._data_simulator._u[:, k] * self._scenario_meta_data["Tu"][k])
+        u_controlled = self._data_simulator._u * self._scenario_meta_data["Tu"]
+        u_dictated = self._data_simulator._tvp[:, self._num_u - 1] * self._scenario_meta_data["Tu"][self._num_u + feed_num - 1]
+
+        # get inlet concentrations:
+        self._xis_controlled_subs = []
+        for sub_name in self._scenario_meta_data["sub_names"]:
+            self._xis_controlled_subs.append(getattr(substrates, sub_name).xi)
+        # self._num_dictated_subs
+
+
+        # compute OLR:
+        self._S_vs_controlled = [sum(self._xis_controlled_subs[k][0:4] + self._xis_controlled_subs[k][5:11]) for k
+                                 in range(self._num_u)]  # aggregate all volatile solids components
+        self.olr_controlled = np.sum((np.array(self._S_vs_controlled) * u_controlled)/params_R3.Vl,1)
+
+        # get daily OLR by averaging over batches of 24h (thanks chatGPT):
+        time = np.array(self._data_simulator._time[:, 0])
+        day_indices = np.ceil(time).astype(int)  # Convert time in days to integer day indices
+        unique_days = np.unique(day_indices)
+        data = self.olr_controlled
+        daily_average = np.array([data[day_indices == day].mean() for day in unique_days])
+        self.unique_days = unique_days
+        self.olr_controlled_daily = daily_average
+
+
+        # self._dictated_subs_xis = []
+        # dictated_sub_names = list(self._scenario_meta_data["disturbances"].dictated_feeding.keys())
+        # for sub_name in dictated_sub_names:
+        #     self._dictated_subs_xis.append(getattr(substrates, sub_name).xi)
+
+        # self._S_vs_dictated = ...
+
     def plot(
             self,
             subplot_labels_and_vars: list[tuple[str, dict[str, PlotVarProperty]]],
@@ -95,7 +136,15 @@ class PostProcessing:
             input_inset_axes: list[dict[str, tuple]] = None,
             other_inset_axes: list[dict[str, tuple]] = None,
             color_background_indices: tuple[int] = None,
+            plot_olr: bool = False,  # __SH: if True, height_ratios must have 1 additional list entry
     ):
+
+        # insert volume flows and/or OLR to subplots in reverse order:
+        if plot_olr:
+            subplot_labels_and_vars.insert(
+                0, (r"$OLR$" + "\n" + r"$[kg VS/m^3/d]$", {f"OLR": None})
+            )
+
         if plot_inputs:
             subplot_labels_and_vars.insert(
                 0, (r"$\dot V_{feed,silage}$" + "\n" + r"$[m^3/d]$", {f"u_norm": None})
@@ -103,16 +152,18 @@ class PostProcessing:
 
         if height_ratios is None:
             height_ratios = [1 for _ in range(len(subplot_labels_and_vars))]
+
+        num_sub_plots = len(height_ratios)
         fig, axes = plt.subplots(
-            len(subplot_labels_and_vars),
+            num_sub_plots,
             sharex=True,
             gridspec_kw={"height_ratios": height_ratios},
         )
 
+        # create inset axes for substrates:
         if plot_inputs:
             ax_inputs_liquid = axes[0].twinx()
 
-            # create inset axes for substrates:
             inset_axes_u = []
             inset_axes_u_liq = []
             if input_inset_axes is not None:
@@ -135,7 +186,7 @@ class PostProcessing:
                     inset_axes_u.append(_inset_ax_input)
                     inset_axes_u_liq.append(_inset_ax_input_liq)
 
-            # create other inset axes:
+            # create all other inset axes:
             inset_axes = {}
             if other_inset_axes is not None:
                 for inset_ax in other_inset_axes:
@@ -318,6 +369,7 @@ class PostProcessing:
                         #    # label=r"$u_{max}$",
                         # )
 
+                        # add constraints line for liquid substrates:
                         ax_inputs_liquid.hlines(
                             self._scenario_meta_data["u_max"]["liquid"],
                             xmin=0,
@@ -377,6 +429,21 @@ class PostProcessing:
                                     linewidth=1.0,
                                 )
 
+                    # plot OLR:
+                    elif plot_var_name.startswith("OLR"):
+
+                        if plt_kwargs["color"] is None:
+                            plt_kwargs["color"] = "tomato"
+
+                        plt_kwargs["drawstyle"] = "steps-post"
+
+                        ax.plot(
+                            self.unique_days,
+                            self.olr_controlled_daily,
+                            **plt_kwargs,
+                        )
+
+                    # plot auxiliary variables:
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":
                         if plot_var_name in self._scenario_meta_data["aux_var_names"]:
                             aux_expression_idx = np.where(
@@ -432,6 +499,7 @@ class PostProcessing:
                                         linewidth=1.0,
                                     )
 
+                # __SH: add constraints:
                 if constraints is not None:
                     for constraint in constraints:
                         if constraint.color is None:
@@ -475,6 +543,7 @@ class PostProcessing:
                                         linewidth=1.0
                                     )
 
+            # __SH: cosmetics:
             for ax in axes_stacked:
                 if plot_var_name[0] == "u":
                     loc = 2
@@ -500,8 +569,8 @@ class PostProcessing:
                 labelpad=30.0,
             )
 
+            # __SH: adjust ylabel for liquid substrates:
             if plot_inputs:
-                # ax_inputs_liquid.yaxis.set_label_coords(0.1, 0)
                 ax_inputs_liquid.set_ylabel(
                     r"$\dot V_{feed,manure}$" + "\n" + r"$[m^3/d]$",
                     rotation=0,
