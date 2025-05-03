@@ -197,6 +197,7 @@ class Simulation:
                 cost_func=self.scenario.controller_params.cost_func,
                 substrate_costs=[sub.cost for sub in self._subs_controlled],
                 substrate_cost_formulation=self.scenario.controller_params.substrate_cost_formulation,
+                Tu=self.Tu,
                 store_full_solution=True,
                 disturbances=self.scenario.disturbances,
                 gas_storage_bound_fraction=self.scenario.controller_params.gas_storage_bound_fraction,
@@ -429,7 +430,7 @@ class Simulation:
             self.x0_norm_estimated = self.x0_norm_estimated[:18]
             self.Tx = self.Tx[:18]
 
-        self.Tu = np.array([self.scenario.u_max[sub.state] for sub in self._subs_all])
+        self.Tu = np.array([self.scenario.u_max[sub.state] for sub in self._subs_all])  # __SH: normalization of input
         self.scenario.Tu = self.Tu
 
     def _model_setup(self):

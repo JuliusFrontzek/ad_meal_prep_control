@@ -33,6 +33,7 @@ def mpc_setup(
     cost_func: CostFunction,
     substrate_costs: list[float],
     substrate_cost_formulation: str,
+    Tu: np.ndarray,
     store_full_solution: bool,
     disturbances: Disturbances,
     gas_storage_bound_fraction: float,
@@ -187,10 +188,10 @@ def mpc_setup(
 
         if substrate_cost_formulation == "linear":
             for idx, cost in enumerate(substrate_costs):
-                sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}])")
+                sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}] * {Tu[idx]})")  # __SH: penalize absolute vol flows of substrates (not normalized ones)
         else:
             for idx, cost in enumerate(substrate_costs):
-                sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}])**2")
+                sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}] * {Tu[idx]})**2")
 
         sub_cost_rterm = " + ".join(sub_cost_rterms)
 

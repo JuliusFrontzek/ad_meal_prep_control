@@ -26,7 +26,7 @@ def adm1_r3_frac_norm(
     model_type = "continuous"
     model = do_mpc.model.Model(model_type, "SX")
 
-    num_inputs = xi_norm[0].shape[0] - num_dictated_subs
+    num_inputs = xi_norm[0].shape[0] - num_dictated_subs  # __SH: consider only controlled substrates as real inputs
 
     xi_norm[5] = model.set_variable(
         var_type="_p", var_name="xi_ch_norm", shape=(len(xi_norm[0]), 1)
@@ -323,7 +323,7 @@ def adm1_r3_frac_norm(
         ]
     ).transpose()
 
-    # Input
+    # normalized input
     u_norm = model.set_variable(var_type="_u", var_name="u_norm", shape=(num_inputs, 1))
 
     if num_dictated_subs:
@@ -468,7 +468,7 @@ def adm1_r3_frac_norm(
     else:
         sum_u = Tu * u_norm
 
-    # Measurements
+    # Measurements, __SH: y contains first absolute feed volume flows, then actual measurements
     u_meas = model.set_meas("u_meas", Tu * u_norm, meas_noise=False)
     y_meas = []
     for idx, y in enumerate(y):
