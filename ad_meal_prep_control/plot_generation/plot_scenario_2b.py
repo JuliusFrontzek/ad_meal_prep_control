@@ -123,18 +123,19 @@ post_processing.plot(
     ],
     plot_save_name="Scenario_2b_nominal_ideal",
     constraints=[
-        Constraint(value=0.0, ax_idx=2),
-        Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
-        Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-        Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
+        Constraint(value=0.0, ax_idx=3),
+        Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=3),
+        Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="grey"),
+        Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="grey"),
         # adapt ylim of plots by adding invisible horizontal lines:
-        Constraint(value=0, ax_idx=3, color="white"),  # gas production lower bound
-        Constraint(value=7.6, ax_idx=4, color="white"),  # pH upper bound
-        Constraint(value=0, ax_idx=5, color="white"),  # inhibtion lower bound
+        Constraint(value=0, ax_idx=4, color="white"),  # gas production lower bound
+        Constraint(value=7.6, ax_idx=5, color="white"),  # pH upper bound
+        Constraint(value=0, ax_idx=6, color="white"),  # inhibtion lower bound
     ],
     dpi=dpi,
     show_plot=show_plot,
-    height_ratios=[2, 1, 2, 2, 1, 1],
+    height_ratios=[2, 1, 1, 2, 2, 1, 1],
     color_background_indices=(0,1),
+    plot_olr=True,
 )
 #controller_plotting_2b()

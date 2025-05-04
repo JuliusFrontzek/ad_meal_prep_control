@@ -91,8 +91,8 @@ class PostProcessing:
         # u_controlled = []
         # for k in range(self._num_u):
         #     u_controlled.append(self._data_simulator._u[:, k] * self._scenario_meta_data["Tu"][k])
-        u_controlled = self._data_simulator._u * self._scenario_meta_data["Tu"]
-        u_dictated = self._data_simulator._tvp[:, self._num_u - 1] * self._scenario_meta_data["Tu"][self._num_u + feed_num - 1]
+        u_controlled = self._data_simulator._u * self._scenario_meta_data["Tu"][0:self._num_u]
+        # u_dictated = self._data_simulator._tvp[:, self._num_u - 1] * self._scenario_meta_data["Tu"][self._num_u + feed_num - 1]
 
         # get inlet concentrations:
         self._xis_controlled_subs = []
@@ -108,7 +108,7 @@ class PostProcessing:
 
         # get daily OLR by averaging over batches of 24h (thanks chatGPT):
         time = np.array(self._data_simulator._time[:, 0])
-        day_indices = np.ceil(time).astype(int)  # Convert time in days to integer day indices
+        day_indices = np.floor(time).astype(int)  # Convert time in days to integer day indices
         unique_days = np.unique(day_indices)
         data = self.olr_controlled
         daily_average = np.array([data[day_indices == day].mean() for day in unique_days])
@@ -139,15 +139,20 @@ class PostProcessing:
             plot_olr: bool = False,  # __SH: if True, height_ratios must have 1 additional list entry
     ):
 
-        # insert volume flows and/or OLR to subplots in reverse order:
-        if plot_olr:
-            subplot_labels_and_vars.insert(
-                0, (r"$OLR$" + "\n" + r"$[kg VS/m^3/d]$", {f"OLR": None})
-            )
-
+        # insert volume flows and/or OLR to subplots:
         if plot_inputs:
             subplot_labels_and_vars.insert(
                 0, (r"$\dot V_{feed,silage}$" + "\n" + r"$[m^3/d]$", {f"u_norm": None})
+            )
+
+        if plot_olr and self._num_dictated_subs == 0:
+            subplot_labels_and_vars.insert(
+                1, (r"$OLR$" + "\n" + r"$[kg VS/m^3/d]$", {f"OLR": None})
+            )
+
+        if plot_olr and self._num_dictated_subs > 0:
+            subplot_labels_and_vars.insert(
+                2, (r"$OLR$" + "\n" + r"$[kg VS/m^3/d]$", {f"OLR": None})
             )
 
         if height_ratios is None:
@@ -255,7 +260,7 @@ class PostProcessing:
 
                         x_num = int(plot_var_name.split("_")[-1])
 
-                    # plot outputs:
+                    # plot outputs (includes dictated substrates):
                     elif plot_var_name[0] == "y":
                         y_num = int(plot_var_name.split("_")[-1])
 
@@ -433,13 +438,16 @@ class PostProcessing:
                     elif plot_var_name.startswith("OLR"):
 
                         if plt_kwargs["color"] is None:
-                            plt_kwargs["color"] = "tomato"
+                            plt_kwargs["color"] = "black"
 
                         plt_kwargs["drawstyle"] = "steps-post"
 
+                        # the last data point must be repeated for step plots to be shown until the end of plotted time:
+                        unique_days_plot = np.append(self.unique_days, self._data_simulator._time[-1])
+                        olr_daily_plot = np.append(self.olr_controlled_daily, self.olr_controlled_daily[-1])
                         ax.plot(
-                            self.unique_days,
-                            self.olr_controlled_daily,
+                            unique_days_plot,
+                            olr_daily_plot,
                             **plt_kwargs,
                         )
 

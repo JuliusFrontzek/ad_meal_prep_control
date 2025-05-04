@@ -11,14 +11,15 @@ import numpy as np
 
 fill_level_setpoint = 0.4
 lterm = (f"(5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2 +"
-         f"+ 5e-1 *(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**4)"
+         f"+ 5e-1*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**4)"
          )
 
 mterm = "model.tvp['dummy_tvp']"
+
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 # user input:
-n_days_mpc = 14  # length of simulation [d]
+n_days_mpc = 3  # length of simulation [d]
 n_std_dev = 0  # number std deviations
 t_stp_ahead_pred = 8  # for controller plotting
 
