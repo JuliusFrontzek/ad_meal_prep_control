@@ -85,43 +85,48 @@ class PostProcessing:
         self.MEASUREMENT_COLOR = self._cmap.resampled(1).colors[0]
 
         # compute organic loading rate (OLR):
-        # __SH: carefully think which variables really need to be defined as an attribute of PostProcessing
-        # __SH: compute OLR only from controlled substrates for now
         # get absolute volume flows
-        # u_controlled = []
-        # for k in range(self._num_u):
-        #     u_controlled.append(self._data_simulator._u[:, k] * self._scenario_meta_data["Tu"][k])
         u_controlled = self._data_simulator._u * self._scenario_meta_data["Tu"][0:self._num_u]
-        # u_dictated = self._data_simulator._tvp[:, self._num_u - 1] * self._scenario_meta_data["Tu"][self._num_u + feed_num - 1]
+        if self._num_dictated_subs > 0:
+            u_dictated = self._data_simulator._tvp[:, 0] * self._scenario_meta_data["Tu"][self._num_u]
 
         # get inlet concentrations:
         self._xis_controlled_subs = []
         for sub_name in self._scenario_meta_data["sub_names"]:
             self._xis_controlled_subs.append(getattr(substrates, sub_name).xi)
-        # self._num_dictated_subs
 
+        if self._num_dictated_subs > 0:
+            self._xis_dictated_subs = []
+            dictated_sub_names = list(self._scenario_meta_data["disturbances"]["dictated_feeding"].keys())
+            for sub_name in dictated_sub_names:
+                self._xis_dictated_subs.append(getattr(substrates, sub_name).xi)
+
+        # aggregate all volatile solids components
+        self._S_vs_controlled = [sum(self._xis_controlled_subs[k][0:4] + self._xis_controlled_subs[k][5:11]) for k
+                                 in range(self._num_u)]
+        self._olr_controlled = np.sum((np.array(self._S_vs_controlled) * u_controlled)/params_R3.Vl,1)  # sum of all substrates
+
+        if self._num_dictated_subs > 0:
+            self._S_vs_dictated = [sum(self._xis_dictated_subs[k][0:4] + self._xis_controlled_subs[k][5:11]) for k
+                                   in range(self._num_dictated_subs)]
+            if self._num_dictated_subs > 1:
+                self._olr_dictated = np.sum((np.array(self._S_vs_dictated) * u_dictated) / params_R3.Vl, 1)
+            else:
+                self._olr_dictated = (np.array(self._S_vs_dictated) * u_dictated) / params_R3.Vl
 
         # compute OLR:
-        self._S_vs_controlled = [sum(self._xis_controlled_subs[k][0:4] + self._xis_controlled_subs[k][5:11]) for k
-                                 in range(self._num_u)]  # aggregate all volatile solids components
-        self.olr_controlled = np.sum((np.array(self._S_vs_controlled) * u_controlled)/params_R3.Vl,1)
+        if self._num_dictated_subs > 0:
+            self.olr = self._olr_controlled + self._olr_dictated
+        else:
+            self.olr = self._olr_controlled
 
         # get daily OLR by averaging over batches of 24h (thanks chatGPT):
         time = np.array(self._data_simulator._time[:, 0])
         day_indices = np.floor(time).astype(int)  # Convert time in days to integer day indices
         unique_days = np.unique(day_indices)
-        data = self.olr_controlled
-        daily_average = np.array([data[day_indices == day].mean() for day in unique_days])
+        olr_daily_average = np.array([self.olr[day_indices == day].mean() for day in unique_days])
         self.unique_days = unique_days
-        self.olr_controlled_daily = daily_average
-
-
-        # self._dictated_subs_xis = []
-        # dictated_sub_names = list(self._scenario_meta_data["disturbances"].dictated_feeding.keys())
-        # for sub_name in dictated_sub_names:
-        #     self._dictated_subs_xis.append(getattr(substrates, sub_name).xi)
-
-        # self._S_vs_dictated = ...
+        self.olr_daily = olr_daily_average
 
     def plot(
             self,
@@ -165,7 +170,7 @@ class PostProcessing:
             gridspec_kw={"height_ratios": height_ratios},
         )
 
-        # create inset axes for substrates:
+        # create inset axes for controlled substrates:
         if plot_inputs:
             ax_inputs_liquid = axes[0].twinx()
 
@@ -281,11 +286,7 @@ class PostProcessing:
                                 inset_ax.plot(
                                     self._data_simulator._time,
                                     self._data_simulator._y[
-                                    :,
-                                    self._num_u
-                                    + y_num
-                                    + self._num_dictated_subs
-                                    - 1,
+                                    :, self._num_u + y_num + self._num_dictated_subs - 1,
                                     ],
                                     label=plot_var_property.label,
                                     **plt_kwargs,
@@ -400,7 +401,7 @@ class PostProcessing:
                                 0.0, self._scenario_meta_data["u_max"]["liquid"] * 1.1
                             )
 
-                    # plot disturbance feeding:
+                    # plot dictated feeding: __SH: multiple dictated feeds are probably not plotted in the same subplot
                     elif plot_var_name.startswith("dictated_sub_feed"):
                         feed_num = int(plot_var_name.split("_")[-1])
 
@@ -444,12 +445,13 @@ class PostProcessing:
 
                         # the last data point must be repeated for step plots to be shown until the end of plotted time:
                         unique_days_plot = np.append(self.unique_days, self._data_simulator._time[-1])
-                        olr_daily_plot = np.append(self.olr_controlled_daily, self.olr_controlled_daily[-1])
+                        olr_daily_plot = np.append(self.olr_daily, self.olr_daily[-1])
                         ax.plot(
                             unique_days_plot,
                             olr_daily_plot,
                             **plt_kwargs,
                         )
+                        ax.set_ylim(0,)
 
                     # plot auxiliary variables:
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":
