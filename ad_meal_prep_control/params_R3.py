@@ -36,13 +36,10 @@ KS_IN = 0.0017  # kg/m^3
 k_AB_ac = 1.0 * 10**10  # l/mol/d
 k_AB_co2 = 1.0 * 10**10  # l/mol/d
 k_AB_IN = 1.0 * 10**10  # l/mol/d
-# K_a_ac = 1.737800828749374 * 10 ** (-5.0)  # mol/l
-# K_a_co2 = 4.937073397534361 * 10 ** (-7.0)  # mol/l
-# K_a_IN = 1.110286652708067 * 10 ** (-9.0)  # mol/l
-
-K_a_IN = 1.3809e-9
+# Dissociation parameters from Diss Sören, Tab. B.6: [mol/l]
+K_a_IN = 1.3490e-9
 K_a_ac = 1.7378e-5
-K_a_co2 = 5.0981e-7
+K_a_co2 = 5.1286e-7
 
 # Parameters introduced by Julius
 p_gas_storage = p0 * 1.001  # slightly larger than atmospheric pressure [bar]
