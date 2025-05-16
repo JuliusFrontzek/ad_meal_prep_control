@@ -423,9 +423,9 @@ def adm1_r3_frac_norm(
     model.set_variable(var_type="_tvp", var_name="v_ch4_dot_tank_in_setpoint")
     model.set_variable(var_type="_tvp", var_name="dummy_tvp")
 
-    p_h2o = vapour_pressure_h2o(T)
+    p_h2o_gas_storage = vapour_pressure_h2o(T_gas_storage)
     p_gas_total_fermenter = model.set_expression(
-        "p_gas_total_fermenter", y_norm[1] * Ty[1] + y_norm[2] * Ty[2] + p_h2o
+        "p_gas_total_fermenter", y_norm[1] * Ty[1] + y_norm[2] * Ty[2] + ph2o
     )
     v_total_dot_tank_in = model.set_expression(
         "v_total_dot_tank_in",
@@ -433,20 +433,19 @@ def adm1_r3_frac_norm(
     )
     v_ch4_dot_tank_in = model.set_expression(
         f"v_ch4_dot_tank_in",
-        v_total_dot_tank_in * y_norm[1] * Ty[1] / p_gas_total_fermenter,
+        v_total_dot_tank_in * y_norm[1] * Ty[1] / p_gas_total_fermenter,  # temperature correction already considered for total inflowing vol flow
     )
 
+    # define auxiliary variables for GS ODEs:
     if external_gas_storage_model:
         v_ch4_dot_tank_out = model.set_variable(
             var_type="_tvp", var_name="v_ch4_dot_tank_out"
         )
-        model.set_variable(var_type="_tvp", var_name="v_ch4_dot_tank_out_mean")
+        model.set_variable(var_type="_tvp", var_name="v_h2o_tank")
         v_h2o = model.set_expression(
             "V_H2O",
             1.0
-            / (1.0 - p_h2o / p_gas_storage)
-            * p_h2o
-            / p_gas_storage
+            / (1.0 - p_h2o_gas_storage / p_gas_storage)
             * (Tx[18] * x_norm[18] + Tx[19] * x_norm[19]),
         )
 
@@ -662,16 +661,22 @@ def adm1_r3_frac_norm(
     if external_gas_storage_model:
         model.set_rhs(
             "x_19",
-            (v_ch4_dot_tank_in - v_ch4_dot_tank_out) / Tx[18],
+            (v_ch4_dot_tank_in - v_ch4_dot_tank_out) / Tx[18],  # temperature correction of chp outflow already considered in class CHP
         )  # V_CH4
         model.set_rhs(
             "x_20",
             (
-                v_total_dot_tank_in * y_norm[2] * Ty[2] / p_gas_total_fermenter
-                - y_co2
-                / (1.0 - y_co2)
-                / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
-                * (v_ch4_dot_tank_out * (1.0 + y_h2o / (1.0 - y_h2o)))
+                # v_total_dot_tank_in * y_norm[2] * Ty[2] / p_gas_total_fermenter  # temperature correction already considered for total inflowing vol flow
+                # - y_co2 / (1.0 - y_co2)
+                # / (1.0 - y_co2 * y_h2o / ((1.0 - y_co2) * (1.0 - y_h2o)))
+                # * (v_ch4_dot_tank_out * (1.0 + y_h2o / (1.0 - y_h2o)))
+                #
+                # __SH: the above is equivalent to:
+                # v_total_dot_tank_in * y_norm[2] * Ty[2] / p_gas_total_fermenter  # temperature correction already considered for total inflowing vol flow
+                # - y_co2 / (1.0 - y_h2o - y_co2) * v_ch4_dot_tank_out
+                # __SH: the correct ODE is:
+                v_total_dot_tank_in * y_norm[2] * Ty[2] /p_gas_total_fermenter  # temperature correction already considered for total inflowing vol flow
+                - (2.0 - y_h2o) / (y_co2 * y_h2o - y_h2o - y_co2) * v_ch4_dot_tank_out
             )
             / Tx[19],
         )  # V_CO2
