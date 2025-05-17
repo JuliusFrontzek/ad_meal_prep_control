@@ -672,11 +672,8 @@ def adm1_r3_frac_norm(
                 # * (v_ch4_dot_tank_out * (1.0 + y_h2o / (1.0 - y_h2o)))
                 #
                 # __SH: the above is equivalent to:
-                # v_total_dot_tank_in * y_norm[2] * Ty[2] / p_gas_total_fermenter  # temperature correction already considered for total inflowing vol flow
-                # - y_co2 / (1.0 - y_h2o - y_co2) * v_ch4_dot_tank_out
-                # __SH: the correct ODE is:
-                v_total_dot_tank_in * y_norm[2] * Ty[2] /p_gas_total_fermenter  # temperature correction already considered for total inflowing vol flow
-                - (2.0 - y_h2o) / (y_co2 * y_h2o - y_h2o - y_co2) * v_ch4_dot_tank_out
+                v_total_dot_tank_in * y_norm[2] * Ty[2] / p_gas_total_fermenter  # temperature correction already considered for total inflowing vol flow
+                - y_co2 / (1.0 - y_h2o - y_co2) * v_ch4_dot_tank_out
             )
             / Tx[19],
         )  # V_CO2
