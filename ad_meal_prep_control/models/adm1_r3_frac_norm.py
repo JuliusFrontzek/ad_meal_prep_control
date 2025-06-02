@@ -424,6 +424,7 @@ def adm1_r3_frac_norm(
     model.set_variable(var_type="_tvp", var_name="dummy_tvp")
 
     p_h2o_gas_storage = vapour_pressure_h2o(T_gas_storage)
+    y_h2o = p_h2o_gas_storage / p_gas_storage  # __SH: fixed share of water vapour in GS due to saturation
     p_gas_total_fermenter = model.set_expression(
         "p_gas_total_fermenter", y_norm[1] * Ty[1] + y_norm[2] * Ty[2] + ph2o
     )
@@ -438,25 +439,24 @@ def adm1_r3_frac_norm(
 
     # define auxiliary variables for GS ODEs:
     if external_gas_storage_model:
-        v_ch4_dot_tank_out = model.set_variable(
-            var_type="_tvp", var_name="v_ch4_dot_tank_out"
-        )
-        model.set_variable(var_type="_tvp", var_name="v_h2o_tank")
+        v_ch4_dot_tank_out = model.set_variable(var_type="_tvp", var_name="v_ch4_dot_tank_out")
+        model.set_variable(var_type="_tvp", var_name="v_ch4_dot_tank_out_mean")
+
+        # __SH: correct Julius' gas storage bugs
+        # y_h2o = model.set_expression(
+        #     "y_h2o",
+        #     p_h2o_gas_storage / p_gas_storage,
+        # )
         v_h2o = model.set_expression(
             "V_H2O",
-            1.0
-            / (1.0 - p_h2o_gas_storage / p_gas_storage)
-            * (Tx[18] * x_norm[18] + Tx[19] * x_norm[19]),
+            y_h2o / (1.0 - y_h2o) * (Tx[18] * x_norm[18] + Tx[19] * x_norm[19]),
         )
 
         v_gas_storage = model.set_expression(
-            "v_gas_storage", Tx[18] * x_norm[18] + Tx[19] * x_norm[19] + v_h2o
+            "v_gas_storage",
+            Tx[18] * x_norm[18] + Tx[19] * x_norm[19] + v_h2o,
         )
 
-        y_h2o = model.set_expression(
-            "y_h2o",
-            v_h2o / (v_gas_storage),
-        )
         y_co2 = model.set_expression(
             "y_co2",
             Tx[19] * x_norm[19] / (v_gas_storage),

@@ -11,8 +11,8 @@ from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scen
 )
 
 scenario_names = [
-    #"Scenario_2a_dynamic_nominal_feedback_mismatch_2std_8tsap",
-    "Scenario_2a_dynamic_nominal_ideal_feedback_8tsap",
+    "Scenario_2a_dynamic_nominal_feedback_mismatch_2std_8tsap",
+    #"Scenario_2a_dynamic_nominal_ideal_feedback_8tsap",
     #"Scenario_2a_dynamic_robust_feedback_mismatch_2std_8tsap",
 ]
 plot_save_names = scenario_names
@@ -97,29 +97,29 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                         )
                     },
                 ),
-                (
-                    r"$Inhibition$" + "\n" + r"$[-]$",
-                    {
-                        "inhibition_1": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="black", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$Inhibition_1$",
-                        ),
-                        "inhibition_2": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="mediumblue", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$Inhibition_2$",
-                        ),
-                        "inhibition_3": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="cornflowerblue", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$Inhibition_3$",
-                        ),
-                    },
-                ),
+                # (
+                #     r"$Inhibition$" + "\n" + r"$[-]$",
+                #     {
+                #         "inhibition_1": PlotVarProperty(
+                #             mpl_properties=MPLProperties(
+                #                 color="black", linewidth=1, linestyle="-"
+                #             ),
+                #             label=r"$Inhibition_1$",
+                #         ),
+                #         "inhibition_2": PlotVarProperty(
+                #             mpl_properties=MPLProperties(
+                #                 color="mediumblue", linewidth=1, linestyle="-"
+                #             ),
+                #             label=r"$Inhibition_2$",
+                #         ),
+                #         "inhibition_3": PlotVarProperty(
+                #             mpl_properties=MPLProperties(
+                #                 color="cornflowerblue", linewidth=1, linestyle="-"
+                #             ),
+                #             label=r"$Inhibition_3$",
+                #         ),
+                #     },
+                # ),
             ],
             plot_save_name=plot_save_name,
             constraints=[
@@ -141,7 +141,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ],
             dpi=dpi,
             show_plot=show_plot,
-            height_ratios=[2, 1, 2, 2, 1, 1],
+            height_ratios=[2, 1, 2, 2, 1],
             color_background_indices=(1,),
             plot_olr=True,
         )
@@ -212,29 +212,29 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                         )
                     },
                 ),
-                (
-                    r"$Inhibition$" + "\n" + r"$[-]$",
-                    {
-                        "inhibition_1": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="black", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$Inhibition_1$",
-                        ),
-                        "inhibition_2": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="mediumblue", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$Inhibition_2$",
-                        ),
-                        "inhibition_3": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="cornflowerblue", linewidth=1, linestyle="-"
-                            ),
-                            label=r"$Inhibition_3$",
-                        ),
-                    },
-                ),
+                # (
+                #     r"$Inhibition$" + "\n" + r"$[-]$",
+                #     {
+                #         "inhibition_1": PlotVarProperty(
+                #             mpl_properties=MPLProperties(
+                #                 color="black", linewidth=1, linestyle="-"
+                #             ),
+                #             label=r"$Inhibition_1$",
+                #         ),
+                #         "inhibition_2": PlotVarProperty(
+                #             mpl_properties=MPLProperties(
+                #                 color="mediumblue", linewidth=1, linestyle="-"
+                #             ),
+                #             label=r"$Inhibition_2$",
+                #         ),
+                #         "inhibition_3": PlotVarProperty(
+                #             mpl_properties=MPLProperties(
+                #                 color="cornflowerblue", linewidth=1, linestyle="-"
+                #             ),
+                #             label=r"$Inhibition_3$",
+                #         ),
+                #     },
+                # ),
             ],
             plot_save_name=plot_save_name,
             constraints=[
@@ -276,8 +276,8 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             ],
             dpi=dpi,
             show_plot=show_plot,
-            height_ratios=[2, 1, 2, 2, 1, 1],
-            color_background_indices=(1,),
+            height_ratios=[2, 1, 2, 2, 1],
+            color_background_indices=(1,2),
             plot_olr=True,
         )
-controller_plotting_2a(scenario_names)
+#controller_plotting_2a(scenario_names)

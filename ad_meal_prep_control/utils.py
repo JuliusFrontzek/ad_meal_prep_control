@@ -413,8 +413,8 @@ class ScenarioFactory:
             0.0223,
             0.358,
             0.660,
-            0.075 * params_R3.V_GAS_STORAGE_MAX,  # m^3
-            0.075 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+            0.1 * params_R3.V_GAS_STORAGE_MAX,  # m^3
+            0.1 * params_R3.V_GAS_STORAGE_MAX,  # m^3
         ]
     )
 
