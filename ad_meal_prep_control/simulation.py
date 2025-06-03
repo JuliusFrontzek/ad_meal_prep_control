@@ -588,27 +588,30 @@ class Simulation:
             if self.scenario.pygame_vis:
                 self._screen.fill("white")
 
+            _u_norm_ss_silage = 3.2e-2 / len(self._subs_controlled)  # __SH: results in OLR 4
+            _u_norm_ss_manure = (len(self.Tu) - 1) * min(self.Tu)/max(self.Tu) * _u_norm_ss_silage  # __SH: for equal fresh matter inputs of silages and manure
             u_norm_steady_state = np.array(
                 [
                     [
-                        3e-4 / len(self._subs_controlled) * _tu
-                        if sub.state == "solid"                      # for silages
-                        else 1e-5 / len(self._subs_controlled) * _tu  # for manure
-                        for _tu, sub in zip(self.Tu, self._subs_controlled)
+                        _u_norm_ss_manure
+                        if sub.state == "liquid"
+                        else _u_norm_ss_silage
+                        for sub in self._subs_controlled
                     ]
                 ]
             ).T
 
+            # __SH: compute OLR during steady-state computation:
+            _u_abs_steady_state = (u_norm_steady_state.T * self.Tu[0:4]).T
+            _dot_m_vs_sub = [_u_abs_steady_state[k] * (sum(self._subs_controlled[k].xi[0:4])
+                                                       + sum(self._subs_controlled[k].xi[5:11]))
+                             for k in range(len(self._subs_controlled))]
+            self.olr_ss = sum(_dot_m_vs_sub) / params_R3.Vl
+
+            # compute SS
             y_next = self._simulator.make_step(u_norm_steady_state)
             self.x0_norm_true = np.array(self._simulator.x0.master)
             self.x0_norm_estimated = self._estimator.make_step(y_next)
-
-            # __SH: compute OLR of steady-state computation:
-            _u_abs_steady_state = (u_norm_steady_state.T * self.Tu[0:4]).T
-            _dot_m_vs_sub = [_u_abs_steady_state[k] * (sum(self._subs_controlled[k].xi[0:4])
-                                                     + sum(self._subs_controlled[k].xi[5:11]))
-                             for k in range(len(self._subs_controlled))]
-            self.olr_ss = sum(_dot_m_vs_sub) / params_R3.Vl
 
         # Save normalized x values
         np.savetxt(
