@@ -277,7 +277,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             dpi=dpi,
             show_plot=show_plot,
             height_ratios=[2, 1, 2, 2, 1],
-            color_background_indices=(1,2),
+            color_background_indices=(2,),
             plot_olr=True,
         )
 #controller_plotting_2a(scenario_names)
