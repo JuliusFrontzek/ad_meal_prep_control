@@ -452,6 +452,8 @@ class PostProcessing:
                             **plt_kwargs,
                         )
                         ax.set_ylim(0,)
+                        # Set y-ticks to show all integer values up to the maximum value
+                        ax.set_yticks(np.arange(0, np.ceil(max(self.olr_daily)) + 1, 1))
 
                     # plot auxiliary variables:
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":

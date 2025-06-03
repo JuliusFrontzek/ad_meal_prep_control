@@ -9,6 +9,12 @@ from ad_meal_prep_control.utils import (
 from ad_meal_prep_control.params_R3 import P_el_chp
 import numpy as np
 
+# user input:
+n_days_mpc = 21  # length of simulation [d]
+n_std_dev = 2  # number std deviations
+t_step = 0.5 / 24.0
+t_stp_ahead_pred = 8  # for controller plotting
+
 fill_level_setpoint = 0.5
 c_1 = 1e2
 lterm = (f"{c_1} * (model.aux['v_gas_storage']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2"
@@ -17,11 +23,6 @@ lterm = (f"{c_1} * (model.aux['v_gas_storage']/V_GAS_STORAGE_MAX - {fill_level_s
 mterm = "model.tvp['dummy_tvp']"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
-
-# user input:
-n_days_mpc = 1  # length of simulation [d]
-n_std_dev = 2  # number std deviations
-t_stp_ahead_pred = 8  # for controller plotting
 
 controller_params = ControllerParams(
     mpc_n_horizon=40,
@@ -43,7 +44,7 @@ kwargs = {
         "v_ch4_dot_tank_in",
         "y_meas_4",
     ],
-    "t_step": 0.5 / 24.0,
+    "t_step": t_step,
     "n_days_mpc": n_days_mpc,
     "num_std_devs_sim": n_std_dev,
     "feedback": True,

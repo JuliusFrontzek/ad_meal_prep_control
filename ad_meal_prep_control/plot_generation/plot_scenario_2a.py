@@ -27,7 +27,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         dpi = int(sys.argv[1])
         show_plot = int(sys.argv[2])
     except IndexError:
-        dpi = 100
+        dpi = 600
         show_plot = False
 
     if not "nominal_feedback" in scenario_name:

@@ -12,17 +12,18 @@ import random
 
 np.random.seed(seed=42)
 
-fill_level_setpoint = 0.4
-lterm = (f"(0.5*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2 +"
-         f"+ 50*(model.x['x_19'] + model.x['x_20'] + model.aux['V_H2O']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**4)"
+# user input:
+n_days_mpc = 30
+n_std_dev = 1  # number std deviations
+t_step = 0.5 / 24.0
+fill_level_setpoint = 0.5
+c_1 = 1e2
+lterm = (f"{c_1} * (model.aux['v_gas_storage']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2"
          )
 
 mterm = "model.tvp['dummy_tvp']"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
-
-n_days_mpc = 30
-n_std_dev = 1  # number std deviations
 
 controller_params = ControllerParams(
     mpc_n_horizon=40,
@@ -32,8 +33,6 @@ controller_params = ControllerParams(
     substrate_cost_formulation="linear",
     gas_storage_bound_fraction=0.05,
 )
-
-t_step = 0.5 / 24.0
 
 # add gas storage measurement noise ("state jumps"):
 rng = default_rng()
