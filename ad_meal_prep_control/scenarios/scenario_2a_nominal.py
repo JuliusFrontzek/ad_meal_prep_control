@@ -3,19 +3,16 @@ from ad_meal_prep_control.utils import (
     ScenarioFactory,
     CostFunction,
     ControllerParams,
-    Disturbances,
     NlConstraint
 )
-from ad_meal_prep_control.params_R3 import P_el_chp
-import numpy as np
 
 # user input:
-n_days_mpc = 28  # length of simulation [d]
+n_days_mpc = 23  # length of simulation [d]
 n_std_dev = 2  # number std deviations
 t_step = 0.5 / 24.0
 t_stp_ahead_pred = 8  # for controller plotting
 
-fill_level_setpoint = 0.35
+fill_level_setpoint = 0.45
 c_1 = 1e3
 lterm = (f"{c_1} * (model.aux['v_gas_storage']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2"
          )
