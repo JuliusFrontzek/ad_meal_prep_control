@@ -578,7 +578,7 @@ class PostProcessing:
             axis.set_ylabel(
                 y_label,
                 rotation=0,
-                labelpad=30.0,
+                labelpad=self._scenario_meta_data["n_days_mpc"],
             )
 
             # __SH: adjust ylabel for liquid substrates:
@@ -586,7 +586,7 @@ class PostProcessing:
                 ax_inputs_liquid.set_ylabel(
                     r"$\dot V_{feed,manure}$" + "\n" + r"$[m^3/d]$",
                     rotation=0,
-                    labelpad=30.0,
+                    labelpad=self._scenario_meta_data["n_days_mpc"],
                 )
 
         # Gray coloring of plot background
@@ -609,6 +609,7 @@ class PostProcessing:
         if time_range is not None:
             plt.setp(axes, xlim=time_range)
 
+        plt.xlim(0, np.ceil(self._scenario_meta_data["n_days_mpc"]/5)*5)  # integer multiples of 5
         fig.set_size_inches(w=8, h=2 * len(axes))
 
         fig.tight_layout()

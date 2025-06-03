@@ -97,58 +97,61 @@ post_processing.plot(
                 )
             },
         ),
-        (
-            r"$Inhibition$" + "\n" + r"$[-]$",
-            {
-                "inhibition_1": PlotVarProperty(
-                    mpl_properties=MPLProperties(
-                        color="black", linewidth=1, linestyle="-"
-                    ),
-                    label=r"$Inhibition_1$",
-                ),
-                "inhibition_2": PlotVarProperty(
-                    mpl_properties=MPLProperties(
-                        color="mediumblue", linewidth=1, linestyle="-"
-                    ),
-                    label=r"$Inhibition_2$",
-                ),
-                "inhibition_3": PlotVarProperty(
-                    mpl_properties=MPLProperties(
-                        color="cornflowerblue", linewidth=1, linestyle="-"
-                    ),
-                    label=r"$Inhibition_3$",
-                ),
-            },
-        ),
+        # (
+        #     r"$Inhibition$" + "\n" + r"$[-]$",
+        #     {
+        #         "inhibition_1": PlotVarProperty(
+        #             mpl_properties=MPLProperties(
+        #                 color="black", linewidth=1, linestyle="-"
+        #             ),
+        #             label=r"$Inhibition_1$",
+        #         ),
+        #         "inhibition_2": PlotVarProperty(
+        #             mpl_properties=MPLProperties(
+        #                 color="mediumblue", linewidth=1, linestyle="-"
+        #             ),
+        #             label=r"$Inhibition_2$",
+        #         ),
+        #         "inhibition_3": PlotVarProperty(
+        #             mpl_properties=MPLProperties(
+        #                 color="cornflowerblue", linewidth=1, linestyle="-"
+        #             ),
+        #             label=r"$Inhibition_3$",
+        #         ),
+        #     },
+        # ),
     ],
     plot_save_name="Scenario_2c_dynamic",
     constraints=[
         Constraint(value=0.0, ax_idx=2),
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
-        Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-        Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
+        Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="grey"),
+        Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="grey"),
         # adapt ylim of plots by adding invisible horizontal lines:
-        Constraint(value=0, ax_idx=3, color="white"),  # gas production lower bound
-        Constraint(value=7.6, ax_idx=4, color="white"),  # pH upper bound
-        Constraint(value=0, ax_idx=5, color="white"),  # inhibition lower bound
+        Constraint(value=2, ax_idx=1, color="white"),    # dictated feeding upper bound
+        Constraint(value=0, ax_idx=4, color="white"),    # gas production lower bound
+        Constraint(value=7.4, ax_idx=5, color="white"),  # pH upper bound
+        Constraint(value=7.3, ax_idx=5, color="white"),  # pH lower bound
+        #Constraint(value=0, ax_idx=5, color="white"),   # inhibition lower bound
     ],
     dpi=dpi,
     show_plot=show_plot,
-    height_ratios=[2, 1, 2, 2, 1, 1],
+    height_ratios=[2, 1, 1, 2, 2, 1],
     # input_inset_axes=[
     #     {
     #         "days": (12, 13),
     #         "ylimit": (0, 1),
     #         "inset_axis_specs": (0.4, 0.7, 0.05, 0.15),
     #     }],
-    other_inset_axes=[
-        {
-            "plot_idx": 2,
-            "days": (6, 7.5),
-            "ylimit": (210, 235),
-            "inset_axis_specs": (0.3, 0.35, 0.1, 0.2),
-        },
-    ],
-    color_background_indices=(2,),
+    # other_inset_axes=[
+    #     {
+    #         "plot_idx": 3,
+    #         "days": (6, 7.5),
+    #         "ylimit": (320, 340),
+    #         "inset_axis_specs": (0.3, 0.35, 0.1, 0.2),
+    #     },
+    # ],
+    color_background_indices=(3,),
+    plot_olr=True,
 )
-controller_plotting_2c()
+#controller_plotting_2c()

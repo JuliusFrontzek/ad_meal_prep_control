@@ -13,11 +13,11 @@ import random
 np.random.seed(seed=42)
 
 # user input:
-n_days_mpc = 30
+n_days_mpc = 28
 n_std_dev = 1  # number std deviations
 t_step = 0.5 / 24.0
 fill_level_setpoint = 0.5
-c_1 = 1e2
+c_1 = 1e3
 lterm = (f"{c_1} * (model.aux['v_gas_storage']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2"
          )
 
@@ -65,9 +65,9 @@ kwargs = {
     "disturbances": Disturbances(
         state_jumps={18: state_jumps_ch4, 19: state_jumps_co2},
         dictated_feeding={
-            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 7.0, 0.0065),
-                                             (9.0, 12.0, 0.0086),
-                                             (15.0, 19.0, 0.0129)],
+            "CATTLE_MANURE_VERY_UNCERTAIN": [(5.0, 7.0, 1.292e-3),
+                                             (9.0, 12.0, 2.585e-3),
+                                             (15.0, 19.0, 3.877e-3)],
         },
         #max_feeding_error=0.05,
     ),

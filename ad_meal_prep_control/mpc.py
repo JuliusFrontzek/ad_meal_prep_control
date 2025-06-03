@@ -84,12 +84,12 @@ def mpc_setup(
                     for dictated_sub in dictated_sub_properties:
                         start_time = dictated_sub[0]
                         end_time = dictated_sub[1]
-                        feed_amount = dictated_sub[2]  # __SH: normalized
+                        feed_vol_flow = dictated_sub[2]  # __SH: normalized
 
                         time_k = t_now + t_step * k
                         if time_k >= start_time and time_k < end_time:
                             tvp_template["_tvp", k, "dictated_sub_feed", feed_idx] = (
-                                feed_amount
+                                feed_vol_flow
                             )
                             break
                         else:
