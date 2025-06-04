@@ -131,7 +131,7 @@ post_processing.plot(
         Constraint(value=2, ax_idx=1, color="white"),    # dictated feeding upper bound
         Constraint(value=0, ax_idx=4, color="white"),    # gas production lower bound
         Constraint(value=7.5, ax_idx=5, color="white"),  # pH upper bound
-        Constraint(value=7.4, ax_idx=5, color="white"),  # pH lower bound
+        Constraint(value=7.3, ax_idx=5, color="white"),  # pH lower bound
         #Constraint(value=0, ax_idx=5, color="white"),   # inhibition lower bound
     ],
     dpi=dpi,

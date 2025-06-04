@@ -596,16 +596,19 @@ class PostProcessing:
             y = self._data_simulator["_tvp", "v_ch4_dot_tank_out"]
 
             mask = y > 0
-            if mask[0]:
+            if mask[0]:  # __SH: edge case CHP on at beginning
                 start = x[0]
             for i in range(1, len(x)):
                 if mask[i] and not mask[i - 1]:  # Start of a region
                     start = x[i]
                 if not mask[i] and mask[i - 1]:  # End of a region
                     end = x[i]
-
                     for ax_idx in color_background_indices:
                         axes[ax_idx].axvspan(start[0], end[0], color="gray", alpha=0.3, lw=0)
+            if mask[-1]:  # __SH: edge case CHP on at end
+                end = x[-1]
+                for ax_idx in color_background_indices:
+                    axes[ax_idx].axvspan(start[0], end[0], color="gray", alpha=0.3, lw=0)
 
         if time_range is not None:
             plt.setp(axes, xlim=time_range)
