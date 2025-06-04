@@ -9,25 +9,27 @@ from ad_meal_prep_control.utils import (
 import numpy as np
 import math
 
-lterm = "10*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
-mterm = "100*((model.aux['v_ch4_dot_tank_in'] - model.tvp['v_ch4_dot_tank_in_setpoint'])/model.tvp['v_ch4_dot_tank_in_setpoint'])**2"
+c_1 = 1e3
+c_2 = 0
+c_3 = 1e-1
+lterm = f"{c_1}*((model.aux['v_dot_ch4_AD_norm_condition'] - model.tvp['v_ch4_dot_AD_setpoint'])/model.tvp['v_ch4_dot_AD_setpoint'])**2"
+mterm = f"{c_2}*((model.aux['v_dot_ch4_AD_norm_condition'] - model.tvp['v_ch4_dot_AD_setpoint'])/model.tvp['v_ch4_dot_AD_setpoint'])**2"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 # user input:
-n_days_mpc = 30         # length of simulation [d]
+n_days_mpc = 28         # length of simulation [d]
 n_std_dev = 1.5         # used for plant and controller
 t_stp_ahead_pred = 3    # for controller plotting
-setpoints = np.array([350.0, 550.0, 450.0, 350.0])
+substrate_cost_formulation = "quadratic"  # linear or quadratic
 
 ch4_set_point_function = SetpointFunction(
-    setpoints=setpoints,
+    setpoints=np.array([350.0, 450.0, 450.0, 350.0]),
     time_points=np.array([3, 6, 9]),
 )
 
-
 rterms = [
-    f"0.1*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
+    f"{c_3}*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
 ]
 rterm = " + ".join(rterms)
 
@@ -36,7 +38,7 @@ controller_params = ControllerParams(
     mpc_n_robust=1,
     num_std_devs=n_std_dev,
     cost_func=cost_func,
-    substrate_cost_formulation="quadratic",
+    substrate_cost_formulation=substrate_cost_formulation,
     ch4_set_point_function=ch4_set_point_function,
     rterm=rterm,
 )
@@ -60,7 +62,7 @@ kwargs = {
     "feedback": True,
     "mismatch": True,
     "t_stp_ahead_pred": t_stp_ahead_pred,
-    "name": f"Scenario_1b_quadratic_robust_feedback_mismatch_{n_std_dev}std_{t_stp_ahead_pred}tsap",
+    "name": f"Scenario_1b_{substrate_cost_formulation}_robust_feedback_mismatch_{n_std_dev}std_{t_stp_ahead_pred}tsap",
 }
 
 scenario = ScenarioFactory().create_scenario(

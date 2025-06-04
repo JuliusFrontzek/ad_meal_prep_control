@@ -7,8 +7,8 @@ from ad_meal_prep_control.postprocessing import (
 import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1b import controller_plotting_1b
 
-scenario_names = ["Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap"]
-# scenario_names = ["Scenario_1b_quadratic_robust_feedback_mismatch_1.5std_3tsap"]
+# scenario_names = ["Scenario_1b_quadratic_nominal_feedback_mismatch_2std_3tsap"]
+scenario_names = ["Scenario_1b_quadratic_robust_feedback_mismatch_1.5std_3tsap"]
 plot_save_name = scenario_names
 
 try:
@@ -42,13 +42,13 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
             (
                 r"$\dot V$" + "\n" + r"$[m^3/d]$",
                 {
-                    "v_ch4_dot_tank_in_setpoint": PlotVarProperty(
+                    "v_ch4_dot_AD_setpoint": PlotVarProperty(
                         mpl_properties=MPLProperties(
                             color="grey", linewidth=1, linestyle='dashed'
                         ),
                         label=r"Reference ($\dot V_{CH_4}$)",
                     ),
-                    "v_ch4_dot_tank_in": PlotVarProperty(
+                    "v_dot_ch4_AD_norm_condition": PlotVarProperty(
                         mpl_properties=MPLProperties(
                             color='blue',
                             linewidth=1,
@@ -100,39 +100,39 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
         plot_save_name=plot_save_name,
         constraints=[
             # adapt ylim of plots by adding invisible horizontal lines:
-            Constraint(value=0, ax_idx=2, color="white"),  # gas production lower bound
-            Constraint(value=7.3, ax_idx=3, color="white"),  # pH lower bound
-            Constraint(value=7.5, ax_idx=3, color="white"),  # pH upper bound
-            Constraint(value=0, ax_idx=4, color="white"),  # inhibtion lower bound
+            Constraint(value=0, ax_idx=3, color="white"),  # gas production lower bound
+            Constraint(value=7.3, ax_idx=4, color="white"),  # pH lower bound
+            Constraint(value=7.5, ax_idx=4, color="white"),  # pH upper bound
+            Constraint(value=0, ax_idx=5, color="white"),  # inhibtion lower bound
         ],
-        time_range=(0.0, 30.0),
         dpi=dpi,
         show_plot=show_plot,
-        height_ratios=[1, 1, 2, 1, 1],
+        height_ratios=[1, 1, 1, 2, 1, 1],
         input_inset_axes=[
             {
                 "days": (4.7, 6),
-                "ylimit": (0.4, 1.2),
+                "ylimit": (1, 1.5),
                 "inset_axis_specs": (0.6, 0.45, 0.15, 0.2),
             },
             {
-                "days": (26, 27),
-                "ylimit": (0.55, 0.8),
+                "days": (25, 27),
+                "ylimit": (0.5, 1.4),
                 "inset_axis_specs": (0.85, 0.45, 0.1, 0.2),
             }],
         other_inset_axes=[
             {
-                "plot_idx": 2,
-                "days": (2.6, 3.6),
-                "ylimit": (320, 580),
+                "plot_idx": 3,
+                "days": (2.9, 3.5),
+                "ylimit": (320, 500),
                 "inset_axis_specs": (0.15, 0.1, 0.1, 0.2),
             },
             {
-                "plot_idx": 2,
+                "plot_idx": 3,
                 "days": (12, 18),
-                "ylimit": (390, 410),
-                "inset_axis_specs": (0.37, 0.15, 0.3, 0.2),
+                "ylimit": (345, 355),
+                "inset_axis_specs": (0.37, 0.1, 0.3, 0.18),
             },
         ],
+        plot_olr=True,
     )
-controller_plotting_1b(scenario_names)
+#controller_plotting_1b(scenario_names)

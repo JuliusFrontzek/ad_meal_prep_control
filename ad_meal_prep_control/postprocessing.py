@@ -452,8 +452,9 @@ class PostProcessing:
                             **plt_kwargs,
                         )
                         ax.set_ylim(0,)
-                        # Set y-ticks to show all integer values up to the maximum value
-                        ax.set_yticks(np.arange(0, np.ceil(max(self.olr_daily)) + 1, 1))
+                        if max(self.olr_daily) < 6:
+                            # Set y-ticks to show all integer values up to the maximum value
+                            ax.set_yticks(np.arange(0, np.ceil(max(self.olr_daily)) + 1, 1))
 
                     # plot auxiliary variables:
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":
@@ -609,9 +610,10 @@ class PostProcessing:
         if time_range is not None:
             plt.setp(axes, xlim=time_range)
 
-        plt.xlim(0, np.ceil(self._scenario_meta_data["n_days_mpc"]/5)*5)  # integer multiples of 5
-        fig.set_size_inches(w=8, h=2 * len(axes))
+        # __SH: set xticks for time axis at integer multiples of 5:
+        axes[-1].set_xlim(0, np.ceil(self._scenario_meta_data["n_days_mpc"]/5)*5)
 
+        fig.set_size_inches(w=8, h=2 * len(axes))
         fig.tight_layout()
         if plot_save_name is not None:
             fig.savefig(

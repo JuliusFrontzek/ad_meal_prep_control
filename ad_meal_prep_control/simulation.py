@@ -622,7 +622,7 @@ class Simulation:
 
     def _run_mpc(self):
         # Initialize variables
-        vg_ch4_model = self._mpc.data.prediction(('_aux', 'v_ch4_dot_tank_in'))[0][0]
+        vg_ch4_model = self._mpc.data.prediction(('_aux', 'v_dot_ch4_AD_norm_condition'))[0][0]
         vg_model = self._mpc.data.prediction(('_aux', 'y_1'))[0][0]
         ph_model = self._mpc.data.prediction(('_aux', 'y_4'))[0][0]
 
@@ -689,7 +689,7 @@ class Simulation:
                 if self.scenario.feedback:
                     # Prediction of MPC using model
                     vg_ch4_model = np.column_stack((vg_ch4_model, self._mpc.data.prediction(
-                        ('_aux', 'v_ch4_dot_tank_in'))[0][self.scenario.t_stp_ahead_pred]))
+                        ('_aux', 'v_dot_ch4_AD_norm_condition'))[0][self.scenario.t_stp_ahead_pred]))
                     vg_model = np.column_stack((vg_model, self._mpc.data.prediction(
                         ('_aux', 'y_1'))[0][self.scenario.t_stp_ahead_pred]))
                     ph_model = np.column_stack((ph_model, self._mpc.data.prediction(
@@ -819,7 +819,7 @@ class Simulation:
                     np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
 
             if not self.scenario.feedback:
-                vg_ch4_model = self._simulator_plant.data['_aux', 'v_ch4_dot_tank_in']
+                vg_ch4_model = self._simulator_plant.data['_aux', 'v_dot_ch4_AD_norm_condition']
                 vg_model = self._simulator_plant.data['_aux', 'y_1']
                 ph_model = self._simulator_plant.data['_aux', 'y_4']
 

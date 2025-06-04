@@ -421,7 +421,7 @@ def adm1_r3_frac_norm(
     for i in range(8):
         y.append(model.set_expression(f"y_{i+1}", Ty[i] * y_norm[i]))
 
-    model.set_variable(var_type="_tvp", var_name="v_ch4_dot_tank_in_setpoint")
+    model.set_variable(var_type="_tvp", var_name="v_ch4_dot_AD_setpoint")
     model.set_variable(var_type="_tvp", var_name="dummy_tvp")
 
     p_h2o_gas_storage = vapour_pressure_h2o(T_gas_storage)
@@ -436,6 +436,12 @@ def adm1_r3_frac_norm(
     v_ch4_dot_tank_in = model.set_expression(
         f"v_ch4_dot_tank_in",
         v_total_dot_tank_in * y_norm[1] * Ty[1] / p_gas_total_fermenter,  # temperature correction already considered for total inflowing vol flow
+    )
+
+    # __SH: get norm vol flow of CH4 from AD:
+    v_dot_ch4_AD_norm_condition = model.set_expression(
+        f"v_dot_ch4_AD_norm_condition",
+        y_norm[0] * Ty[0] * y_norm[1] * Ty[1] / p_norm * T_norm / T,  # __SH: p_gas_total_fermenter cancels out
     )
 
     # define auxiliary variables for GS ODEs:

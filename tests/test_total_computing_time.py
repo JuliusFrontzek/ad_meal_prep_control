@@ -17,8 +17,10 @@ def read_computation_times(file_path):
 
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
-my_scenario = '2c'  # '2a_robust', '2a_nominal', '2c'
-if my_scenario == '2a_nominal':
+my_scenario = '1b'  # '1b' '2a_robust', '2a_nominal', '2c'
+if my_scenario == '1b':
+    scen_name = 'Scenario_1b_quadratic_robust_feedback_mismatch_1.5std_3tsap'
+elif my_scenario == '2a_nominal':
     scen_name = 'Scenario_2a_dynamic_nominal_feedback_mismatch_2std_8tsap'
 elif my_scenario == '2a_robust':
     scen_name = 'Scenario_2a_dynamic_robust_feedback_mismatch_2std_8tsap'
@@ -28,4 +30,4 @@ elif my_scenario == '2c':
 my_path = '../ad_meal_prep_control/scenarios/results/'
 file_name = scen_name + '_mpc_computation_times_mikro_secs.txt'
 test_result = read_computation_times(my_path + file_name)
-print(test_result)
+print('\ncomputation time was: ' + test_result)

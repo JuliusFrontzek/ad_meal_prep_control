@@ -151,7 +151,7 @@ def mpc_setup(
                 tvp_template["_tvp", k, "theta"] = theta
 
             if ch4_set_point_function is not None:
-                tvp_template["_tvp", :, "v_ch4_dot_tank_in_setpoint"] = (
+                tvp_template["_tvp", :, "v_ch4_dot_AD_setpoint"] = (
                     ch4_set_point_function.get_current_setpoint(t_now)
                 )
 
@@ -165,7 +165,7 @@ def mpc_setup(
             for k in range(n_horizon + 1):
                 tvp_template["_tvp", k, "theta"] = theta
             if ch4_set_point_function is not None:
-                tvp_template["_tvp", :, "v_ch4_dot_tank_in_setpoint"] = (
+                tvp_template["_tvp", :, "v_ch4_dot_AD_setpoint"] = (
                     ch4_set_point_function.get_current_setpoint(t_now)
                 )
 
