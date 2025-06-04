@@ -7,7 +7,7 @@ from ad_meal_prep_control.utils import (
 )
 
 # user input:
-n_days_mpc = 23  # length of simulation [d]
+n_days_mpc = 28  # length of simulation [d]
 n_std_dev = 2  # number std deviations
 t_step = 0.5 / 24.0
 t_stp_ahead_pred = 8  # for controller plotting

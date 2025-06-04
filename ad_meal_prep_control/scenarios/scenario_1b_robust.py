@@ -24,7 +24,7 @@ t_stp_ahead_pred = 3    # for controller plotting
 substrate_cost_formulation = "quadratic"  # linear or quadratic
 
 ch4_set_point_function = SetpointFunction(
-    setpoints=np.array([350.0, 450.0, 450.0, 350.0]),
+    setpoints=np.array([350.0, 550.0, 450.0, 350.0]),
     time_points=np.array([3, 6, 9]),
 )
 
