@@ -556,12 +556,12 @@ class PostProcessing:
                                         linewidth=1.0
                                     )
 
-            # __SH: cosmetics:
+            # __SH: legend cosmetics:
             for ax in axes_stacked:
-                if plot_var_name[0] == "u":
-                    loc = 2
-                else:
-                    loc = 0
+                # if plot_var_name[0] == "u":
+                #     loc = 2
+                # else:
+                #     loc = 0
                 labels = [line.get_label() for line in ax.get_lines()]
                 if not labels[0].startswith("_"):
                     temp_legend = ax.legend(
@@ -571,7 +571,7 @@ class PostProcessing:
                     ax_inputs_liquid.legend(
                         ncol=max(1, len(labels) // 3), loc="upper right"
                     )
-                    if "silage" in labels[0] and "Scenario_2" in plot_save_name:
+                    if "silage" in labels[0]: # and "Scenario_2" in plot_save_name: # __SH
                         ax_inputs_liquid.add_artist(temp_legend)
                 ax.grid(True, linestyle="--")
 
