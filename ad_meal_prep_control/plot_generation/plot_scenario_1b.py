@@ -73,64 +73,64 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                     )
                 },
             ),
-            (
-                r"$Inhibition$" + "\n" + r"$[-]$",
-                {
-                    "inhibition_1": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="black", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$Inhibition_1$",
-                    ),
-                    "inhibition_2": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="mediumblue", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$Inhibition_2$",
-                    ),
-                    "inhibition_3": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="cornflowerblue", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$Inhibition_3$",
-                    ),
-                },
-            ),
+            # (
+            #     r"$Inhibition$" + "\n" + r"$[-]$",
+            #     {
+            #         "inhibition_1": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="black", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$Inhibition_1$",
+            #         ),
+            #         "inhibition_2": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="mediumblue", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$Inhibition_2$",
+            #         ),
+            #         "inhibition_3": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="cornflowerblue", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$Inhibition_3$",
+            #         ),
+            #     },
+            # ),
         ],
         plot_save_name=plot_save_name,
         constraints=[
             # adapt ylim of plots by adding invisible horizontal lines:
             Constraint(value=0, ax_idx=3, color="white"),  # gas production lower bound
-            Constraint(value=7.3, ax_idx=4, color="white"),  # pH lower bound
-            Constraint(value=7.5, ax_idx=4, color="white"),  # pH upper bound
-            Constraint(value=0, ax_idx=5, color="white"),  # inhibtion lower bound
+            Constraint(value=7.1, ax_idx=4, color="white"),  # pH lower bound
+            Constraint(value=7.4, ax_idx=4, color="white"),  # pH upper bound
+            #Constraint(value=0, ax_idx=5, color="white"),  # inhibtion lower bound
         ],
         dpi=dpi,
         show_plot=show_plot,
-        height_ratios=[1, 1, 1, 2, 1, 1],
+        height_ratios=[1.5, 1, 1, 1.5, 1],
         input_inset_axes=[
             {
-                "days": (4.7, 6),
-                "ylimit": (1, 1.5),
-                "inset_axis_specs": (0.6, 0.45, 0.15, 0.2),
+                "days": (5.5, 6.5),
+                "ylimit": (0, 2),
+                "inset_axis_specs": (0.3, 0.3, 0.1, 0.3),
             },
             {
                 "days": (25, 27),
-                "ylimit": (0.5, 1.4),
-                "inset_axis_specs": (0.85, 0.45, 0.1, 0.2),
+                "ylimit": (0.7, 1),
+                "inset_axis_specs": (0.85, 0.3, 0.1, 0.3),
             }],
         other_inset_axes=[
             {
                 "plot_idx": 3,
-                "days": (2.9, 3.5),
-                "ylimit": (320, 500),
-                "inset_axis_specs": (0.15, 0.1, 0.1, 0.2),
+                "days": (2.9, 4),
+                "ylimit": (330, 570),
+                "inset_axis_specs": (0.18, 0.55, 0.1, 0.2),
             },
             {
                 "plot_idx": 3,
-                "days": (12, 18),
+                "days": (21, 27),
                 "ylimit": (345, 355),
-                "inset_axis_specs": (0.37, 0.1, 0.3, 0.18),
+                "inset_axis_specs": (0.65, 0.4, 0.3, 0.18),
             },
         ],
         plot_olr=True,
