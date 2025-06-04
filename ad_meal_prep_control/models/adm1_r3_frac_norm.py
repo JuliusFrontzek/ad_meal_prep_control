@@ -386,6 +386,7 @@ def adm1_r3_frac_norm(
     IacNorm = model.set_expression(
         "IacNorm", inhibitions[0] * inhibitions[1] * inhibitions[2]
     )
+    # IacNorm = 1  # __SH: no inhibition (resembles ADM1-R4)
 
     # Set measurement equations as expressions
     y_norm = []
