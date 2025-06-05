@@ -48,6 +48,7 @@ kwargs = {
     "mismatch": True,
     "t_stp_ahead_pred": t_stp_ahead_pred,
     "name": f"Scenario_2a_dynamic_robust_feedback_mismatch_{n_std_dev}std_{t_stp_ahead_pred}tsap",
+    # "name": "Scenario_2a_uninhibited_robust",
 }
 
 scenario = ScenarioFactory().create_scenario(

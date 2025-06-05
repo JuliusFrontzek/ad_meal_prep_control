@@ -12,8 +12,9 @@ from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scen
 
 scenario_names = [
     "Scenario_2a_dynamic_nominal_feedback_mismatch_2std_8tsap",
-    #"Scenario_2a_dynamic_nominal_ideal_feedback_8tsap",
+    # "Scenario_2a_dynamic_nominal_ideal_feedback_8tsap",
     "Scenario_2a_dynamic_robust_feedback_mismatch_2std_8tsap",
+    # "Scenario_2a_uninhibited_robust",
 ]
 plot_save_names = scenario_names
 
