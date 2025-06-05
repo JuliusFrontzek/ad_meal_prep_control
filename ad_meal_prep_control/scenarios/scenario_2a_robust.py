@@ -12,8 +12,8 @@ n_std_dev = 2  # number std deviations
 t_step = 0.5 / 24.0
 t_stp_ahead_pred = 8  # for controller plotting
 
-fill_level_setpoint = 0.45
-c_1 = 1e3
+fill_level_setpoint = 0.47
+c_1 = 1e4
 lterm = (f"{c_1} * (model.aux['v_gas_storage']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2"
          )
 

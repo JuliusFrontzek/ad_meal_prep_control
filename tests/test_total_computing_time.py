@@ -17,7 +17,7 @@ def read_computation_times(file_path):
 
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
-my_scenario = '2c'  # '1b' '2a_robust', '2a_nominal', '2c'
+my_scenario = '2a_robust'  # '1b' '2a_robust', '2a_nominal', '2c'
 if my_scenario == '1b':
     scen_name = 'Scenario_1b_quadratic_robust_feedback_mismatch_1.5std_3tsap'
 elif my_scenario == '2a_nominal':
