@@ -605,7 +605,7 @@ class PostProcessing:
                     end = x[i]
                     for ax_idx in color_background_indices:
                         axes[ax_idx].axvspan(start[0], end[0], color="gray", alpha=0.3, lw=0)
-            if mask[-1]:  # __SH: edge case CHP on at end
+            if mask[-1] and start > end:  # __SH: edge case CHP on at end
                 end = x[-1]
                 for ax_idx in color_background_indices:
                     axes[ax_idx].axvspan(start[0], end[0], color="gray", alpha=0.3, lw=0)
