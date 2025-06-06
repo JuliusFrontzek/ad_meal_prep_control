@@ -534,20 +534,22 @@ class PostProcessing:
                                         linewidth=1.0
                                     )
 
-                # __SH: legend cosmetics:
+                # __SH legend cosmetics:
                 labels = [line.get_label() for line in ax.get_lines()]
+                # __SH ensure unique labels
+                handles, labels = ax.get_legend_handles_labels()
+                seen_labels = set()
+                unique_handles_labels = [(h, l) for h, l in zip(handles, labels) if l not in seen_labels and not seen_labels.add(l)]
+                if unique_handles_labels:
+                    handles, labels = zip(*unique_handles_labels)
+                else:
+                    handles, labels = [], []
                 # __SH: deal with legends for feed substrates separately:
-                if "silage" in " ".join(labels):
-                    temp_legend = ax.legend(
-                        ncol=max(1, len(labels) // 3), loc="upper left"
-                    )
-                    temp_legend.remove()
-                    ax_inputs_liquid.legend(
-                        ncol=max(1, len(labels) // 3), loc="upper right"
-                    )
-                    ax_inputs_liquid.add_artist(temp_legend)
-                elif not labels[0].startswith("_"):  # __SH filter out empty labels as they can't have legend entries
-                    ax.legend(loc="best")
+                if any("silage" in l for l in labels):
+                    ax.legend(handles, labels, ncol=max(1, len(labels) // 3), loc="upper left")
+                    ax_inputs_liquid.legend(ncol=max(1, len(labels) // 3), loc="upper right")
+                elif labels and not labels[0].startswith("_"):  # avoid default/empty labels
+                    ax.legend(handles, labels, loc="best")
 
                 ax.grid(True, linestyle="--")
 
