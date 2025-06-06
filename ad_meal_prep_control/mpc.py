@@ -61,6 +61,7 @@ def mpc_setup(
         "store_full_solution": store_full_solution,
         # "nl_cons_check_colloc_points": True,
         'nlpsol_opts': {"ipopt.linear_solver": "ma27"},# "ipopt.hsllib": "/usr/local/lib/libcoinhsl.so.2.2.5"}
+        'max_iter': 1000,
     }
 
     # setup_mpc["nlpsol_opts"] = {

@@ -55,7 +55,7 @@ post_processing.plot(
         #    },
         # ),
         (
-            r"$V_{g, tank}$" + "\n" + r"$[m^3]$",
+            r"$V_{GS}$" + "\n" + r"$[m^3]$",
             {
                 "v_gas_storage": PlotVarProperty(
                     mpl_properties=MPLProperties(
