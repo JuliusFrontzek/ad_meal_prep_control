@@ -8,9 +8,12 @@ from ad_meal_prep_control import params_R3
 import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_2c import controller_plotting_2c
 
+scenario_name = "Scenario_2c_dynamic"
+# scenario_name = "Scenario_2c_uninhibited"
+
 post_processing = PostProcessing(
     result_directory="../scenarios/results",
-    scenario_name="Scenario_2c_dynamic",
+    scenario_name=scenario_name,
 )
 
 try:
@@ -121,7 +124,7 @@ post_processing.plot(
         #     },
         # ),
     ],
-    plot_save_name="Scenario_2c_dynamic",
+    plot_save_name=scenario_name,
     constraints=[
         Constraint(value=0.0, ax_idx=2),
         Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),

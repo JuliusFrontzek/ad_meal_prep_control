@@ -52,6 +52,7 @@ for i in range(mpc_t_steps):
 
 kwargs = {
     "name": "Scenario_2c_dynamic",
+    # "name": "Scenario_2c_uninhibited",
     "pygame_vis": False,
     "mpc_live_vis": False,
     "P_el_chp": 50.0,
