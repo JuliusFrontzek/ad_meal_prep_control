@@ -164,7 +164,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 #    },
                 # ),
                 (
-                    r"$V_{g, tank}$" + "\n" + r"$[m^3]$",
+                    r"$V_{GS}$" + "\n" + r"$[m^3]$",
                     {
                         "v_gas_storage": PlotVarProperty(
                             mpl_properties=MPLProperties(
