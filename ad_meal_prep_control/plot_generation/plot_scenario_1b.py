@@ -42,25 +42,29 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
             (
                 r"$\dot V$" + "\n" + r"$[m^3/d]$",
                 {
-                    "v_ch4_dot_AD_setpoint": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="grey", linewidth=1, linestyle='dashed'
-                        ),
-                        label=r"Reference ($\dot V_{CH_4}$)",
-                    ),
                     "v_dot_ch4_AD_norm_condition": PlotVarProperty(
                         mpl_properties=MPLProperties(
                             color='blue',
                             linewidth=1,
                             linestyle="-",
                         ),
-                        label=r"$\dot V_{CH_4, plant}$",
+                        label=r"$\dot V_{CH_4}$",
                     ),
                     "y_1": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="black", linewidth=1, linestyle="-"
+                            color="black",
+                            linewidth=1,
+                            linestyle="-"
                         ),
-                        label=r"$\dot V_{g, plant}$",
+                        label=r"$\dot V_{g}$",
+                    ),
+                    "v_ch4_dot_AD_setpoint": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color='dimgrey',
+                            linewidth=1,
+                            linestyle="dashed",
+                        ),
+                        label=r"Reference ($\dot V_{CH_4}$)",
                     ),
                 },
             ),
@@ -69,33 +73,33 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                 {
                     "y_4": PlotVarProperty(
                         mpl_properties=MPLProperties(linewidth=1, linestyle="-", color='black'),
-                        label='$pH_{plant}$',
+                        label='',
                     )
                 },
             ),
-            # (
-            #     r"$Inhibition$" + "\n" + r"$[-]$",
-            #     {
-            #         "inhibition_1": PlotVarProperty(
-            #             mpl_properties=MPLProperties(
-            #                 color="black", linewidth=1, linestyle="-"
-            #             ),
-            #             label=r"$Inhibition_1$",
-            #         ),
-            #         "inhibition_2": PlotVarProperty(
-            #             mpl_properties=MPLProperties(
-            #                 color="mediumblue", linewidth=1, linestyle="-"
-            #             ),
-            #             label=r"$Inhibition_2$",
-            #         ),
-            #         "inhibition_3": PlotVarProperty(
-            #             mpl_properties=MPLProperties(
-            #                 color="cornflowerblue", linewidth=1, linestyle="-"
-            #             ),
-            #             label=r"$Inhibition_3$",
-            #         ),
-            #     },
-            # ),
+            (
+                r"$Inhibition$" + "\n" + r"$[-]$",
+                {
+                    "inhibition_1": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="black", linewidth=1, linestyle="-"
+                        ),
+                        label=r"$I_{N-lim}$",
+                    ),
+                    "inhibition_2": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="mediumblue", linewidth=1, linestyle="-"
+                        ),
+                        label=r"$I_{pH}$",
+                    ),
+                    "inhibition_3": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="cornflowerblue", linewidth=1, linestyle="-"
+                        ),
+                        label=r"$I_{NH3}$",
+                    ),
+                },
+            ),
         ],
         plot_save_name=plot_save_name,
         constraints=[
@@ -103,11 +107,11 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
             Constraint(value=0, ax_idx=3, color="white"),  # gas production lower bound
             Constraint(value=7.1, ax_idx=4, color="white"),  # pH lower bound
             Constraint(value=7.4, ax_idx=4, color="white"),  # pH upper bound
-            #Constraint(value=0, ax_idx=5, color="white"),  # inhibtion lower bound
+            Constraint(value=0, ax_idx=5, color="white"),  # inhibition lower bound
         ],
         dpi=dpi,
         show_plot=show_plot,
-        height_ratios=[1.5, 1, 1, 1.5, 1],
+        height_ratios=[1.5, 1, 1, 1.5, 1, 1],
         input_inset_axes=[
             {
                 "days": (5.5, 6.5),
@@ -130,7 +134,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                 "plot_idx": 3,
                 "days": (21, 27),
                 "ylimit": (345, 355),
-                "inset_axis_specs": (0.65, 0.4, 0.3, 0.18),
+                "inset_axis_specs": (0.65, 0.11, 0.3, 0.15),
             },
         ],
         plot_olr=True,
