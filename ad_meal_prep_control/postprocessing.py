@@ -208,8 +208,6 @@ class PostProcessing:
                         inset_ax["inset_axis_specs"],
                         xlim=(x1, x2),
                         ylim=(y1, y2),
-                        # xticklabels=[],
-                        # yticklabels=[],
                     )
                     _inset_ax.grid(True, linestyle="--")
 
@@ -217,8 +215,6 @@ class PostProcessing:
                         inset_axes[inset_ax["plot_idx"]].append(_inset_ax)
                     else:
                         inset_axes[inset_ax["plot_idx"]] = [_inset_ax]
-
-        axes[-1].set_xlabel("Time [d]")
 
         # draw the actual plots:
         for ax_idx, (axis, subplot_label_and_vars) in enumerate(
@@ -274,9 +270,7 @@ class PostProcessing:
 
                         ax.plot(
                             self._data_simulator._time,
-                            self._data_simulator._y[
-                            :, self._num_u + y_num + self._num_dictated_subs - 1
-                            ],
+                            self._data_simulator._y[:, self._num_u + y_num + self._num_dictated_subs - 1],
                             label=plot_var_property.label,
                             **plt_kwargs,
                         )
@@ -285,9 +279,7 @@ class PostProcessing:
                             for inset_ax in inset_axes[ax_idx]:
                                 inset_ax.plot(
                                     self._data_simulator._time,
-                                    self._data_simulator._y[
-                                    :, self._num_u + y_num + self._num_dictated_subs - 1,
-                                    ],
+                                    self._data_simulator._y[:, self._num_u + y_num + self._num_dictated_subs - 1,],
                                     label=plot_var_property.label,
                                     **plt_kwargs,
                                 )
@@ -363,17 +355,6 @@ class PostProcessing:
                             if input_inset_axes is not None:
                                 for inset_ax_u in inset_axes_u:
                                     ax.indicate_inset_zoom(inset_ax_u, edgecolor="black", linewidth=1.0)
-
-                        # Add constraints to plot
-                        # ax.hlines(
-                        #    self._scenario_meta_data["u_max"]["solid"],
-                        #    xmin=0,
-                        #    xmax=self._scenario_meta_data["n_days_mpc"],
-                        #    color="black",
-                        #    linestyle="--",
-                        #    linewidth= 1
-                        #    # label=r"$u_{max}$",
-                        # )
 
                         # add constraints line for liquid substrates:
                         ax_inputs_liquid.hlines(
@@ -456,7 +437,7 @@ class PostProcessing:
                             # Set y-ticks to show all integer values up to the maximum value
                             ax.set_yticks(np.arange(0, np.ceil(max(self.olr_daily)) + 1, 1))
 
-                    # plot auxiliary variables:
+                    # plot other variables:
                     elif plot_var_name[0] != "u" and plot_var_name[0] != "x":
                         if plot_var_name in self._scenario_meta_data["aux_var_names"]:
                             aux_expression_idx = np.where(
@@ -474,9 +455,7 @@ class PostProcessing:
                                 for inset_ax in inset_axes[ax_idx]:
                                     inset_ax.plot(
                                         self._data_simulator._time,
-                                        self._data_simulator._aux[
-                                        :, aux_expression_idx
-                                        ],
+                                        self._data_simulator._aux[:, aux_expression_idx],
                                         label=plot_var_property.label,
                                         **plt_kwargs,
                                     )
@@ -486,7 +465,6 @@ class PostProcessing:
                                         edgecolor="black",
                                         linewidth=1.0
                                     )
-
                         else:
                             self._graphics_mpc.add_line(
                                 var_type=f"_tvp",
@@ -556,14 +534,10 @@ class PostProcessing:
                                         linewidth=1.0
                                     )
 
-            # __SH: legend cosmetics:
-            for ax in axes_stacked:
-                # if plot_var_name[0] == "u":
-                #     loc = 2
-                # else:
-                #     loc = 0
+                # __SH: legend cosmetics:
                 labels = [line.get_label() for line in ax.get_lines()]
-                if not labels[0].startswith("_"):
+                # __SH: deal with legends for feed substrates separately:
+                if "silage" in " ".join(labels):
                     temp_legend = ax.legend(
                         ncol=max(1, len(labels) // 3), loc="upper left"
                     )
@@ -571,8 +545,10 @@ class PostProcessing:
                     ax_inputs_liquid.legend(
                         ncol=max(1, len(labels) // 3), loc="upper right"
                     )
-                    if "silage" in labels[0]: # and "Scenario_2" in plot_save_name: # __SH
-                        ax_inputs_liquid.add_artist(temp_legend)
+                    ax_inputs_liquid.add_artist(temp_legend)
+                elif not labels[0].startswith("_"):  # __SH filter out empty labels as they can't have legend entries
+                    ax.legend(loc="best")
+
                 ax.grid(True, linestyle="--")
 
             # axis.yaxis.set_label_coords(-0.1, 0)
@@ -613,8 +589,9 @@ class PostProcessing:
         if time_range is not None:
             plt.setp(axes, xlim=time_range)
 
-        # __SH: set xticks for time axis at integer multiples of 5:
-        axes[-1].set_xlim(0, np.ceil(self._scenario_meta_data["n_days_mpc"]/5)*5)
+        # __SH: modify x-axis:
+        axes[-1].set_xlim(0, np.ceil(self._scenario_meta_data["n_days_mpc"]/5)*5)  # __SH: xticks at integer multiples of 5
+        axes[-1].set_xlabel("Time [d]")
 
         fig.set_size_inches(w=8, h=2 * len(axes))
         fig.tight_layout()
