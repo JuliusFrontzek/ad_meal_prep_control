@@ -54,7 +54,7 @@ X_bac = 0.95*X_biomass*TS*rhoFM;    % assign 95% of biomass to X_bac...
 X_ac = 0.05*X_biomass*TS*rhoFM;     % ...and 5% to X_ac
 
 % lab data measurements:
-NH4N = labData(3);          % nitrogen [
+NH4N = labData(3);          % ammonium nitrogen [g/L]
 S_ac = labData(10)/1000;    % acetic acid [g/L]
 pH = 7.4;   % default inlet pH about netral
 
