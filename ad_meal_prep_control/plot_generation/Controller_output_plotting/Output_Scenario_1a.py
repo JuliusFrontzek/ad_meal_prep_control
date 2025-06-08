@@ -27,11 +27,11 @@ def controller_plotting_1a(scenario_names=None):
         if not metadata['feedback']:
             plant_output = np.genfromtxt(f'../scenarios/results/Plant Output {scenario}.csv', delimiter=' ')
 
-            fig.axes[2].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 1], 'black',
+            fig.axes[2].plot(np.linspace(0, metadata['n_days_mpc'], num=plant_output.shape[0]), plant_output[:, 1], 'black',
                              linestyle='dotted', label=r'$pH_{sim 2}$')
-            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 0], 'black',
+            fig.axes[1].plot(np.linspace(0, metadata['n_days_mpc'], num=plant_output.shape[0]), plant_output[:, 0], 'black',
                              linestyle='dotted', label=r"$\dot V_{g, sim 2}$")
-            fig.axes[1].plot(np.linspace(0, 30, num=plant_output.shape[0]), plant_output[:, 2], 'blue',
+            fig.axes[1].plot(np.linspace(0, metadata['n_days_mpc'], num=plant_output.shape[0]), plant_output[:, 2], 'blue',
                              linestyle='dotted', label=r"$\dot V_{CH_4, sim 2}$")
 
             error_ph = (f'{scenario}_NRMSE_pH = ', nRMSE(x_est=mpc['mpc']['_aux', 'y_4'], x_true=plant_output[:, [1]]))
@@ -69,21 +69,21 @@ def controller_plotting_1a(scenario_names=None):
             predicted_data[:, 0:metadata['t_stp_ahead_pred'] + 1] = np.NaN
 
             if mpc['mpc'].meta_data['n_robust'] == 0:
-                fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[1, :], 'black',
+                fig.axes[2].plot(np.linspace(0, metadata['n_days_mpc'], num=predicted_data.shape[1]), predicted_data[1, :], 'black',
                                  linestyle='dotted', label=r'$pH_{controller}$')
-                fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :], 'black',
+                fig.axes[1].plot(np.linspace(0, metadata['n_days_mpc'], num=predicted_data.shape[1]), predicted_data[0, :], 'black',
                                  linestyle='dotted', label=r"$\dot V_{g, controller}$")
-                fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[2, :], 'blue',
+                fig.axes[1].plot(np.linspace(0, metadata['n_days_mpc'], num=predicted_data.shape[1]), predicted_data[2, :], 'blue',
                                  linestyle='dotted', label=r"$\dot V_{CH_4, controller}$")
 
             if mpc['mpc'].meta_data['n_robust'] > 0:
-                fig.axes[2].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[2, 3], :].transpose(),
+                fig.axes[2].plot(np.linspace(0, metadata['n_days_mpc'], num=predicted_data.shape[1]), predicted_data[[2, 3], :].transpose(),
                                  'black',
                                  linestyle='dotted', label=r'$pH_{controller}$')
-                fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[0, 1], :].transpose(),
+                fig.axes[1].plot(np.linspace(0, metadata['n_days_mpc'], num=predicted_data.shape[1]), predicted_data[[0, 1], :].transpose(),
                                  'black',
                                  linestyle='dotted', label=r"$\dot V_{g, controller}$")
-                fig.axes[1].plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[4, 5], :].transpose(),
+                fig.axes[1].plot(np.linspace(0, metadata['n_days_mpc'], num=predicted_data.shape[1]), predicted_data[[4, 5], :].transpose(),
                                  'blue',
                                  linestyle='dotted', label=r"$\dot V_{CH_4, controller}$")
 
@@ -96,12 +96,12 @@ def controller_plotting_1a(scenario_names=None):
     
                     if 'nominal' in scenario:
     
-                        axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[0, :], 'blue',
+                        axins_1.plot(np.linspace(0, metadata['n_days_mpc'], num=predicted_data.shape[1]), predicted_data[0, :], 'blue',
                                      linestyle = 'dotted', linewidth=1)
     
                     if 'robust' in scenario:
     
-                        axins_1.plot(np.linspace(0, 30, num=predicted_data.shape[1]), predicted_data[[0, 1], :].transpose(),
+                        axins_1.plot(np.linspace(0, metadata['n_days_mpc'], num=predicted_data.shape[1]), predicted_data[[0, 1], :].transpose(),
                                          'blue',
                                          linestyle='dotted', linewidth=1)
             '''

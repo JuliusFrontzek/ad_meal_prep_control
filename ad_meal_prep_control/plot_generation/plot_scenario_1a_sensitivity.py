@@ -2,6 +2,7 @@ from ad_meal_prep_control.postprocessing import (
     PlotVarProperty,
     MPLProperties,
     PostProcessing,
+    Constraint
 )
 import sys
 from ad_meal_prep_control.plot_generation.Controller_output_plotting.Output_Scenario_1a import controller_plotting_1a
@@ -32,13 +33,13 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             (
                 r"$\dot V$" + "\n" + r"$[m^3/d]$",
                 {
-                    "v_ch4_dot_tank_in_setpoint": PlotVarProperty(
+                    "v_ch4_dot_AD_setpoint": PlotVarProperty(
                         mpl_properties=MPLProperties(
-                            color="grey", linewidth=1, linestyle="-."
+                            color="dimgrey", linewidth=1, linestyle="-."
                         ),
-                        label=r"Reference" "\n" "($\dot V_{CH_4}$)",
+                        label=r"Reference ($\dot V_{CH_4}$)",
                     ),
-                    "v_ch4_dot_tank_in": PlotVarProperty(
+                    "v_dot_ch4_AD_norm_condition": PlotVarProperty(
                         mpl_properties=MPLProperties(
                             color='blue',
                             linewidth=1,
@@ -89,6 +90,14 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             #),
         ],
         plot_save_name=plot_save_name,
+        constraints=[
+            # adapt ylim of plots by adding invisible horizontal lines:
+            Constraint(value=0, ax_idx=1, color="white"),    # gas production lower bound
+            Constraint(value=1300, ax_idx=1, color="white"), # gas production upper bound
+            Constraint(value=7.1, ax_idx=2, color="white"),  # pH lower bound
+            Constraint(value=7.4, ax_idx=2, color="white"),  # pH upper bound
+            # Constraint(value=0, ax_idx=5, color="white"),  # inhibition lower bound
+        ],
         #input_inset_axis={
         #    "days": (0, 10),
         #    "ylimit": (-1.0, 30.0),
