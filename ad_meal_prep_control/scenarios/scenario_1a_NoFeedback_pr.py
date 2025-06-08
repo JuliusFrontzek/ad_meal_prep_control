@@ -10,10 +10,9 @@ import numpy as np
 import math
 
 c_1 = 1e3
-c_2 = 0
-c_3 = 1e-1
+c_2 = 1e-1
 lterm = f"{c_1}*((model.aux['v_dot_ch4_AD_norm_condition'] - model.tvp['v_ch4_dot_AD_setpoint'])/model.tvp['v_ch4_dot_AD_setpoint'])**2"
-mterm = f"{c_2}*((model.aux['v_dot_ch4_AD_norm_condition'] - model.tvp['v_ch4_dot_AD_setpoint'])/model.tvp['v_ch4_dot_AD_setpoint'])**2"
+mterm = "model.tvp['dummy_tvp']"
 
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
@@ -29,7 +28,7 @@ ch4_set_point_function = SetpointFunction(
 )
 
 rterms = [
-    f"{c_3}*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
+    f"{c_2}*(model.u['u_norm'][{i}] - mpc.u_prev['u_norm'][{i}])**2" for i in range(4)
 ]
 rterm = " + ".join(rterms)
 

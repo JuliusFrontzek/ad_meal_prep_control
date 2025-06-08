@@ -97,13 +97,13 @@ def mpc_setup(
                             tvp_template["_tvp", k, "dictated_sub_feed", feed_idx] = 0.0
 
     if num_states == 20:  # i.e. if we consider the gas storage
-        c_3 = 1e2
+        c_2 = 1e2
         mpc.set_nl_cons(
             "max_vol_gas_storage",
             model.aux["v_gas_storage"] / V_GAS_STORAGE_MAX,
             ub=1.0 - gas_storage_bound_fraction,
             soft_constraint=True,
-            penalty_term_cons=c_3,
+            penalty_term_cons=c_2,
             maximum_violation=gas_storage_bound_fraction,
         )
 
@@ -112,7 +112,7 @@ def mpc_setup(
             -(model.aux["v_gas_storage"] / V_GAS_STORAGE_MAX),
             ub=-gas_storage_bound_fraction,
             soft_constraint=True,
-            penalty_term_cons=c_3,
+            penalty_term_cons=c_2,
             maximum_violation=gas_storage_bound_fraction,
         )
 
