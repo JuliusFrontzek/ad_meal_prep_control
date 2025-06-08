@@ -62,7 +62,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                         mpl_properties=MPLProperties(
                             color='dimgrey',
                             linewidth=1,
-                            linestyle="dashed",
+                            linestyle="-.",
                         ),
                         label=r"Reference ($\dot V_{CH_4}$)",
                     ),
@@ -77,29 +77,29 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                     )
                 },
             ),
-            (
-                r"$Inhibition$" + "\n" + r"$[-]$",
-                {
-                    "inhibition_1": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="black", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$I_{N-lim}$",
-                    ),
-                    "inhibition_2": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="mediumblue", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$I_{pH}$",
-                    ),
-                    "inhibition_3": PlotVarProperty(
-                        mpl_properties=MPLProperties(
-                            color="cornflowerblue", linewidth=1, linestyle="-"
-                        ),
-                        label=r"$I_{NH3}$",
-                    ),
-                },
-            ),
+            # (
+            #     r"$Inhibition$" + "\n" + r"$[-]$",
+            #     {
+            #         "inhibition_1": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="black", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$I_{N-lim}$",
+            #         ),
+            #         "inhibition_2": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="mediumblue", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$I_{pH}$",
+            #         ),
+            #         "inhibition_3": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="cornflowerblue", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$I_{NH3}$",
+            #         ),
+            #     },
+            # ),
         ],
         plot_save_name=plot_save_name,
         constraints=[
@@ -107,11 +107,11 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
             Constraint(value=0, ax_idx=3, color="white"),  # gas production lower bound
             Constraint(value=7.1, ax_idx=4, color="white"),  # pH lower bound
             Constraint(value=7.4, ax_idx=4, color="white"),  # pH upper bound
-            Constraint(value=0, ax_idx=5, color="white"),  # inhibition lower bound
+            # Constraint(value=0, ax_idx=5, color="white"),  # inhibition lower bound
         ],
         dpi=dpi,
         show_plot=show_plot,
-        height_ratios=[1.5, 1, 1, 1.5, 1, 1],
+        height_ratios=[1.5, 1, 1, 1.5, 1],
         input_inset_axes=[
             {
                 "days": (5.5, 6.5),
