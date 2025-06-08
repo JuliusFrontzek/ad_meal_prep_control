@@ -45,13 +45,13 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                             linewidth=1,
                             linestyle="-",
                         ),
-                        label=r"$\dot V_{CH_4, sim 1}$",
+                        label=r"$\dot V_{CH_4, nom+\sigma}$",
                     ),
                     "y_1": PlotVarProperty(
                         mpl_properties=MPLProperties(
                             color="black", linewidth=1, linestyle="-"
                         ),
-                        label=r"$\dot V_{g, sim 1}$",
+                        label=r"$\dot V_{g, nom+\sigma}$",
                     ),
                 },
             ),
@@ -61,7 +61,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                     "y_4": PlotVarProperty(
                         mpl_properties=MPLProperties(linewidth=1, linestyle="-",
                                                      color="black"),
-                        label="$pH_{sim 1}$",
+                        label="$pH_{nom+\sigma}$",
                     )
                 },
             ),

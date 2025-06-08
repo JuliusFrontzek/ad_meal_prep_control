@@ -28,11 +28,11 @@ def controller_plotting_1a(scenario_names=None):
             plant_output = np.genfromtxt(f'../scenarios/results/Plant Output {scenario}.csv', delimiter=' ')
 
             fig.axes[2].plot(np.linspace(0, metadata['n_days_mpc'], num=plant_output.shape[0]), plant_output[:, 1], 'black',
-                             linestyle='dotted', label=r'$pH_{sim 2}$')
+                             linestyle='dotted', label=r'$pH_{nom}$')
             fig.axes[1].plot(np.linspace(0, metadata['n_days_mpc'], num=plant_output.shape[0]), plant_output[:, 0], 'black',
-                             linestyle='dotted', label=r"$\dot V_{g, sim 2}$")
+                             linestyle='dotted', label=r"$\dot V_{g, nom}$")
             fig.axes[1].plot(np.linspace(0, metadata['n_days_mpc'], num=plant_output.shape[0]), plant_output[:, 2], 'blue',
-                             linestyle='dotted', label=r"$\dot V_{CH_4, sim 2}$")
+                             linestyle='dotted', label=r"$\dot V_{CH_4, nom}$")
 
             error_ph = (f'{scenario}_NRMSE_pH = ', nRMSE(x_est=mpc['mpc']['_aux', 'y_4'], x_true=plant_output[:, [1]]))
             error_gas = (
