@@ -378,7 +378,7 @@ class Scenario:
 
     _meas_names: list[str] = field(
         default_factory=lambda: [
-            "V´_g",
+            "V_g",
             "p_CH4",
             "p_CO2",
             "pH",

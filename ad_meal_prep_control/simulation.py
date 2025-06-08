@@ -589,7 +589,7 @@ class Simulation:
                 self._screen.fill("white")
 
             _u_norm_ss_silage = 3.2e-2 / len(self._subs_controlled)  # __SH: results in OLR 4
-            _u_norm_ss_manure = (len(self.Tu) - 1) * min(self.Tu)/max(self.Tu) * _u_norm_ss_silage  # __SH: for equal fresh matter inputs of silages and manure
+            _u_norm_ss_manure = (len(self._subs_controlled) - 1) * min(self.Tu)/max(self.Tu) * _u_norm_ss_silage  # __SH: for equal fresh matter inputs of silages and manure
             u_norm_steady_state = np.array(
                 [
                     [
