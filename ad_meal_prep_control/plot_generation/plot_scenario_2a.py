@@ -27,7 +27,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         dpi = int(sys.argv[1])
         show_plot = int(sys.argv[2])
     except IndexError:
-        dpi = 600
+        dpi = 1000
         show_plot = False
 
     if not "nominal_feedback" in scenario_name:
@@ -61,7 +61,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                                 linewidth=1,
                                 linestyle="-",
                             ),
-                            label=r"$\dot V_{g, tank, plant}$",
+                            label=r"$\dot V_{GS}$",
                         )
                     },
                 ),
@@ -74,7 +74,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                                 linewidth=1,
                                 linestyle="-",
                             ),
-                            label=r"$\dot V_{CH_4,AD, plant}$",
+                            label=r"$\dot V_{CH_4}$",
                         ),
                         "y_1": PlotVarProperty(
                             mpl_properties=MPLProperties(
@@ -82,7 +82,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                                 linewidth=1,
                                 linestyle="-",
                             ),
-                            label=r"$\dot V_{g, AD, plant}$",
+                            label=r"$\dot V_{g}$",
                         ),
                     },
                 ),
@@ -93,7 +93,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                             mpl_properties=MPLProperties(
                                 linewidth=1, linestyle="-", color="black"
                             ),
-                            label="$pH_{plant}$",
+                            label="$pH$",
                         )
                     },
                 ),
@@ -171,7 +171,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                                 linewidth=1,
                                 linestyle="-",
                             ),
-                            label=r"$V_{g, tank, plant}$",
+                            label=r"$V_{GS}$",
                         )
                     },
                 ),
@@ -184,7 +184,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                                 linewidth=1,
                                 linestyle="-",
                             ),
-                            label=r"$\dot V_{CH_4,AD, plant}$",
+                            label=r"$\dot V_{CH_4}$",
                         ),
                         "y_1": PlotVarProperty(
                             mpl_properties=MPLProperties(
@@ -192,7 +192,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                                 linewidth=1,
                                 linestyle="-",
                             ),
-                            label=r"$\dot V_{g, AD, plant}$",
+                            label=r"$\dot V_{g}$",
                         ),
                     },
                 ),
@@ -203,7 +203,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                             mpl_properties=MPLProperties(
                                 linewidth=1, linestyle="-", color="black"
                             ),
-                            label="$pH_{plant}$",
+                            label="$pH$",
                         )
                     },
                 ),
@@ -273,4 +273,4 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             color_background_indices=(2,),
             plot_olr=True,
         )
-#controller_plotting_2a(scenario_names)
+controller_plotting_2a(scenario_names)

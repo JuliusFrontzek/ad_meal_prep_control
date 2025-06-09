@@ -20,7 +20,7 @@ try:
     dpi = int(sys.argv[1])
     show_plot = int(sys.argv[2])
 except IndexError:
-    dpi = 600
+    dpi = 1000
     show_plot = False
 
 post_processing.plot(
@@ -66,7 +66,7 @@ post_processing.plot(
                         linewidth=1,
                         linestyle="-",
                     ),
-                    label=r"$\dot V_{g, tank, plant}$",
+                    # label=r"$\dot V_{g, tank, plant}$",
                 )
             },
         ),
@@ -79,7 +79,7 @@ post_processing.plot(
                         linewidth=1,
                         linestyle="-",
                     ),
-                    label=r"$\dot V_{CH_4,AD, plant}$",
+                    label=r"$\dot V_{CH_4}$",
                 ),
                 "y_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -87,7 +87,7 @@ post_processing.plot(
                         linewidth=1,
                         linestyle="-",
                     ),
-                    label=r"$\dot V_{g, AD, plant}$",
+                    label=r"$\dot V_{g}$",
                 ),
             },
         ),
@@ -95,8 +95,12 @@ post_processing.plot(
             r"$pH$" + "\n" + r"$[-]$",
             {
                 "y_4": PlotVarProperty(
-                    mpl_properties=MPLProperties(linewidth=1, linestyle="-", color="black"),
-                    label="$pH_{plant}$",
+                    mpl_properties=MPLProperties(
+                        linewidth=1,
+                        linestyle="-",
+                        color="black"
+                    ),
+                    # label="$pH_{plant}$",
                 )
             },
         ),

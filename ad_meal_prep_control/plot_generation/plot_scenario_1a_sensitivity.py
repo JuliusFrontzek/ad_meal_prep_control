@@ -18,7 +18,7 @@ try:
     dpi = int(sys.argv[1])
     show_plot = int(sys.argv[2])
 except IndexError:
-    dpi = 600
+    dpi = 1000
     show_plot = False
 
 

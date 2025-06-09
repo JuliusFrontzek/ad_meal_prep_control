@@ -165,7 +165,7 @@ fig.savefig(
             f"xi_pdfs_and_boxplots.png",
         )
     ),
-    dpi=600,
+    dpi=1000,
     format="png",
 )
 plt.show()

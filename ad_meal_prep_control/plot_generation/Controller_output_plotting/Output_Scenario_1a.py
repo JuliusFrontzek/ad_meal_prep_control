@@ -4,6 +4,9 @@ import do_mpc
 import matplotlib.pyplot as plt
 import pickle as pkl
 from ad_meal_prep_control.utils import remove_duplicate_labels, nRMSE
+import matplotlib as mpl
+
+mpl.rcParams['figure.dpi'] = 1000
 
 
 def controller_plotting_1a(scenario_names=None):
