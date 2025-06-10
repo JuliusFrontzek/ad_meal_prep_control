@@ -111,19 +111,19 @@ post_processing.plot(
         #             mpl_properties=MPLProperties(
         #                 color="black", linewidth=1, linestyle="-"
         #             ),
-        #             label=r"$Inhibition_1$",
+        #             label=r"$I_{N-lim}$",
         #         ),
         #         "inhibition_2": PlotVarProperty(
         #             mpl_properties=MPLProperties(
         #                 color="mediumblue", linewidth=1, linestyle="-"
         #             ),
-        #             label=r"$Inhibition_2$",
+        #             label=r"$I_{pH}$",
         #         ),
         #         "inhibition_3": PlotVarProperty(
         #             mpl_properties=MPLProperties(
         #                 color="cornflowerblue", linewidth=1, linestyle="-"
         #             ),
-        #             label=r"$Inhibition_3$",
+        #             label=r"$I_{nh3}$",
         #         ),
         #     },
         # ),
@@ -139,7 +139,7 @@ post_processing.plot(
         Constraint(value=0, ax_idx=4, color="white"),    # gas production lower bound
         Constraint(value=7.5, ax_idx=5, color="white"),  # pH upper bound
         Constraint(value=7.3, ax_idx=5, color="white"),  # pH lower bound
-        #Constraint(value=0, ax_idx=5, color="white"),   # inhibition lower bound
+        # Constraint(value=0, ax_idx=6, color="white"),    # inhibition lower bound
     ],
     dpi=dpi,
     show_plot=show_plot,
