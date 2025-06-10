@@ -116,4 +116,4 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         #height_ratios=[2, 2, 1, 1],
         height_ratios=[2, 2, 1],
     )
-controller_plotting_1a('Sensitivity')
+controller_plotting_1a(scenario_names)

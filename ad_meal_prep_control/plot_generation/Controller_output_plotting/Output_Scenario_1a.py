@@ -15,10 +15,10 @@ def controller_plotting_1a(scenario_names=None):
                           'Scenario_1a_quadratic_nominal_ideal_feedback_3tsap',
                           'Scenario_1a_quadratic_robust_feedback_mismatch_3std_3tsap'
                           ]
-    elif scenario_names in 'Sensitivity':
+    elif 'Sensitivity' in scenario_names:
         scenario_names = ['Scenario_1a_quadratic_no_feedback_mismatch_1std_ch',
                           'Scenario_1a_quadratic_no_feedback_mismatch_1std_pr',
-                          'Scenario_1a_quadratic_no_feedback_mismatch_1std_li']
+                          'Scenario_1a_quadratic_no_feedback_mismatch_5std_li']
 
     for scenario in scenario_names:
         with open(f'../scenarios/results/plots/{scenario}_substrate_costs.pkl', 'rb') as file:
@@ -41,7 +41,7 @@ def controller_plotting_1a(scenario_names=None):
             error_gas = (
                 f'{scenario}_NRMSE_gas = ', nRMSE(x_est=mpc['mpc']['_aux', 'y_1'], x_true=plant_output[:, [0]]))
             error_ch4 = (f'{scenario}_NRMSE_ch4 = ',
-                         nRMSE(x_est=mpc['mpc']['_aux', 'v_ch4_dot_tank_in'], x_true=plant_output[:, [2]]))
+                         nRMSE(x_est=mpc['mpc']['_aux', 'v_dot_ch4_AD_norm_condition'], x_true=plant_output[:, [2]]))
 
             results = [
                 [f"{scenario}_NRMSE_pH", error_ph],
