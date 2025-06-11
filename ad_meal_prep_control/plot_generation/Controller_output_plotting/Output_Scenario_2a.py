@@ -62,29 +62,8 @@ def controller_plotting_2a(scenario_names=None):
                     fig.axes[4].plot(simulated_time,
                                      predicted_data[5, :], 'black',
                                      linestyle='dotted', label=r'$pH_{MPC}$', linewidth=1)
-                    if 'nominal_feedback' in scenario:
-                        fig.axes[4].set_ylim(bottom=4, top=12)  # ylim of pH
-                        fig.axes[4].set_yticks(range(4, 12, 2))  # Set specific tick positions for pH
-
-                if mpc['mpc'].meta_data['n_robust'] > 0:
-                    # fig.axes[1].plot(simulated_time, predicted_data[[0,1], :].transpose()*100, 'black',
-                    #                 linestyle = 'dotted', label=r"$V_{CH_4,tank, MPC}$", linewidth=1)
-                    # fig.axes[1].plot(simulated_time, predicted_data[[2,3], :].transpose()*100, 'blue',
-                    #                 linestyle = 'dotted', label=r"$V_{CO_2,tank, MPC}$", linewidth=1)
-                    fig.axes[2].plot(simulated_time,
-                                     predicted_data[[4, 5], :].transpose(), 'black',
-                                     linestyle='dotted', label=r"$V_{GS,MPC}$", linewidth=1)
-                    fig.axes[3].plot(simulated_time,
-                                     predicted_data[[6, 7], :].transpose(), 'blue',
-                                     linestyle='dotted', label=r"$\dot V_{CH_4,MPC}$", linewidth=1)
-                    fig.axes[3].plot(simulated_time,
-                                     predicted_data[[8, 9], :].transpose(), 'black',
-                                     linestyle='dotted', label=r"$\dot V_{g,MPC}$", linewidth=1)
-                    fig.axes[4].plot(simulated_time,
-                                     predicted_data[[10, 11], :].transpose(), 'black',
-                                     linestyle='dotted', label=r'$pH_{MPC}$', linewidth=1)
-
-                if 'nominal_feedback' in scenario:
+                    fig.axes[4].set_ylim(bottom=4, top=12)  # ylim of pH
+                    fig.axes[4].set_yticks(range(4, 12, 2))  # Set specific tick positions for pH
 
                     # plot insets
                     axins_1 = fig.axes[2].inset_axes([0.4, 0.3, 0.3, 0.4], xlim=(3, 4), ylim=(200, 400))
@@ -103,7 +82,7 @@ def controller_plotting_2a(scenario_names=None):
                                  'black', linestyle='dashed')  # __SH upper bound GS
                     axins_1.plot(simulated_time,
                                  np.ones((predicted_data.shape[1], 1)) * V_GAS_STORAGE_MAX * (
-                                         metadata['controller_params']['gas_storage_bound_fraction']),
+                                     metadata['controller_params']['gas_storage_bound_fraction']),
                                  'grey', linestyle='dashed')  # __SH lower soft constraint GS
                     axins_1.plot(simulated_time,
                                  np.ones((predicted_data.shape[1], 1)) * V_GAS_STORAGE_MAX * (
@@ -148,6 +127,24 @@ def controller_plotting_2a(scenario_names=None):
                     #                 linestyle = 'dotted', linewidth=1)
                     # axins_3.plot(simulated_time, predicted_data[4, :], 'blue',
                     #                 linestyle = 'dotted', linewidth=1)
+
+                if mpc['mpc'].meta_data['n_robust'] > 0:
+                    # fig.axes[1].plot(simulated_time, predicted_data[[0,1], :].transpose()*100, 'black',
+                    #                 linestyle = 'dotted', label=r"$V_{CH_4,tank, MPC}$", linewidth=1)
+                    # fig.axes[1].plot(simulated_time, predicted_data[[2,3], :].transpose()*100, 'blue',
+                    #                 linestyle = 'dotted', label=r"$V_{CO_2,tank, MPC}$", linewidth=1)
+                    fig.axes[2].plot(simulated_time,
+                                     predicted_data[[4, 5], :].transpose(), 'black',
+                                     linestyle='dotted', label=r"$V_{GS,MPC}$", linewidth=1)
+                    fig.axes[3].plot(simulated_time,
+                                     predicted_data[[6, 7], :].transpose(), 'blue',
+                                     linestyle='dotted', label=r"$\dot V_{CH_4,MPC}$", linewidth=1)
+                    fig.axes[3].plot(simulated_time,
+                                     predicted_data[[8, 9], :].transpose(), 'black',
+                                     linestyle='dotted', label=r"$\dot V_{g,MPC}$", linewidth=1)
+                    fig.axes[4].plot(simulated_time,
+                                     predicted_data[[10, 11], :].transpose(), 'black',
+                                     linestyle='dotted', label=r'$pH_{MPC}$', linewidth=1)
 
             except:
                 pass
