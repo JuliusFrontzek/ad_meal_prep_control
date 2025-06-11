@@ -3,17 +3,18 @@ from ad_meal_prep_control.utils import (
     ScenarioFactory,
     CostFunction,
     ControllerParams,
+    Disturbances,
     NlConstraint
 )
 
 # user input:
-n_days_mpc = 28  # length of simulation [d]
+n_days_mpc = 14  # length of simulation [d]
 n_std_dev = 2  # number std deviations
 t_step = 0.5 / 24.0
 t_stp_ahead_pred = 8  # for controller plotting
 
-fill_level_setpoint = 0.47
-c_1 = 1e4
+fill_level_setpoint = 0.6
+c_1 = 1e2
 lterm = (f"{c_1} * (model.aux['v_gas_storage']/V_GAS_STORAGE_MAX - {fill_level_setpoint})**2"
          )
 
@@ -22,7 +23,7 @@ mterm = "model.tvp['dummy_tvp']"
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 controller_params = ControllerParams(
-    mpc_n_horizon=40,
+    mpc_n_horizon=48,
     mpc_n_robust=0,
     num_std_devs=n_std_dev,
     cost_func=cost_func,

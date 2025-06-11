@@ -808,42 +808,41 @@ class Simulation:
                         model=self.model,
                     )
 
-            if self.scenario.feedback:
-                # save predicted data
-                if 'Scenario_1' in self.scenario.name:
-                    predicted_data = np.concatenate((vg_model, ph_model, vg_ch4_model), axis=0)
-                    np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
-                if 'Scenario_2' in self.scenario.name:
-                    predicted_data = np.concatenate((vg_ch4_tank_model, vg_co2_tank_model, vg_tank_model,
-                                                     vg_ch4_model, vg_model, ph_model), axis=0)
-                    np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
-
-            if not self.scenario.feedback:
-                vg_ch4_model = self._simulator_plant.data['_aux', 'v_dot_ch4_AD_norm_condition']
-                vg_model = self._simulator_plant.data['_aux', 'y_1']
-                ph_model = self._simulator_plant.data['_aux', 'y_4']
-
-                if 'Scenario_2' in self.scenario.name:
-                    vg_ch4_tank_model = self._simulator_plant.data['_x', 'x_19']
-                    vg_co2_tank_model = self._simulator_plant.data['_x', 'x_20']
-                    vg_tank_model = self._simulator_plant.data['_aux', 'v_gas_storage']
-
-                # Save plant output
-                if 'Scenario_1' in self.scenario.name:
-                    plant_output = np.concatenate((vg_model, ph_model, vg_ch4_model), axis=1)
-                    np.savetxt(f'./results/Plant Output {self.scenario.name}.csv', plant_output)
-
-                if 'Scenario_2' in self.scenario.name:
-                    plant_output = np.concatenate((vg_ch4_tank_model, vg_co2_tank_model, vg_tank_model,
-                                                   vg_ch4_model, vg_model, ph_model), axis=1)
-
-                    np.savetxt(f'./results/Plant Output {self.scenario.name}.csv', plant_output)
-
         except (KeyboardInterrupt, SystemError):
             pass
         finally:   # is always executed, regardless of error
             if self.scenario.save_results:
                 self._save_results()
+
+                if self.scenario.feedback:
+                    # save predicted data
+                    if 'Scenario_1' in self.scenario.name:
+                        predicted_data = np.concatenate((vg_model, ph_model, vg_ch4_model), axis=0)
+                        np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
+                    if 'Scenario_2' in self.scenario.name:
+                        predicted_data = np.concatenate((vg_ch4_tank_model, vg_co2_tank_model, vg_tank_model,
+                                                         vg_ch4_model, vg_model, ph_model), axis=0)
+                        np.savetxt(f'./results/Predicted Data {self.scenario.name}.csv', predicted_data)
+
+                if not self.scenario.feedback:
+                    vg_ch4_model = self._simulator_plant.data['_aux', 'v_dot_ch4_AD_norm_condition']
+                    vg_model = self._simulator_plant.data['_aux', 'y_1']
+                    ph_model = self._simulator_plant.data['_aux', 'y_4']
+
+                    if 'Scenario_2' in self.scenario.name:
+                        vg_ch4_tank_model = self._simulator_plant.data['_x', 'x_19']
+                        vg_co2_tank_model = self._simulator_plant.data['_x', 'x_20']
+                        vg_tank_model = self._simulator_plant.data['_aux', 'v_gas_storage']
+
+                    # Save plant output
+                    if 'Scenario_1' in self.scenario.name:
+                        plant_output = np.concatenate((vg_model, ph_model, vg_ch4_model), axis=1)
+                        np.savetxt(f'./results/Plant Output {self.scenario.name}.csv', plant_output)
+
+                    if 'Scenario_2' in self.scenario.name:
+                        plant_output = np.concatenate((vg_ch4_tank_model, vg_co2_tank_model, vg_tank_model,
+                                                       vg_ch4_model, vg_model, ph_model), axis=1)
+                        np.savetxt(f'./results/Plant Output {self.scenario.name}.csv', plant_output)
 
     def _save_results(self):
         # Save do_mpc data

@@ -30,247 +30,113 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         dpi = 1000
         show_plot = False
 
-    if not "nominal_feedback" in scenario_name:
-        post_processing.plot(
-            [
-                # (
-                #    "Gas storage  \nlevel" + r" $[\%]$",
-                #    {
-                #        "x_19": PlotVarProperty(
-                #            mpl_properties=MPLProperties(
-                #                color="black", linewidth=1, linestyle="-"
-                #            ),
-                #            label=r"$V_{CH_4,tank, plant}$",
-                #            scaling=100.0,
-                #        ),
-                #        "x_20": PlotVarProperty(
-                #            mpl_properties=MPLProperties(
-                #                color="blue", linewidth=1, linestyle="-"
-                #            ),
-                #            label=r"$V_{CO_2,tank, plant}$",
-                #            scaling=100.0,
-                #        ),
-                #    },
-                # ),
-                (
-                    r"$V_{GS}$" + "\n" + r"$[m^3]$",
-                    {
-                        "v_gas_storage": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="black",
-                                linewidth=1,
-                                linestyle="-",
-                            ),
-                            label=r"$\dot V_{GS}$",
-                        )
-                    },
-                ),
-                (
-                    r"$\dot V$" + "\n" + r"$[m^3/d]$",
-                    {
-                        "v_ch4_dot_tank_in": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="blue",
-                                linewidth=1,
-                                linestyle="-",
-                            ),
-                            label=r"$\dot V_{CH_4}$",
+    post_processing.plot(
+        [
+            # (
+            #    "Gas storage  \nlevel" + r" $[\%]$",
+            #    {
+            #        "x_19": PlotVarProperty(
+            #            mpl_properties=MPLProperties(
+            #                color="black", linewidth=1, linestyle="-"
+            #            ),
+            #            label=r"$V_{CH_4,tank, plant}$",
+            #            scaling=100.0,
+            #        ),
+            #        "x_20": PlotVarProperty(
+            #            mpl_properties=MPLProperties(
+            #                color="blue", linewidth=1, linestyle="-"
+            #            ),
+            #            label=r"$V_{CO_2,tank, plant}$",
+            #            scaling=100.0,
+            #        ),
+            #    },
+            # ),
+            (
+                r"$V_{GS}$" + "\n" + r"$[m^3]$",
+                {
+                    "v_gas_storage": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="black",
+                            linewidth=1,
+                            linestyle="-",
                         ),
-                        "y_1": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="black",
-                                linewidth=1,
-                                linestyle="-",
-                            ),
-                            label=r"$\dot V_{g}$",
+                        label=r"$\dot V_{GS}$",
+                    )
+                },
+            ),
+            (
+                r"$\dot V$" + "\n" + r"$[m^3/d]$",
+                {
+                    "v_ch4_dot_tank_in": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="blue",
+                            linewidth=1,
+                            linestyle="-",
                         ),
-                    },
-                ),
-                (
-                    r"$pH$" + "\n" + r"$[-]$",
-                    {
-                        "y_4": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                linewidth=1, linestyle="-", color="black"
-                            ),
-                            label="$pH$",
-                        )
-                    },
-                ),
-                # (
-                #     r"$Inhibition$" + "\n" + r"$[-]$",
-                #     {
-                #         "inhibition_1": PlotVarProperty(
-                #             mpl_properties=MPLProperties(
-                #                 color="black", linewidth=1, linestyle="-"
-                #             ),
-                #             label=r"$Inhibition_1$",
-                #         ),
-                #         "inhibition_2": PlotVarProperty(
-                #             mpl_properties=MPLProperties(
-                #                 color="mediumblue", linewidth=1, linestyle="-"
-                #             ),
-                #             label=r"$Inhibition_2$",
-                #         ),
-                #         "inhibition_3": PlotVarProperty(
-                #             mpl_properties=MPLProperties(
-                #                 color="cornflowerblue", linewidth=1, linestyle="-"
-                #             ),
-                #             label=r"$Inhibition_3$",
-                #         ),
-                #     },
-                # ),
-            ],
-            plot_save_name=plot_save_name,
-            constraints=[
-                # Constraint(value=0.0, ax_idx=1),
-                Constraint(value=0.0, ax_idx=2),
-                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
-                Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-                Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-                # adapt ylim of plots by adding invisible horizontal lines:
-                Constraint(value=0, ax_idx=3, color="white"),  # gas production lower bound
-                Constraint(value=7.6, ax_idx=4, color="white"),  # pH upper bound
-                Constraint(value=7.2, ax_idx=4, color="white"),  # pH lower bound
-                #Constraint(value=0, ax_idx=5, color="white"),  # inhibition lower bound
-            ],
-            dpi=dpi,
-            show_plot=show_plot,
-            height_ratios=[2, 1, 2, 2, 1],
-            color_background_indices=(2,),
-            plot_olr=True,
-        )
-    else:
-        post_processing.plot(
-            [
-                # (
-                #    "Gas storage  \nlevel" + r" $[\%]$",
-                #    {
-                #        "x_19": PlotVarProperty(
-                #            mpl_properties=MPLProperties(
-                #                color="black", linewidth=1, linestyle="-"
-                #            ),
-                #            label=r"$V_{CH_4,tank, plant}$",
-                #            scaling=100.0,
-                #        ),
-                #        "x_20": PlotVarProperty(
-                #            mpl_properties=MPLProperties(
-                #                color="blue", linewidth=1, linestyle="-"
-                #            ),
-                #            label=r"$V_{CO_2,tank, plant}$",
-                #            scaling=100.0,
-                #        ),
-                #    },
-                # ),
-                (
-                    r"$V_{GS}$" + "\n" + r"$[m^3]$",
-                    {
-                        "v_gas_storage": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="black",
-                                linewidth=1,
-                                linestyle="-",
-                            ),
-                            label=r"$V_{GS}$",
-                        )
-                    },
-                ),
-                (
-                    r"$\dot V$" + "\n" + r"$[m^3/d]$",
-                    {
-                        "v_ch4_dot_tank_in": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="blue",
-                                linewidth=1,
-                                linestyle="-",
-                            ),
-                            label=r"$\dot V_{CH_4}$",
+                        label=r"$\dot V_{CH_4}$",
+                    ),
+                    "y_1": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            color="black",
+                            linewidth=1,
+                            linestyle="-",
                         ),
-                        "y_1": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                color="black",
-                                linewidth=1,
-                                linestyle="-",
-                            ),
-                            label=r"$\dot V_{g}$",
+                        label=r"$\dot V_{g}$",
+                    ),
+                },
+            ),
+            (
+                r"$pH$" + "\n" + r"$[-]$",
+                {
+                    "y_4": PlotVarProperty(
+                        mpl_properties=MPLProperties(
+                            linewidth=1, linestyle="-", color="black"
                         ),
-                    },
-                ),
-                (
-                    r"$pH$" + "\n" + r"$[-]$",
-                    {
-                        "y_4": PlotVarProperty(
-                            mpl_properties=MPLProperties(
-                                linewidth=1, linestyle="-", color="black"
-                            ),
-                            label="$pH$",
-                        )
-                    },
-                ),
-                # (
-                #     r"$Inhibition$" + "\n" + r"$[-]$",
-                #     {
-                #         "inhibition_1": PlotVarProperty(
-                #             mpl_properties=MPLProperties(
-                #                 color="black", linewidth=1, linestyle="-"
-                #             ),
-                #             label=r"$Inhibition_1$",
-                #         ),
-                #         "inhibition_2": PlotVarProperty(
-                #             mpl_properties=MPLProperties(
-                #                 color="mediumblue", linewidth=1, linestyle="-"
-                #             ),
-                #             label=r"$Inhibition_2$",
-                #         ),
-                #         "inhibition_3": PlotVarProperty(
-                #             mpl_properties=MPLProperties(
-                #                 color="cornflowerblue", linewidth=1, linestyle="-"
-                #             ),
-                #             label=r"$Inhibition_3$",
-                #         ),
-                #     },
-                # ),
-            ],
-            plot_save_name=plot_save_name,
-            constraints=[
-                # Constraint(value=0.0, ax_idx=1),
-                Constraint(value=0.0, ax_idx=2),
-                Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
-                Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-                Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
-                Constraint(value=7.6, ax_idx=4, color="white"),  # pH upper bound
-                Constraint(value=7.2, ax_idx=4, color="white"),  # pH lower bound
-            ],
-            other_inset_axes=[
-                # {
-                #    "plot_idx": 1,
-                #    "days": (18, 23),
-                #    "ylimit": (-10, 120),
-                #    "inset_axis_specs": (0.4, 0.2, 0.35, 0.35)
-                # },
-                # {
-                #    "plot_idx": 1,
-                #    "days": (18, 23),
-                #    "ylimit": (20, 300),
-                #    "inset_axis_specs": (0.4, 0.2, 0.35, 0.35)
-                # },
-                # {
-                #    "plot_idx": 3,
-                #    "days": (3, 5),
-                #    "ylimit": (100, 700),
-                #    "inset_axis_specs": (0.4, 0.4, 0.25, 0.25)
-                # },
-                # {
-                #    "plot_idx": 3,
-                #    "days": (17.1, 17.4),
-                #    "ylimit": (350, 500),
-                #    "inset_axis_specs": (0.2, 0.4, 0.25, 0.25)
-                # },
-            ],
-            dpi=dpi,
-            show_plot=show_plot,
-            height_ratios=[2, 1, 2, 2, 1],
-            color_background_indices=(2,),
-            plot_olr=True,
-        )
+                        label="$pH$",
+                    )
+                },
+            ),
+            # (
+            #     r"$Inhibition$" + "\n" + r"$[-]$",
+            #     {
+            #         "inhibition_1": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="black", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$Inhibition_1$",
+            #         ),
+            #         "inhibition_2": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="mediumblue", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$Inhibition_2$",
+            #         ),
+            #         "inhibition_3": PlotVarProperty(
+            #             mpl_properties=MPLProperties(
+            #                 color="cornflowerblue", linewidth=1, linestyle="-"
+            #             ),
+            #             label=r"$Inhibition_3$",
+            #         ),
+            #     },
+            # ),
+        ],
+        plot_save_name=plot_save_name,
+        constraints=[
+            # Constraint(value=0.0, ax_idx=1),
+            Constraint(value=0.0, ax_idx=1),
+            Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
+            Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
+            Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
+            # adapt ylim of plots by adding invisible horizontal lines:
+            Constraint(value=0, ax_idx=3, color="white"),  # gas production lower bound
+            Constraint(value=7.6, ax_idx=4, color="white"),  # pH upper bound
+            Constraint(value=7.2, ax_idx=4, color="white"),  # pH lower bound
+            #Constraint(value=0, ax_idx=5, color="white"),  # inhibition lower bound
+        ],
+        dpi=dpi,
+        show_plot=show_plot,
+        height_ratios=[2, 1, 2, 2, 1],
+        color_background_indices=(2,),
+        plot_olr=True,
+    )
 controller_plotting_2a(scenario_names)

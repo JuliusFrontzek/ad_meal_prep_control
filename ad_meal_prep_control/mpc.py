@@ -20,30 +20,30 @@ import do_mpc
 
 
 def mpc_setup(
-    *,
-    model: do_mpc.model.Model,
-    n_horizon: int,
-    n_robust: int,
-    t_step: float,
-    xi_ch_norm: np.ndarray,
-    xi_pr_norm: np.ndarray,
-    xi_li_norm: np.ndarray,
-    compile_nlp: bool,
-    ch4_outflow_rate: np.ndarray,
-    cost_func: CostFunction,
-    substrate_costs: list[float],
-    substrate_cost_formulation: str,
-    Tu: np.ndarray,
-    store_full_solution: bool,
-    disturbances: Disturbances,
-    gas_storage_bound_fraction: float,
-    bounds: list[Bound] = None,
-    nl_cons: list[NlConstraint] = None,
-    rterm: str = None,
-    suppress_ipopt_output: bool = False,
-    ch4_set_point_function: SetpointFunction = None,
-    theta: np.ndarray,
-    limited_substrates: list[LimitedSubstrate] = None,
+        *,
+        model: do_mpc.model.Model,
+        n_horizon: int,
+        n_robust: int,
+        t_step: float,
+        xi_ch_norm: np.ndarray,
+        xi_pr_norm: np.ndarray,
+        xi_li_norm: np.ndarray,
+        compile_nlp: bool,
+        ch4_outflow_rate: np.ndarray,
+        cost_func: CostFunction,
+        substrate_costs: list[float],
+        substrate_cost_formulation: str,
+        Tu: np.ndarray,
+        store_full_solution: bool,
+        disturbances: Disturbances,
+        gas_storage_bound_fraction: float,
+        bounds: list[Bound] = None,
+        nl_cons: list[NlConstraint] = None,
+        rterm: str = None,
+        suppress_ipopt_output: bool = False,
+        ch4_set_point_function: SetpointFunction = None,
+        theta: np.ndarray,
+        limited_substrates: list[LimitedSubstrate] = None,
 ) -> do_mpc.controller.MPC:
     num_states = model._x.size
 
@@ -60,8 +60,10 @@ def mpc_setup(
         "collocation_ni": 1,
         "store_full_solution": store_full_solution,
         # "nl_cons_check_colloc_points": True,
-        'nlpsol_opts': {"ipopt.linear_solver": "ma27"},# "ipopt.hsllib": "/usr/local/lib/libcoinhsl.so.2.2.5"}
-        'max_iter': 1000,
+        "nlpsol_opts": {
+            "ipopt.linear_solver": "ma27",  # "ipopt.hsllib": "/usr/local/lib/libcoinhsl.so.2.2.5"}
+            "ipopt.max_iter": 500  # reset maximum iterations
+        }
     }
 
     # setup_mpc["nlpsol_opts"] = {
@@ -79,7 +81,7 @@ def mpc_setup(
     def dictated_sub_tvp_setup(t_now: float):
         if disturbances.dictated_feeding is not None:
             for feed_idx, dictated_sub_properties in enumerate(
-                disturbances.dictated_feeding.values()
+                    disturbances.dictated_feeding.values()
             ):
                 for k in range(n_horizon + 1):
                     for dictated_sub in dictated_sub_properties:
@@ -145,7 +147,7 @@ def mpc_setup(
             for k in range(n_horizon + 1):
                 tvp_template["_tvp", k, "v_ch4_dot_tank_out"] = ch4_outflow_rate[
                     t_now_idx + k
-                ]
+                    ]
                 tvp_template["_tvp", k, "v_ch4_dot_tank_out_mean"] = (
                     mean_ch4_outflow_rate
                 )
@@ -186,7 +188,8 @@ def mpc_setup(
 
         if substrate_cost_formulation == "linear":
             for idx, cost in enumerate(substrate_costs):
-                sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}] * {Tu[idx]})")  # __SH: penalize absolute vol flows of substrates (not normalized ones)
+                sub_cost_rterms.append(
+                    f"{cost} * (model.u['u_norm'][{idx}] * {Tu[idx]})")  # __SH: penalize absolute vol flows of substrates (not normalized ones)
         else:
             for idx, cost in enumerate(substrate_costs):
                 sub_cost_rterms.append(f"{cost} * (model.u['u_norm'][{idx}] * {Tu[idx]})**2")

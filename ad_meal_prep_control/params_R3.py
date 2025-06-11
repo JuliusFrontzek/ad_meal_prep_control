@@ -47,4 +47,4 @@ p_norm = p0  # [bar]
 T_norm = 273.15  # [K]
 T_gas_storage = 323.15  # [K]
 P_el_chp = 50.0  # kW
-V_GAS_STORAGE_MAX = 300  # m3
+V_GAS_STORAGE_MAX = 280  # m3
