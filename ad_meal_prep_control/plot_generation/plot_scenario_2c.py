@@ -130,8 +130,8 @@ post_processing.plot(
     ],
     plot_save_name=scenario_name,
     constraints=[
-        Constraint(value=0.0, ax_idx=2),
-        Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
+        Constraint(value=0.0, ax_idx=3),
+        Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=3),
         Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="grey"),
         Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=3, color="grey"),
         # adapt ylim of plots by adding invisible horizontal lines:

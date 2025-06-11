@@ -66,7 +66,7 @@ def controller_plotting_2a(scenario_names=None):
                     fig.axes[4].set_yticks(range(4, 12, 2))  # Set specific tick positions for pH
 
                     # plot insets
-                    axins_1 = fig.axes[2].inset_axes([0.4, 0.3, 0.3, 0.4], xlim=(3, 4), ylim=(200, 400))
+                    axins_1 = fig.axes[2].inset_axes([0.1, 0.4, 0.3, 0.4], xlim=(2, 3.7), ylim=(0, 400))
                     axins_1.plot(simulated_time,
                                  predicted_data[2, :],
                                  'black', linestyle='dotted', linewidth=1)
