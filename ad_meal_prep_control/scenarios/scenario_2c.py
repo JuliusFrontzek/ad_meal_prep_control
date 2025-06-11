@@ -26,7 +26,7 @@ mterm = "model.tvp['dummy_tvp']"
 cost_func = CostFunction(lterm=lterm, mterm=mterm)
 
 controller_params = ControllerParams(
-    mpc_n_horizon=40,
+    mpc_n_horizon=48,
     mpc_n_robust=1,
     num_std_devs=n_std_dev,
     cost_func=cost_func,
