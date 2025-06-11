@@ -10,7 +10,7 @@ import numpy as np
 import math
 
 c_1 = 1e3
-c_2 = 1e-1
+c_2 = 1
 lterm = f"{c_1}*((model.aux['v_dot_ch4_AD_norm_condition'] - model.tvp['v_ch4_dot_AD_setpoint'])/model.tvp['v_ch4_dot_AD_setpoint'])**2"
 mterm = "model.tvp['dummy_tvp']"
 

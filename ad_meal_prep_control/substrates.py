@@ -280,7 +280,7 @@ MAIZE_SILAGE = Substrate(
 
     ],
     state="solid",
-    cost=40.0,
+    cost=45.0,
 )
 
 GRASS_SILAGE = Substrate(
@@ -322,7 +322,7 @@ GRASS_SILAGE = Substrate(
 
     ],
     state="solid",
-    cost=35.0,
+    cost=31.0,
 )
 
 
@@ -365,7 +365,7 @@ CATTLE_MANURE = Substrate(
 
     ],
     state="liquid",
-    cost=20.0,
+    cost=5.0,
 )
 
 CATTLE_MANURE_VERY_UNCERTAIN = deepcopy(CATTLE_MANURE)
@@ -411,7 +411,7 @@ SUGAR_BEET_SILAGE = Substrate(
 
     ],
     state="solid",
-    cost=50.0,
+    cost=52.0,
 )
 
 
