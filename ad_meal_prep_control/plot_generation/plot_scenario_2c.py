@@ -158,7 +158,7 @@ post_processing.plot(
     #         "inset_axis_specs": (0.3, 0.35, 0.1, 0.2),
     #     },
     # ],
-    color_background_indices=(3,),
+    color_background_indices=(0,3,4),
     plot_olr=True,
 )
 #controller_plotting_2c()
