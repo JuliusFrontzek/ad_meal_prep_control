@@ -119,9 +119,9 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                 "inset_axis_specs": (0.4, 0.25, 0.15, 0.4),
             },
             {
-                "days": (25, 27),
+                "days": (21, 23),
                 "ylimit": (0.6, 1.0),
-                "inset_axis_specs": (0.85, 0.3, 0.1, 0.3),
+                "inset_axis_specs": (0.75, 0.3, 0.1, 0.3),
             }],
         other_inset_axes=[
             {
