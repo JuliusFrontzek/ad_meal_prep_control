@@ -372,7 +372,8 @@ class PostProcessing:
                                 0.0, self._scenario_meta_data["u_max"]["solid"] * 0.1
                             )
                             ax_inputs_liquid.set_ylim(
-                                0.0, self._scenario_meta_data["u_max"]["liquid"] * 0.05
+                                # 0.0, self._scenario_meta_data["u_max"]["liquid"] * 0.05
+                                0.0, self._scenario_meta_data["u_max"]["solid"] * 0.1  # __SH make y-scaling of manure equal to silages
                             )
                         elif "Scenario_2a" or "Scenario_2c" in plot_save_name:
                             ax.set_ylim(
