@@ -122,8 +122,8 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         ],
         plot_save_name=plot_save_name,
         constraints=[
-            # Constraint(value=0.0, ax_idx=1),
-            Constraint(value=0.0, ax_idx=1),
+            # Gas storage soft and hard constraints:
+            Constraint(value=0.0, ax_idx=2),
             Constraint(value=params_R3.V_GAS_STORAGE_MAX, ax_idx=2),
             Constraint(value=0.05 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
             Constraint(value=0.95 * params_R3.V_GAS_STORAGE_MAX, ax_idx=2, color="grey"),
@@ -136,7 +136,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         dpi=dpi,
         show_plot=show_plot,
         height_ratios=[2, 1, 2, 2, 1],
-        color_background_indices=(2,),
+        color_background_indices=(0,2,3),
         plot_olr=True,
     )
 controller_plotting_2a(scenario_names)
