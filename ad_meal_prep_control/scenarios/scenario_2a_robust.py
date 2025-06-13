@@ -11,7 +11,7 @@ from ad_meal_prep_control.utils import (
 n_days_mpc = 14  # length of simulation [d]
 n_std_dev = 2  # number std deviations
 t_step = 0.5 / 24.0
-t_stp_ahead_pred = 8  # for controller plotting
+t_stp_ahead_pred = 12  # for controller plotting
 
 fill_level_setpoint = 0.6
 c_1 = 1e2

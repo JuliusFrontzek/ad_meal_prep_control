@@ -58,7 +58,7 @@ def controller_plotting_2a(scenario_names=None):
                     fig.axes[3].plot(simulated_time,
                                      predicted_data[4, :],
                                      'black', linestyle='dotted', label=r"$\dot V_{g,MPC}$", linewidth=1)
-                    fig.axes[3].set_ylim(bottom=-50, top=1000)  # ylim of gas production
+                    fig.axes[3].set_ylim(bottom=-50, top=1500)  # ylim of gas production
                     fig.axes[4].plot(simulated_time,
                                      predicted_data[5, :], 'black',
                                      linestyle='dotted', label=r'$pH_{MPC}$', linewidth=1)
@@ -66,7 +66,7 @@ def controller_plotting_2a(scenario_names=None):
                     fig.axes[4].set_yticks(range(4, 12, 2))  # Set specific tick positions for pH
 
                     # plot insets
-                    axins_1 = fig.axes[2].inset_axes([0.1, 0.4, 0.3, 0.4], xlim=(0, 3.7), ylim=(-10, 350))
+                    axins_1 = fig.axes[2].inset_axes([0.07, 0.4, 0.4, 0.5], xlim=(0, 3.7), ylim=(-10, 350))
                     axins_1.plot(simulated_time,
                                  predicted_data[2, :],
                                  'black', linestyle='dotted', linewidth=1)
@@ -92,6 +92,19 @@ def controller_plotting_2a(scenario_names=None):
                     axins_1.grid(True, linestyle='dashed')  # show grid
                     fig.axes[2].indicate_inset_zoom(
                         axins_1,
+                        edgecolor="black",
+                        linewidth=1.0,
+                    )
+
+                    axins_2 = fig.axes[3].inset_axes([0.08, 0.6, 0.1, 0.35], xlim=(1.3, 1.74), ylim=(500, 750))
+                    axins_2.plot(simulated_time,
+                                 predicted_data[4, :].transpose(),
+                                 'black', linestyle='dotted', linewidth=1)  # predicted gas production
+                    axins_2.plot(simulated_time, mpc['simulator']['_y'][:, 4], 'black', linewidth=1)  # simulated gas production
+                    axins_2.tick_params(axis='x', which='both', labelbottom=True)  # Ensure labels are shown
+                    axins_2.grid(True, linestyle='dashed')  # show grid
+                    fig.axes[3].indicate_inset_zoom(
+                        axins_2,
                         edgecolor="black",
                         linewidth=1.0,
                     )
@@ -146,6 +159,19 @@ def controller_plotting_2a(scenario_names=None):
                                      predicted_data[[10, 11], :].transpose(), 'black',
                                      linestyle='dotted', label=r'$pH_{MPC}$', linewidth=1)
 
+                    # plot insets
+                    axins_1 = fig.axes[3].inset_axes([0.37, 0.52, 0.1, 0.45], xlim=(4.3, 4.7), ylim=(500, 800))
+                    axins_1.plot(simulated_time,
+                                 predicted_data[[8, 9], :].transpose(),
+                                 'black', linestyle='dotted', linewidth=1)
+                    axins_1.plot(simulated_time, mpc['simulator']['_y'][:, 4], 'black', linewidth=1)
+                    axins_1.tick_params(axis='x', which='both', labelbottom=True)  # Ensure labels are shown
+                    axins_1.grid(True, linestyle='dashed')  # show grid
+                    fig.axes[3].indicate_inset_zoom(
+                        axins_1,
+                        edgecolor="black",
+                        linewidth=1.0,
+                    )
             except:
                 pass
 
