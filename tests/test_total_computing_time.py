@@ -23,11 +23,11 @@ if my_scenario == '1b':
 elif my_scenario == '2a_nominal':
     scen_name = 'Scenario_2a_dynamic_nominal_feedback_mismatch_2std_8tsap'
 elif my_scenario == '2a_nominal_1sigma':
-    scen_name = 'Scenario_2a_dynamic_nominal_feedback_mismatch_1std_8tsap'
+    scen_name = 'Scenario_2a_dynamic_nominal_feedback_mismatch_1std_12tsap'
 elif my_scenario == '2a_robust':
     scen_name = 'Scenario_2a_dynamic_robust_feedback_mismatch_2std_8tsap'
 elif my_scenario == '2a_robust_1sigma':
-    scen_name = 'Scenario_2a_dynamic_robust_feedback_mismatch_1std_8tsap'
+    scen_name = 'Scenario_2a_dynamic_robust_feedback_mismatch_1std_12tsap'
 elif my_scenario == '2c':
     scen_name = 'Scenario_2c_dynamic'
 elif my_scenario == '2c_uninhibited':
