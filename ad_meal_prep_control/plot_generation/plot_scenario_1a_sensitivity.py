@@ -31,7 +31,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
     post_processing.plot(
         [
             (
-                r"$\dot V$" + "\n" + r"$[m^3/d]$",
+                r"$\dot V \; [m^3/d]$",
                 {
                     "v_ch4_dot_AD_setpoint": PlotVarProperty(
                         mpl_properties=MPLProperties(
@@ -56,7 +56,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 },
             ),
             (
-                r"$pH$" + "\n" + r"$[-]$",
+                r"$pH \; [-]$",
                 {
                     "y_4": PlotVarProperty(
                         mpl_properties=MPLProperties(linewidth=1, linestyle="-",
@@ -66,7 +66,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 },
             ),
             #(
-            #    r"$Inhibition$" + "\n" + r"$[-]$",
+            #    r"$Inhibition \; [-]$",
             #    {
             #        "inhibition_1": PlotVarProperty(
             #            mpl_properties=MPLProperties(

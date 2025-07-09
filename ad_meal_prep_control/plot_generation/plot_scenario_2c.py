@@ -26,7 +26,7 @@ except IndexError:
 post_processing.plot(
     [
         (
-            r"$d_{feed}$" + "\n" + r"$[m^3/d]$",
+            r"$d_{feed} \; [m^3/d]$",
             {
                 "dictated_sub_feed_1": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -58,7 +58,7 @@ post_processing.plot(
         #    },
         # ),
         (
-            r"$V_{GS}$" + "\n" + r"$[m^3]$",
+            r"$V_{GS} \; [m^3]$",
             {
                 "v_gas_storage": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -71,7 +71,7 @@ post_processing.plot(
             },
         ),
         (
-            r"$\dot V$" + "\n" + r"$[m^3/d]$",
+            r"$\dot V \; [m^3/d]$",
             {
                 "v_ch4_dot_tank_in": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -92,7 +92,7 @@ post_processing.plot(
             },
         ),
         (
-            r"$pH$" + "\n" + r"$[-]$",
+            r"$pH \; [-]$",
             {
                 "y_4": PlotVarProperty(
                     mpl_properties=MPLProperties(
@@ -143,7 +143,7 @@ post_processing.plot(
     ],
     dpi=dpi,
     show_plot=show_plot,
-    height_ratios=[2, 1, 1, 2, 2, 1],
+    height_ratios=[3, 1, 1, 3, 2, 1],
     # input_inset_axes=[
     #     {
     #         "days": (12, 13),

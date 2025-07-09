@@ -27,7 +27,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
     post_processing.plot(
         [
             (
-                r"$\dot d_{feed}$" + "\n" + r"$[m^3/d]$",
+                r"$\dot d_{feed} \; [m^3/d]$",
                 {
                     "dictated_sub_feed_1": PlotVarProperty(
                         mpl_properties=MPLProperties(
@@ -40,7 +40,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                 },
             ),
             (
-                r"$\dot V$" + "\n" + r"$[m^3/d]$",
+                r"$\dot V \; [m^3/d]$",
                 {
                     "v_dot_ch4_AD_norm_condition": PlotVarProperty(
                         mpl_properties=MPLProperties(
@@ -69,7 +69,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                 },
             ),
             (
-                r"$pH$" + "\n" + r"$[-]$",
+                r"$pH \; [-]$",
                 {
                     "y_4": PlotVarProperty(
                         mpl_properties=MPLProperties(linewidth=1, linestyle="-", color='black'),
@@ -78,7 +78,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                 },
             ),
             # (
-            #     r"$Inhibition$" + "\n" + r"$[-]$",
+            #     r"$Inhibition \; [-]$",
             #     {
             #         "inhibition_1": PlotVarProperty(
             #             mpl_properties=MPLProperties(
@@ -111,7 +111,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
         ],
         dpi=dpi,
         show_plot=show_plot,
-        height_ratios=[1.5, 1, 1, 1.5, 1],
+        height_ratios=[2, 1, 1, 2, 1],
         input_inset_axes=[
             {
                 "days": (5.5, 6.5),

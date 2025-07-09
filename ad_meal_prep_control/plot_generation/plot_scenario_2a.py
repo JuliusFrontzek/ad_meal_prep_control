@@ -52,7 +52,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
             #    },
             # ),
             (
-                r"$V_{GS}$" + "\n" + r"$[m^3]$",
+                r"$V_{GS} \; [m^3]$",
                 {
                     "v_gas_storage": PlotVarProperty(
                         mpl_properties=MPLProperties(
@@ -65,7 +65,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 },
             ),
             (
-                r"$\dot V$" + "\n" + r"$[m^3/d]$",
+                r"$\dot V \; [m^3/d]$",
                 {
                     "v_ch4_dot_tank_in": PlotVarProperty(
                         mpl_properties=MPLProperties(
@@ -86,7 +86,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 },
             ),
             (
-                r"$pH$" + "\n" + r"$[-]$",
+                r"$pH \; [-]$",
                 {
                     "y_4": PlotVarProperty(
                         mpl_properties=MPLProperties(
@@ -97,7 +97,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
                 },
             ),
             # (
-            #     r"$Inhibition$" + "\n" + r"$[-]$",
+            #     r"$Inhibition \; [-]$",
             #     {
             #         "inhibition_1": PlotVarProperty(
             #             mpl_properties=MPLProperties(
@@ -135,7 +135,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_names):
         ],
         dpi=dpi,
         show_plot=show_plot,
-        height_ratios=[2, 1, 2, 2, 1],
+        height_ratios=[2, 1, 3, 3, 1],
         color_background_indices=(0,2,3),
         plot_olr=True,
     )

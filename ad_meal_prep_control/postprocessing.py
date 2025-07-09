@@ -147,17 +147,17 @@ class PostProcessing:
         # insert volume flows and/or OLR to subplots:
         if plot_inputs:
             subplot_labels_and_vars.insert(
-                0, (r"$\dot V_{feed,silage}$" + "\n" + r"$[m^3/d]$", {f"u_norm": None})
+                0, (r"$\dot V_{feed,silage} \; [m^3/d]$", {f"u_norm": None})
             )
 
         if plot_olr and self._num_dictated_subs == 0:
             subplot_labels_and_vars.insert(
-                1, (r"$OLR$" + "\n" + r"$[kg VS/m^3/d]$", {f"OLR": None})
+                1, (r"$OLR \; [kg VS/m^3/d]$", {f"OLR": None})
             )
 
         if plot_olr and self._num_dictated_subs > 0:
             subplot_labels_and_vars.insert(
-                2, (r"$OLR$" + "\n" + r"$[kg VS/m^3/d]$", {f"OLR": None})
+                2, (r"$OLR \; [kg VS/m^3/d]$", {f"OLR": None})
             )
 
         if height_ratios is None:
@@ -557,16 +557,16 @@ class PostProcessing:
             # axis.yaxis.set_label_coords(-0.1, 0)
             axis.set_ylabel(
                 y_label,
-                rotation=0,
-                labelpad=self._scenario_meta_data["n_days_mpc"],
+                rotation=90,
+                #labelpad=self._scenario_meta_data["n_days_mpc"],
             )
 
             # __SH: adjust ylabel for liquid substrates:
             if plot_inputs:
                 ax_inputs_liquid.set_ylabel(
-                    r"$\dot V_{feed,manure}$" + "\n" + r"$[m^3/d]$",
-                    rotation=0,
-                    labelpad=self._scenario_meta_data["n_days_mpc"],
+                    r"$\dot V_{feed,manure} \; [m^3/d]$",
+                    rotation=90,
+                    #labelpad=self._scenario_meta_data["n_days_mpc"],
                 )
 
         # Gray coloring of plot background
