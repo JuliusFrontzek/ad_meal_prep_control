@@ -86,7 +86,7 @@ for idx_k, (means, std_devs, ax) in enumerate(zip(means_all.values(), std_devs_a
                 y=distribution,
                 ax=ax,
                 # make lowercase, replace "_", add sample size:
-                label=[sub_name.lower().replace("_", " ") + fr" ($N={dfs_substrates[sub_k].shape[0]}$)"],
+                label=[sub_name.lower().replace("_", " ").capitalize() + fr" ($n={dfs_substrates[sub_k].shape[0]}$)"],
                 color=substrate_colors[sub_name],
             )
         else:
@@ -137,12 +137,12 @@ for idx_k, (means, std_devs, ax) in enumerate(zip(means_all.values(), std_devs_a
     right_axes.append(axR)  # Store the right y-axis (of complete subplot) for later use
 
 # fig.suptitle("Normalverteilung")
-subtitles = ['carbohydrates', 'proteins', 'lipids']
+subtitles = ['Carbohydrates', 'Proteins', 'Lipids']
 for k, ax, axR, nutrient_name in zip(range(len(axes)), axes, right_axes, means_all.keys()):
     ax.set_xlabel(
-        r"$\xi" + "_" + "\mathrm{" + f"{nutrient_name}" + "}$ $[\mathrm{g} \mathrm{L}^{-1}]$"
+        r"$\xi" + "_" + "\mathrm{" + f"{nutrient_name}" + "}$ $[\mathrm{g} \; \mathrm{L}^{-1}]$"
     )
-    ax.set_ylabel("density")
+    ax.set_ylabel("Density")
     ax.set_title(subtitles[k])
     ax.grid(True, linestyle="--")
     # axR.grid(True, linestyle="--", axis="y")
