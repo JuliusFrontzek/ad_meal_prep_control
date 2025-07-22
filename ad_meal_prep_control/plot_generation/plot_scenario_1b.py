@@ -35,7 +35,7 @@ for scenario_name, plot_save_name in zip(scenario_names, plot_save_name):
                             linewidth=1,
                             linestyle="-",
                         ),
-                        label="cattle manure\nwith large uncertainty",
+                        label="Cattle manure\nwith large uncertainty",
                     ),
                 },
             ),

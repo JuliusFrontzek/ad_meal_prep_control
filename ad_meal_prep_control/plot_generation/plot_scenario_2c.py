@@ -34,7 +34,7 @@ post_processing.plot(
                         linewidth=1,
                         linestyle="-",
                     ),
-                    label="cattle manure\nwith large uncertainty",
+                    label="Cattle manure\nwith large uncertainty",
                 ),
             },
         ),

@@ -326,7 +326,7 @@ class PostProcessing:
                                     self._data_simulator._time,
                                     self._data_simulator._u[:, i]
                                     * self._scenario_meta_data["Tu"][i],
-                                    label=sub_name.lower().replace("_", " "),
+                                    label=sub_name.lower().replace("_", " ").capitalize(),
                                     **plt_kwargs,
                                 )
 
@@ -335,7 +335,7 @@ class PostProcessing:
                                     self._data_simulator._time,
                                     self._data_simulator._u[:, i]
                                     * self._scenario_meta_data["Tu"][i],
-                                    label=sub_name.lower().replace("_", " "),
+                                    label=sub_name.lower().replace("_", " ").capitalize(),
                                     **plt_kwargs,
                                 )
                                 if input_inset_axes is not None:
@@ -605,6 +605,13 @@ class PostProcessing:
                 ),
                 dpi=dpi,
                 format="png",
+            )
+            # __SH: additionally save as SVG:
+            fig.savefig(
+                fname=str(
+                    Path(self.result_directory, "plots", f"{plot_save_name}.svg")
+                ),
+                format="svg",
             )
             # Save plot to a pickle so we can add the plant output later
             with open(
