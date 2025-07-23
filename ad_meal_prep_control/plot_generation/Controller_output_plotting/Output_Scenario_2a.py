@@ -204,6 +204,7 @@ def controller_plotting_2a(scenario_names=None):
             fig.axes[3].legend(bbox_to_anchor=(0.95, 1))
             fig.axes[4].legend()
             plt.savefig(f'../scenarios/results/plots/Plant Output {scenario}.png')
+            plt.savefig(f'../scenarios/results/plots/Plant Output {scenario}.svg')
 
         fig.axes[2].legend()
         fig.axes[3].legend()
@@ -215,4 +216,5 @@ def controller_plotting_2a(scenario_names=None):
         remove_duplicate_labels(fig, 4, legend_location='center right')#, bbox_to_anchor=(0, 0.6))
         #remove_duplicate_labels(fig, 5, legend_location='center left', bbox_to_anchor=(0, 0.6))
         plt.savefig(f'../scenarios/results/plots/Scenario 2/{scenario}.png')
+        plt.savefig(f'../scenarios/results/plots/Scenario 2/{scenario}.svg')
     return
