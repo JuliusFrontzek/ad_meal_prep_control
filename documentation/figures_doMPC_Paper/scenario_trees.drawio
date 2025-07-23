@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" version="27.2.0">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" version="28.0.6">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
     <mxGraphModel dx="1426" dy="751" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
       <root>
@@ -302,22 +302,22 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="UJTZAcefPIGWPJes7JFf-8" value="\(x_k^j -\) State at time \(k\) of scenario \(j\)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=0;strokeColor=none;fillColor=none;imageAspect=1;expand=1;resizeWidth=0;resizeHeight=1;fontSize=14;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="15" y="465" width="220" height="30" as="geometry" />
+          <mxGeometry x="61" y="400" width="220" height="30" as="geometry" />
         </mxCell>
         <mxCell id="UJTZAcefPIGWPJes7JFf-10" value="\(N_p-\) Prediction horizon" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="423.75" y="465" width="190" height="30" as="geometry" />
+          <mxGeometry x="469.75" y="400" width="190" height="30" as="geometry" />
         </mxCell>
         <mxCell id="UJTZAcefPIGWPJes7JFf-11" value="\(N_r-\) Robust horizon" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="425.25" y="490" width="170" height="30" as="geometry" />
+          <mxGeometry x="471.25" y="425" width="170" height="30" as="geometry" />
         </mxCell>
         <mxCell id="UJTZAcefPIGWPJes7JFf-12" value="\(u_k^j -\) Input at time \(k\) of scenario \(j\)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=0;strokeColor=none;fillColor=none;imageAspect=1;expand=1;resizeWidth=0;resizeHeight=1;fontSize=14;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="15" y="489" width="220" height="30" as="geometry" />
+          <mxGeometry x="61" y="424" width="220" height="30" as="geometry" />
         </mxCell>
         <mxCell id="UJTZAcefPIGWPJes7JFf-13" value="\(\boldsymbol{\xi}^j -\) Vector of influent macronutrients (CH, PR, LI) of scenario \(j\)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=0;strokeColor=none;fillColor=none;imageAspect=1;expand=1;resizeWidth=0;resizeHeight=1;fontSize=14;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="112" y="514" width="220" height="30" as="geometry" />
+          <mxGeometry x="158" y="449" width="220" height="30" as="geometry" />
         </mxCell>
         <mxCell id="UJTZAcefPIGWPJes7JFf-15" value="\(\xi^j_\mathrm{ch} -\) Influent CH concentration of scenario \(j\)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=0;strokeColor=none;fillColor=none;imageAspect=1;expand=1;resizeWidth=0;resizeHeight=1;fontSize=14;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="474.25" y="514" width="220" height="30" as="geometry" />
+          <mxGeometry x="520.25" y="449" width="220" height="30" as="geometry" />
         </mxCell>
         <mxCell id="UJTZAcefPIGWPJes7JFf-16" value="" style="shape=curlyBracket;whiteSpace=wrap;html=1;rounded=1;flipH=1;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;direction=north;rotation=-180;size=0.5;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="504" y="129.82" width="123.5" height="20" as="geometry" />
