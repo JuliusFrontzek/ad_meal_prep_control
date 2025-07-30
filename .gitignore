@@ -1,0 +1,19 @@
+# Environment
+.venv/
+
+# Directories
+__pycache__
+*coinhsl*
+*.egg-info/
+
+# File types
+*.c
+*.asv
+*.DS_Store
+*.so
+*.pkl
+*.csv
+*.txt
+
+# Specific files
+launch.json
