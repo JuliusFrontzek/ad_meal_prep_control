@@ -168,4 +168,15 @@ fig.savefig(
     dpi=1000,
     format="png",
 )
+# __SH: additionally save as SVG:
+fig.savefig(
+    fname=str(
+        Path(
+            "../../results",
+            "plots",
+            f"xi_pdfs_and_boxplots.svg",
+        )
+    ),
+    format="svg",
+)
 plt.show()
