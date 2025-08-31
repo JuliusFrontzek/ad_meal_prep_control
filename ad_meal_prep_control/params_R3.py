@@ -5,18 +5,18 @@ kpr = 0.2
 kli = 0.1
 kdec = 0.02
 fracChFast = (
-    0.4  # fraction of fast cabohydrates (rel. hoher Faseranteil am Eingang)
+    0.4  # fraction of fast cabohydrates [-] (rel. hoher Faseranteil am Eingang)
 )
 mu_m_ac = 0.4  # 1/d
 K_S_ac = 0.14  # kg/m^3
 K_I_nh3 = 0.0306  # kg/m^3
 
-# Henry coefficients: [mol/l/bar] (Tab. B.7 in Sörens Diss)
+# Henry coefficients: [mol/l/bar] = [kmol/m3/bar] (Tab. B.7 in Sörens Diss)
 Kch4 = 0.0011
 Kco2 = 0.025
 
 # miscellaneous parameters (Weinrich, 2017, Tab. B.7):
-R = 0.08315  # id. gas constant [bar l/mol/K]
+R = 0.08315  # id. gas constant [bar l/mol/K] = [bar m3/kmol/K]
 ph2o = 0.0657  # partial pressure of water in gas phase (saturated) [bar]
 p0 = 1.0133  # atmospheric pressure [bar]
 kla = 200  # mass transfer coefficient [1/d]
@@ -31,12 +31,12 @@ Mco2 = 44  # molar mass CO2 [kg/kmol]
 pHULac = 7.0
 pHLLac = 6.0
 nac = 3.0 / (pHULac - pHLLac)
-KW = 2.078771055954360 * 10 ** (-14.0)  # mol/l
+KW = 2.078771055954360 * 10 ** (-14.0)  # kmol/m3
 KS_IN = 0.0017  # kg/m^3
-k_AB_ac = 1.0 * 10**10  # l/mol/d
-k_AB_co2 = 1.0 * 10**10  # l/mol/d
-k_AB_IN = 1.0 * 10**10  # l/mol/d
-# Dissociation parameters from Diss Sören, Tab. B.6: [mol/l]
+k_AB_ac = 1.0 * 10**10  # l/mol/d = m3/kmol/d
+k_AB_co2 = 1.0 * 10**10  # l/mol/d = m3/kmol/d
+k_AB_IN = 1.0 * 10**10  # l/mol/d = m3/kmol/d
+# Dissociation parameters from Diss Sören, Tab. B.6: [mol/l] = [kmol/m3]
 K_a_IN = 1.3490e-9
 K_a_ac = 1.7378e-5
 K_a_co2 = 5.1286e-7
